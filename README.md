@@ -172,6 +172,27 @@ and why:
 - **Recordings produce the web player only, not MP4.** The `video` playback
   format is not built into the upstream recordings image.
 
+## Recovering recordings stuck by the sanity worker
+
+The recordings image ships a Ruby that no longer has `File.exists?`, which its
+own pipeline scripts still call. Every recording was archived and then died in
+the sanity worker, leaving a `.fail` marker and nothing in the room's library.
+`recordings-entrypoint.sh` patches the calls, but it only affects recordings
+processed from then on: the ones already marked failed are not retried on their
+own.
+
+To reprocess them, list what is stuck and rebuild each one:
+
+    runagent -m bigbluebutton1 podman exec recordings-app \
+      ls /var/bigbluebutton/recording/status/sanity/
+
+    runagent -m bigbluebutton1 podman exec recordings-app \
+      bbb-record --rebuild <meeting-id>
+
+The `.fail` suffix is not part of the meeting id. Reprocessing is CPU-heavy and
+runs one recording at a time, which is why it is not done automatically on
+update.
+
 ## Maintenance timer
 
 `bigbluebutton-periodic.timer` runs every 30 minutes and replaces the upstream

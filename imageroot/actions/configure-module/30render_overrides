@@ -43,11 +43,13 @@ for name in (
     "nginx-default.conf",
     "freeswitch-entrypoint.sh",
     "greenlight-entrypoint.sh",
+    "recordings-entrypoint.sh",
 ):
     shutil.copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
 
 os.chmod(os.path.join(dst_dir, "freeswitch-entrypoint.sh"), 0o755)
 os.chmod(os.path.join(dst_dir, "greenlight-entrypoint.sh"), 0o755)
+os.chmod(os.path.join(dst_dir, "recordings-entrypoint.sh"), 0o755)
 
 # Substituted here: bbb-webrtc-sfu reads a plain YAML file with no templating
 # of its own, and it needs the allocated port numbers.
