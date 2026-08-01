@@ -39,6 +39,7 @@ BBB_IMAGES=(
     "docker.io/alangecker/bbb-docker-graphql-actions:v3.0.23"
     "docker.io/alangecker/bbb-docker-graphql-middleware:v3.0.23"
     "docker.io/alangecker/bbb-docker-recordings:v3.0.23"
+    "docker.io/bigbluebutton/greenlight:v3.8.0"
     "docker.io/library/postgres:16.14-alpine"
     "docker.io/library/redis:8.4.5-alpine"
 )
@@ -86,7 +87,7 @@ buildah config --entrypoint=/ \
     --label="org.nethserver.udp-ports-demand=9216" \
     --label="org.nethserver.rootfull=0" \
     --label="org.nethserver.max-per-node=1" \
-    --label="org.nethserver.volumes=bigbluebutton postgres-data" \
+    --label="org.nethserver.volumes=bigbluebutton postgres-data greenlight" \
     --label="org.nethserver.min-core=3.20.1" \
     --label="org.nethserver.images=${BBB_IMAGES[*]}" \
     "${container}"

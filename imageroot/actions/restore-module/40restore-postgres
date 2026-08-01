@@ -35,7 +35,7 @@ chmod 755 restore/10-create-databases.sh
 # because two dumps cannot share a single standard input.
 cat - >restore/20-restore.sh <<'EOS'
 set -e
-for db in bbb_graphql hasura_app; do
+for db in bbb_graphql hasura_app greenlight; do
     echo "Restoring ${db}"
     pg_restore --no-owner --no-privileges -U postgres -d "${db}" "/dumps/${db}.pg_dump"
 done
@@ -52,9 +52,9 @@ podman run \
     --replace --name=restore_db \
     --env POSTGRES_USER=postgres \
     --env POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
-    --env POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app \
+    --env POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app,greenlight \
     --env TZ=UTC \
     "${POSTGRES_IMAGE}"
 
 # If the restore is successful, clean up
-rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump
+rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump

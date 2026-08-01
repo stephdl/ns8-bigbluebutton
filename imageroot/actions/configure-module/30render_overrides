@@ -65,6 +65,19 @@ agent.assert_exp("@@" not in content, "unsubstituted placeholder in webrtc-sfu c
 with open(os.path.join(dst_dir, "webrtc-sfu-config.yaml"), "w") as fp:
     fp.write(content)
 
+# Greenlight's environment. Rendered rather than passed on the podman command
+# line because DATABASE_URL embeds the PostgreSQL password, which ps would show.
+pw = agent.read_envfile(os.path.join(state_dir, "passwords.env"))
+gl_path = os.path.join(dst_dir, "greenlight.env")
+gl_fd = os.open(gl_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(gl_fd, "w") as fp:
+    print(f"DATABASE_URL=postgres://postgres:{pw['POSTGRES_PASSWORD']}@127.0.0.1:5432/greenlight", file=fp)
+    print("REDIS_URL=redis://127.0.0.1:6379", file=fp)
+    print(f"BIGBLUEBUTTON_ENDPOINT=https://{env['TRAEFIK_HOST']}/bigbluebutton/api", file=fp)
+    print(f"BIGBLUEBUTTON_SECRET={pw['SHARED_SECRET']}", file=fp)
+    print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
+    print("RELATIVE_URL_ROOT=/", file=fp)
+
 # Read by the postgres image's entrypoint to create the two BigBlueButton
 # databases on first start.
 initdb_dir = os.path.join(state_dir, "initdb.d")

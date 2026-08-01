@@ -1,0 +1,49 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Greenlight, the BigBlueButton front end.
+#
+# Note what this implies: Greenlight holds user accounts, so identity lives in
+# this module rather than being kept out of it. Participants are no longer
+# pseudonymous by construction; if that property is needed, it has to come from
+# how Greenlight is configured or from a different front end.
+#
+# Its database URL carries the PostgreSQL password, so it is rendered into
+# state/overrides/greenlight.env at configure time rather than passed on the
+# podman command line where ps would show it.
+#
+
+[Unit]
+Description=Podman greenlight-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service postgres-app.service redis-app.service bbb-web-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/greenlight-app.pid %t/greenlight-app.ctr-id
+# POSTGRES_MULTIPLE_DATABASES only runs on a fresh data directory, so an
+# instance created before Greenlight existed has no greenlight database.
+# Create it if missing; "already exists" is the normal outcome.
+ExecStartPre=-/usr/bin/podman exec postgres-app psql -U postgres -c "CREATE DATABASE greenlight"
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
+    --cidfile %t/greenlight-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name greenlight-app \
+    --env-file=%S/state/overrides/greenlight.env \
+    --volume greenlight:/usr/src/app/storage:z \
+    ${GREENLIGHT_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/greenlight-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/greenlight-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/greenlight-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
