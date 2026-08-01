@@ -1,172 +1,211 @@
-# ns8-kickstart
+# ns8-bigbluebutton
 
-This is a template module for [NethServer 8](https://github.com/NethServer/ns8-core).
-To start a new module from it:
+[BigBlueButton](https://bigbluebutton.org/) 3.0 for [NethServer 8](https://github.com/NethServer/ns8-core),
+ported from the community [bigbluebutton/docker](https://github.com/bigbluebutton/docker)
+compose stack.
 
-1. Click on [Use this template](https://github.com/NethServer/ns8-kickstart/generate).
-   Name your repo with `ns8-` prefix (e.g. `ns8-mymodule`). 
-   Do not end your module name with a number, like ~~`ns8-baaad2`~~!
+Sixteen containers, a mediasoup SFU and a FreeSWITCH audio mixer, running
+rootless under podman.
 
-1. Clone the repository, enter the cloned directory and
-   [configure your GIT identity](https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup#_your_identity)
+A detailed gap analysis of what the port required, with references into the
+upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md).
 
-1. Rename some references inside the repo:
-   ```
-   modulename=$(basename $(pwd) | sed 's/^ns8-//') &&
-   git mv imageroot/systemd/user/kickstart.service imageroot/systemd/user/${modulename}.service &&
-   git mv imageroot/systemd/user/kickstart-app.service imageroot/systemd/user/${modulename}-app.service && 
-   git mv tests/kickstart.robot tests/${modulename}.robot &&
-   sed -i "s/kickstart/${modulename}/g" $(find .github/ * -type f) &&
-   git commit -a -m "Repository initialization"
-   ```
+## Requirements
 
-1. Edit this `README.md` file, by replacing this section with your module
-   description
+- **One instance per node.** The module is labelled `max-per-node=1`. It asks
+  the node for 9216 UDP ports, and an SFU plus an audio mixer saturate a node's
+  CPU well before its ports.
+- **A public IP address reachable over UDP.** WebRTC media does not travel over
+  the Traefik HTTPS port. The allocated UDP range must be reachable from the
+  internet; the firewall rule on the node itself is created automatically, but
+  any router in front of it needs the range forwarded.
+- **No TURN server is included.** Participants behind a firewall that blocks
+  UDP cannot join unless you point the module at an external TURN server. See
+  *Differences from upstream* below.
 
-1. Adjust `.github/workflows` to your needs. `clean-registry.yml` might
-   need the proper list of image names to work correctly. Unused workflows
-   can be disabled from the GitHub Actions interface.
+## Architecture
 
-1. Commit and push your local changes
+Thirteen containers share one rootless pod, reachable only through the two
+ports it publishes to the node loopback:
+
+| | Containers |
+|---|---|
+| **Pod** | postgres, redis, bbb-web, nginx, etherpad, bbb-pads, bbb-export-annotations, apps-akka, fsesl-akka, bbb-graphql-server, bbb-graphql-actions, bbb-graphql-middleware, recordings |
+| **Host network** | freeswitch, webrtc-sfu, bbb-webrtc-recorder |
+
+Inside the pod every peer resolves to `127.0.0.1` through `--add-host`.
+BigBlueButton is natively a single-host product; the `10.7.7.x` addressing in
+`bigbluebutton/docker` exists only to fit compose, and collapsing it back onto
+one loopback restores the upstream shape. None of the thirteen services collide
+on a port number, so nothing had to be renumbered.
+
+FreeSWITCH is on the host network on purpose. It exchanges RTP with the SFU for
+every conference audio leg, and the SFU cannot leave the host namespace. With
+FreeSWITCH inside the pod that traffic had to be published port by port, which
+put every audio packet through rootlessport in userspace.
+
+### Ports
+
+| | Range | Reachable from |
+|---|---|---|
+| mediasoup RTC | 8192 UDP, allocated | the internet |
+| FreeSWITCH RTP | 1024 UDP, allocated | the node only |
+| nginx, Redis | 2 TCP, allocated | the node loopback |
+| FreeSWITCH ESL, SIP-over-WebSocket | 8021, 5066 | the node only |
+
+Both UDP ranges come from a single allocation that `create-module/05setenvs`
+splits. FreeSWITCH's upstream default of 16384-24576 is not used: it overlaps
+the NS8 allocator span of 20000-45000 and is far wider than the SFU-to-FreeSWITCH
+audio leg needs.
 
 ## Install
 
-Instantiate the module with:
+    add-module ghcr.io/stephdl/bigbluebutton:latest 1
 
-    add-module ghcr.io/nethserver/kickstart:latest 1
+The output returns the instance name:
 
-The output of the command will return the instance name.
-Output example:
-
-    {"module_id": "kickstart1", "image_name": "kickstart", "image_url": "ghcr.io/nethserver/kickstart:latest"}
+    {"module_id": "bigbluebutton1", "image_name": "bigbluebutton", "image_url": "ghcr.io/stephdl/bigbluebutton:latest"}
 
 ## Configure
 
-Let's assume that the mattermost instance is named `kickstart1`.
-
-Launch `configure-module`, by setting the following parameters:
-- `host`: a fully qualified domain name for the application
-- `http2https`: enable or disable HTTP to HTTPS redirection (true/false)
-- `lets_encrypt`: enable or disable Let's Encrypt certificate (true/false)
-
-
-Example:
+Assuming the instance is named `bigbluebutton1`:
 
 ```
-api-cli run configure-module --agent module/kickstart1 --data - <<EOF
+api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
 {
-  "host": "kickstart.domain.com",
+  "host": "bbb.domain.com",
   "http2https": true,
-  "lets_encrypt": false
+  "lets_encrypt": true,
+  "public_address": "203.0.113.10",
+  "private_address": "192.168.1.10",
+  "enable_recording": false
 }
 EOF
 ```
 
-The above command will:
-- start and configure the kickstart instance
-- configure a virtual host for trafik to access the instance
+Required:
+
+- `host` — fully qualified domain name for the web client
+- `public_address` — the address participants use to reach this node. It is
+  *announced* to WebRTC clients, not bound locally, so a public address is
+  correct even when the node sits behind NAT.
+
+Optional:
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `private_address` | empty | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
+| `stun_server` | empty | Leave empty unless you run your own. A public STUN server receives the IP address of every participant. |
+| `turn_ext_server` | empty | Without TURN, participants behind UDP-blocking firewalls cannot join. |
+| `enable_recording` | `false` | Recordings capture audio, video, chat, shared notes and presentations. |
+| `remove_old_recording` | `false` | Let the maintenance timer delete recordings past their retention. |
+| `recording_max_age_days` | `14` | Only meaningful with the above. |
+| `sounds_language` | `en-us-callie` | Language of the spoken announcements. |
+| `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
+| `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
+| `enable_learning_dashboard` | `true` | |
 
 ## Get the configuration
-You can retrieve the configuration with
 
-```
-api-cli run get-configuration --agent module/kickstart1
-```
+    api-cli run get-configuration --agent module/bigbluebutton1
+
+The output includes a read-only `mediasoup_port_range`: this is the UDP range
+that must be reachable from the internet.
+
+## Differences from upstream
+
+The port is not a straight translation of `bigbluebutton/docker`. What changed,
+and why:
+
+- **coturn is dropped.** Its template hardcodes `turns:${DOMAIN}:443`, which
+  collides with Traefik, and `turn:...:3478` is a fixed port that would force
+  one instance per node for a protocol reason rather than a resource one.
+  Upstream also emits the `turn0` bean unconditionally, with no `ENABLE_COTURN`
+  guard, so without this fix every client would receive a TURN candidate for a
+  port nothing listens on. Use `turn_ext_server` instead.
+- **STUN is empty by default.** `sample.env` ships a third-party public STUN
+  server, which would receive the IP address of every participant.
+- **Greenlight is not included.** BigBlueButton is exposed through its API; the
+  front end is a separate concern.
+- **haproxy is replaced by Traefik**, and `periodic` by a systemd timer.
+- **Collabora, webhooks and the Prometheus exporter are not included.**
+- **SIP dial-in is disabled.** The `external-dialin` FreeSWITCH profile is
+  removed, so port 5060 is never bound and does not collide with
+  ns8-nethvoice-proxy on the same node.
+- **Recordings produce the web player only, not MP4.** The `video` playback
+  format is not built into the upstream recordings image.
+
+## Maintenance timer
+
+`bigbluebutton-periodic.timer` runs every 30 minutes and replaces the upstream
+`periodic` container:
+
+1. resynchronises the FreeSWITCH clock
+2. deletes presentation upload directories older than 5 days
+3. deletes recordings past their retention, when both `enable_recording` and
+   `remove_old_recording` are set
+
+    systemctl --user status bigbluebutton-periodic.timer
+    journalctl --user -u bigbluebutton-periodic.service
+
+## Backup and restore
+
+Backed up: the recordings volume, both PostgreSQL databases, the raw recorder
+output, and the generated secrets.
+
+Not backed up: Redis, and the per-meeting scratch volumes. Redis holds live
+meeting state and the recording job queues, which are meaningless across a
+restore.
+
+**A restore therefore loses every in-progress meeting, and any recording still
+queued for processing at backup time.** The raw media survives, but the job that
+would have processed it does not.
 
 ## Uninstall
 
-To uninstall the instance:
-
-    remove-module --no-preserve kickstart1
+    remove-module --no-preserve bigbluebutton1
 
 ## Update
 
-To Update the instance:
+    api-cli run update-module --data '{"module_url":"ghcr.io/stephdl/bigbluebutton:latest","instances":["bigbluebutton1"],"force":true}'
 
-    api-cli run update-module --data '{"module_url":"ghcr.io/nethserver/kickstart:latest","instances":["kickstart1"],"force":true}'
-
-## Smarthost setting discovery
-
-Some configuration settings, like the smarthost setup, are not part of the
-`configure-module` action input: they are discovered by looking at some
-Redis keys.  To ensure the module is always up-to-date with the
-centralized [smarthost
-setup](https://nethserver.github.io/ns8-core/core/smarthost/) every time
-kickstart starts, the command `bin/discover-smarthost` runs and refreshes
-the `state/smarthost.env` file with fresh values from Redis.
-
-Furthermore if smarthost setup is changed when kickstart is already
-running, the event handler `events/smarthost-changed/10reload_services`
-restarts the main module service.
-
-See also the `systemd/user/kickstart.service` file.
-
-This setting discovery is just an example to understand how the module is
-expected to work: it can be rewritten or discarded completely.
+Bump the BigBlueButton images as a set. Upstream does not support mixing
+component versions, and the pinned tags in `build-images.sh` come from a single
+`bigbluebutton/docker` reference.
 
 ## Debug
 
-some CLI are needed to debug
+Inspect the module environment, including the allocated port ranges:
 
-- The module runs under an agent that initiate a lot of environment variables (in /home/kickstart1/.config/state), it could be nice to verify them
-on the root terminal
+    runagent -m bigbluebutton1 env | grep -E 'PORT|IP'
 
-    `runagent -m kickstart1 env`
+Become the module user:
 
-- you can become runagent for testing scripts and initiate all environment variables
-  
-    `runagent -m kickstart1`
+    runagent -m bigbluebutton1
+    podman ps
 
- the path become : 
-```
-    echo $PATH
-    /home/kickstart1/.config/bin:/usr/local/agent/pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/usr/
-```
+Secrets are not in the environment. They live in `state/passwords.env`, mode
+0600, because `agent.set_env()` writes to Redis in plain text where every module
+on the node can read it.
 
-- if you want to debug a container or see environment inside
- `runagent -m kickstart1`
- ```
-podman ps
-CONTAINER ID  IMAGE                                      COMMAND               CREATED        STATUS        PORTS                    NAMES
-d292c6ff28e9  localhost/podman-pause:4.6.1-1702418000                          9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  80b8de25945f-infra
-d8df02bf6f4a  docker.io/library/postgres:15.5-alpine3.19          --character-set-s...  9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  postgresql-app
-9e58e5bd676f  docker.io/library/nginx:stable-alpine3.17  nginx -g daemon o...  9 minutes ago  Up 9 minutes  127.0.0.1:20015->80/tcp  kickstart-app
-```
+Reach the FreeSWITCH console:
 
-you can see what environment variable is inside the container
-```
-podman exec  kickstart-app env
-TERM=xterm
-container=podman
-NGINX_VERSION=1.24.0
-PKG_RELEASE=1
-NJS_VERSION=0.7.12
-NGINX_IMAGE=docker.io/nginx:stable-alpine3.17
-CONFIG_DATABASE_URI="postgresql://postgres:Nethesis,1234@127.0.0.1:5432/toto"
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-HOME=/root
-```
+    runagent -m bigbluebutton1
+    source state/passwords.env
+    podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD"
 
-you can run a shell inside the container
+Confirm the SFU is actually holding UDP ports in the allocated range:
 
-```
-podman exec -ti   kickstart-app sh
-/ # 
-```
+    ss -ulnp | awk '$5 ~ /:(2[0-9]{4}|3[0-9]{4})$/'
+
 ## Testing
 
-Test the module using the `test-module.sh` script:
+    ./test-module.sh <NODE_ADDR> ghcr.io/stephdl/bigbluebutton:latest
 
-
-    ./test-module.sh <NODE_ADDR> ghcr.io/nethserver/kickstart:latest
-
-The tests are made using [Robot Framework](https://robotframework.org/)
+The tests use [Robot Framework](https://robotframework.org/).
 
 ## UI translation
 
 Translated with [Weblate](https://hosted.weblate.org/projects/ns8/).
-
-To setup the translation process:
-
-- add [GitHub Weblate app](https://docs.weblate.org/en/latest/admin/continuous.html#github-setup) to your repository
-- add your repository to [hosted.weblate.org]((https://hosted.weblate.org) or ask a NethServer developer to add it to ns8 Weblate project
+Only `ui/public/i18n/en/translation.json` is edited by hand; the other languages
+are generated.
