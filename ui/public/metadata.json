@@ -1,19 +1,19 @@
 {
-  "name": "kickstart",
+  "name": "BigBlueButton",
   "description": {
-    "en": "My kickstart module"
+    "en": "Web conferencing with audio, video, screen sharing, shared notes and recording"
   },
-  "categories": [],
+  "categories": ["collaboration"],
   "authors": [
     {
-      "name": "Name Surname",
-      "email": "author@yourmail.org"
+      "name": "Stephane de Labrusse",
+      "email": "stephane.delabrusse@nethesis.it"
     }
   ],
   "docs": {
-    "documentation_url": "https://docs.kickstart.com/",
-    "bug_url": "https://github.com/NethServer/dev",
-    "code_url": "https://github.com/author/ns8-kickstart"
+    "documentation_url": "https://docs.bigbluebutton.org/",
+    "bug_url": "https://github.com/stephdl/ns8-bigbluebutton/issues",
+    "code_url": "https://github.com/stephdl/ns8-bigbluebutton"
   },
-  "source": "ghcr.io/nethserver/kickstart"
+  "source": "ghcr.io/stephdl/bigbluebutton"
 }
