@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Open the mediasoup RTC range.
+#
+# Allocation and exposure are independent: the label in build-images.sh reserves
+# the ports against the node registry, this call opens them in the firewall.
+#
+# Only the mediasoup half of the allocated UDP range is public. The FreeSWITCH
+# RTP half is published to the node loopback for the SFU and must stay closed.
+#
+# No TCP port is declared: Traefik owns 443 and reverse-proxies to nginx on
+# loopback. Nothing in BigBlueButton wants a public TCP port once coturn and
+# SIP dial-in are excluded.
+#
+
+import os
+import agent
+
+# agent.set_env() in 05setenvs writes state/environment but does not touch
+# os.environ, and each action step is a separate process: read the file back
+# rather than assuming the variables were propagated.
+env = agent.read_envfile(os.path.join(os.environ["AGENT_STATE_DIR"], "environment"))
+
+agent.assert_exp(agent.add_public_service(os.environ["MODULE_ID"], [
+    f"{env['MEDIASOUP_MIN_PORT']}-{env['MEDIASOUP_MAX_PORT']}/udp",
+]))
