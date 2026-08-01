@@ -30,11 +30,14 @@
               class="mg-bottom"
               :invalid-message="$t(error.host)"
               :disabled="stillLoading"
-              :tooltip="$t('settings.bigbluebutton_fqdn_tooltip')"
               tooltipAlignment="start"
               tooltipDirection="right"
               ref="host"
-            />
+            >
+              <template #tooltip>
+                {{ $t("settings.bigbluebutton_fqdn_tooltip") }}
+              </template>
+            </NsTextInput>
             <NsToggle
               value="letsEncrypt"
               :label="core.$t('apps_lets_encrypt.request_https_certificate')"
@@ -92,11 +95,14 @@
               class="mg-bottom"
               :invalid-message="$t(error.public_address)"
               :disabled="stillLoading"
-              :tooltip="$t('settings.public_address_tooltip')"
               tooltipAlignment="start"
               tooltipDirection="right"
               ref="public_address"
-            />
+            >
+              <template #tooltip>
+                {{ $t("settings.public_address_tooltip") }}
+              </template>
+            </NsTextInput>
             <NsTextInput
               :label="$t('settings.private_address')"
               placeholder="192.168.1.10"
@@ -104,11 +110,14 @@
               class="mg-bottom"
               :invalid-message="$t(error.private_address)"
               :disabled="stillLoading"
-              :tooltip="$t('settings.private_address_tooltip')"
               tooltipAlignment="start"
               tooltipDirection="right"
               ref="private_address"
-            />
+            >
+              <template #tooltip>
+                {{ $t("settings.private_address_tooltip") }}
+              </template>
+            </NsTextInput>
             <!-- The firewall rule on this node is created by the module, but a
                  router in front of it is out of our reach: show the range. -->
             <NsInlineNotification
@@ -187,12 +196,15 @@
                     :title="$t('settings.sounds_language')"
                     :disabled="stillLoading"
                     :acceptUserInput="false"
-                    :tooltip="$t('settings.sounds_language_tooltip')"
                     tooltipAlignment="start"
                     tooltipDirection="right"
                     class="mg-bottom"
                     ref="sounds_language"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.sounds_language_tooltip") }}
+                    </template>
+                  </NsComboBox>
                   <NsToggle
                     value="disableSoundMuted"
                     :label="$t('settings.disable_sound_muted')"
@@ -228,11 +240,14 @@
                     class="mg-bottom"
                     :invalid-message="$t(error.stun_server)"
                     :disabled="stillLoading"
-                    :tooltip="$t('settings.stun_server_tooltip')"
                     tooltipAlignment="start"
                     tooltipDirection="right"
                     ref="stun_server"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.stun_server_tooltip") }}
+                    </template>
+                  </NsTextInput>
                   <NsTextInput
                     :label="$t('settings.turn_ext_server')"
                     placeholder="turns:turn.example.org:443?transport=tcp"
@@ -240,11 +255,14 @@
                     class="mg-bottom"
                     :invalid-message="$t(error.turn_ext_server)"
                     :disabled="stillLoading"
-                    :tooltip="$t('settings.turn_ext_server_tooltip')"
                     tooltipAlignment="start"
                     tooltipDirection="right"
                     ref="turn_ext_server"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.turn_ext_server_tooltip") }}
+                    </template>
+                  </NsTextInput>
 
                   <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
                   <NsTextInput
@@ -252,11 +270,14 @@
                     v-model.trim="welcomeMessage"
                     class="mg-bottom"
                     :disabled="stillLoading"
-                    :tooltip="$t('settings.welcome_message_tooltip')"
                     tooltipAlignment="start"
                     tooltipDirection="right"
                     ref="welcome_message"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.welcome_message_tooltip") }}
+                    </template>
+                  </NsTextInput>
                   <NsTextInput
                     :label="$t('settings.welcome_footer')"
                     v-model.trim="welcomeFooter"
