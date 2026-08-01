@@ -67,7 +67,24 @@
     "sounds_language_tooltip": "Language of the spoken announcements inside a conference. The sound pack is downloaded on first start.",
     "welcome_message_tooltip": "Shown in the chat when a meeting starts. Simple HTML is accepted.",
     "certificate_mismatch_title": "The certificate does not match this hostname",
-    "certificate_mismatch_description": "Traefik serves a certificate issued for another name. Greenlight cannot reach the API and browsers will refuse microphone and camera access. Request a Let's Encrypt certificate above, or upload one for this hostname from Settings > TLS certificates."
+    "certificate_mismatch_description": "Traefik serves a certificate issued for another name. Greenlight cannot reach the API and browsers will refuse microphone and camera access. Request a Let's Encrypt certificate above, or upload one for this hostname from Settings > TLS certificates.",
+    "accounts": "Accounts",
+    "registration_method": "Who can create an account",
+    "registration_method_tooltip": "Open lets anyone sign up, which on a server reachable from the internet means anyone can create rooms. Invite and approval both put an administrator in the loop.",
+    "registration_open": "Anyone can sign up",
+    "registration_invite": "By invitation only",
+    "registration_approval": "Sign-up needs approval",
+    "allowed_domains": "Allowed email domains",
+    "allowed_domains_tooltip": "Comma-separated, for example example.org,example.com. Empty accepts any domain. Has no effect when sign-up is by invitation.",
+    "create_admin": "Create an administrator",
+    "create_admin_description": "Signing up through the form always yields a regular account, and the admin panel is hidden from those. Create the first administrator here.",
+    "admin_name": "Display name",
+    "admin_email": "Email address",
+    "admin_password": "Password",
+    "create_admin_button": "Create administrator",
+    "admin_created": "Administrator {email} created. Sign in with it from the BigBlueButton page.",
+    "admin_creation_failed": "Could not create the account. It may already exist.",
+    "password_too_short": "At least 8 characters"
   },
   "about": {
     "title": "About"

@@ -25,6 +25,8 @@ config = {
     "private_address": os.environ.get("PRIVATE_IP", ""),
     "stun_server": os.environ.get("STUN_SERVER", ""),
     "turn_ext_server": os.environ.get("TURN_EXT_SERVER", ""),
+    "registration_method": os.environ.get("REGISTRATION_METHOD", "open"),
+    "allowed_domains": os.environ.get("ALLOWED_DOMAINS", ""),
     "enable_recording": os.environ.get("ENABLE_RECORDING", "false") == "true",
     "remove_old_recording": os.environ.get("REMOVE_OLD_RECORDING", "false") == "true",
     "recording_max_age_days": int(os.environ.get("RECORDING_MAX_AGE_DAYS", "14")),

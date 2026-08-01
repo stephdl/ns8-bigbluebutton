@@ -73,3 +73,7 @@ systemctl --user restart "${UNITS[@]}"
 # Maintenance timer: FreeSWITCH clock resync, stale presentation cleanup and,
 # when enabled, recording retention. Replaces the upstream `periodic` container.
 systemctl --user enable --now bigbluebutton-periodic.timer
+
+# Greenlight seeds its settings table on first boot, so these can only be
+# written once it is running.
+runagent apply-greenlight-settings || true

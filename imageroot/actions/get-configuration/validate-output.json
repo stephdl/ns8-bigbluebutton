@@ -21,7 +21,8 @@
             "mediasoup_port_range": "20000-28191",
             "remove_old_recording": false,
             "recording_max_age_days": 14,
-            "certificate_matches_host": true
+            "certificate_matches_host": true,
+            "registration_method": "open"
         }
     ],
     "type": "object",
@@ -104,6 +105,14 @@
             "type": "boolean",
             "title": "Certificate matches the hostname",
             "description": "Read-only. False when Traefik serves a certificate issued for another name."
+        },
+        "registration_method": {
+            "type": "string",
+            "title": "Who can create an account"
+        },
+        "allowed_domains": {
+            "type": "string",
+            "title": "Allowed email domains"
         }
     }
 }

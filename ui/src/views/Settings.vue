@@ -142,6 +142,36 @@
               class="mg-bottom"
             />
 
+            <!-- accounts -->
+            <h4 class="mg-bottom">{{ $t("settings.accounts") }}</h4>
+            <NsComboBox
+              v-model="registrationMethod"
+              :options="registrationMethodOptions"
+              :label="$t('settings.registration_method')"
+              :title="$t('settings.registration_method')"
+              :disabled="stillLoading"
+              :acceptUserInput="false"
+              class="mg-bottom"
+              ref="registration_method"
+            >
+              <template #tooltip>
+                {{ $t("settings.registration_method_tooltip") }}
+              </template>
+            </NsComboBox>
+            <NsTextInput
+              v-if="registrationMethod !== 'invite'"
+              :label="$t('settings.allowed_domains')"
+              placeholder="example.org,example.com"
+              v-model.trim="allowedDomains"
+              class="mg-bottom"
+              :disabled="stillLoading"
+              ref="allowed_domains"
+            >
+              <template #tooltip>
+                {{ $t("settings.allowed_domains_tooltip") }}
+              </template>
+            </NsTextInput>
+
             <!-- recording -->
             <h4 class="mg-bottom">{{ $t("settings.recording") }}</h4>
             <NsToggle
@@ -350,6 +380,70 @@
         </cv-tile>
       </cv-column>
     </cv-row>
+    <cv-row>
+      <cv-column>
+        <cv-tile light>
+          <h4 class="mg-bottom">{{ $t("settings.create_admin") }}</h4>
+          <div class="mg-bottom subtle">
+            {{ $t("settings.create_admin_description") }}
+          </div>
+          <cv-form @submit.prevent="createAdmin">
+            <NsTextInput
+              :label="$t('settings.admin_name')"
+              v-model.trim="admin.name"
+              class="mg-bottom"
+              :invalid-message="$t(error.admin_name)"
+              :disabled="loading.createAdmin"
+              ref="admin_name"
+            />
+            <NsTextInput
+              :label="$t('settings.admin_email')"
+              v-model.trim="admin.email"
+              class="mg-bottom"
+              :invalid-message="$t(error.admin_email)"
+              :disabled="loading.createAdmin"
+              ref="admin_email"
+            />
+            <NsPasswordInput
+              :label="$t('settings.admin_password')"
+              v-model="admin.password"
+              class="mg-bottom"
+              :invalid-message="$t(error.admin_password)"
+              :disabled="loading.createAdmin"
+              :newPasswordLabel="$t('settings.admin_password')"
+              :passwordHideLabel="core.$t('password.hide_password')"
+              :passwordShowLabel="core.$t('password.show_password')"
+              ref="admin_password"
+            />
+            <NsInlineNotification
+              v-if="adminCreated"
+              kind="success"
+              :title="$t('settings.create_admin')"
+              :description="
+                $t('settings.admin_created', { email: adminCreated })
+              "
+              :showCloseButton="false"
+              class="mg-bottom"
+            />
+            <NsInlineNotification
+              v-if="error.createAdmin"
+              kind="error"
+              :title="$t('settings.create_admin')"
+              :description="error.createAdmin"
+              :showCloseButton="false"
+              class="mg-bottom"
+            />
+            <NsButton
+              kind="secondary"
+              :icon="User20"
+              :loading="loading.createAdmin"
+              :disabled="loading.createAdmin"
+              >{{ $t("settings.create_admin_button") }}</NsButton
+            >
+          </cv-form>
+        </cv-tile>
+      </cv-column>
+    </cv-row>
   </cv-grid>
 </template>
 
@@ -410,8 +504,12 @@ export default {
       privateAddress: "",
       mediasoupPortRange: "",
       certificateMatchesHost: true,
+      admin: { name: "", email: "", password: "" },
+      adminCreated: "",
       stunServer: "",
       turnExtServer: "",
+      registrationMethod: "open",
+      allowedDomains: "",
       isRecordingEnabled: false,
       isRemoveOldRecordingEnabled: false,
       recordingMaxAgeDays: "14",
@@ -424,6 +522,7 @@ export default {
         getConfiguration: false,
         configureModule: false,
         getStatus: false,
+        createAdmin: false,
       },
       error: {
         getConfiguration: "",
@@ -436,6 +535,10 @@ export default {
         stun_server: "",
         turn_ext_server: "",
         recording_max_age_days: "",
+        createAdmin: "",
+        admin_name: "",
+        admin_email: "",
+        admin_password: "",
       },
     };
   },
@@ -447,6 +550,13 @@ export default {
         this.loading.configureModule ||
         this.loading.getStatus
       );
+    },
+    registrationMethodOptions() {
+      return ["open", "invite", "approval"].map((value) => ({
+        name: value,
+        label: this.$t("settings.registration_" + value),
+        value,
+      }));
     },
     soundsLanguageOptions() {
       return SOUNDS_LANGUAGES.map((code) => ({
@@ -564,6 +674,8 @@ export default {
       this.certificateMatchesHost = config.certificate_matches_host;
       this.stunServer = config.stun_server;
       this.turnExtServer = config.turn_ext_server;
+      this.registrationMethod = config.registration_method;
+      this.allowedDomains = config.allowed_domains;
       this.isRecordingEnabled = config.enable_recording;
       this.isRemoveOldRecordingEnabled = config.remove_old_recording;
       this.recordingMaxAgeDays = String(config.recording_max_age_days);
@@ -657,6 +769,8 @@ export default {
             private_address: this.privateAddress,
             stun_server: this.stunServer,
             turn_ext_server: this.turnExtServer,
+            registration_method: this.registrationMethod,
+            allowed_domains: this.allowedDomains,
             enable_recording: this.isRecordingEnabled,
             remove_old_recording: this.isRemoveOldRecordingEnabled,
             recording_max_age_days: Number(this.recordingMaxAgeDays),
@@ -689,6 +803,75 @@ export default {
       this.error.configureModule = this.$t("error.generic_error");
       this.loading.configureModule = false;
     },
+    validateCreateAdmin() {
+      this.clearErrors(this);
+      let ok = true;
+      const fail = (field, message) => {
+        this.error[field] = message;
+        if (ok) this.focusElement(field);
+        ok = false;
+      };
+      if (!this.admin.name) fail("admin_name", "common.required");
+      if (!this.admin.email) fail("admin_email", "common.required");
+      if (!this.admin.password) fail("admin_password", "common.required");
+      else if (this.admin.password.length < 8)
+        fail("admin_password", "settings.password_too_short");
+      return ok;
+    },
+    async createAdmin() {
+      if (!this.validateCreateAdmin()) return;
+      this.adminCreated = "";
+      this.loading.createAdmin = true;
+      const taskAction = "create-admin";
+      const eventId = this.getUuid();
+      this.core.$root.$once(
+        `${taskAction}-aborted-${eventId}`,
+        this.createAdminAborted
+      );
+      this.core.$root.$once(
+        `${taskAction}-validation-failed-${eventId}`,
+        this.createAdminValidationFailed
+      );
+      this.core.$root.$once(
+        `${taskAction}-completed-${eventId}`,
+        this.createAdminCompleted
+      );
+      const res = await to(
+        this.createModuleTaskForApp(this.instanceName, {
+          action: taskAction,
+          data: {
+            name: this.admin.name,
+            email: this.admin.email,
+            password: this.admin.password,
+          },
+          extra: {
+            title: this.$t("settings.create_admin"),
+            eventId,
+          },
+        })
+      );
+      if (res[0]) {
+        this.error.createAdmin = this.getErrorMessage(res[0]);
+        this.loading.createAdmin = false;
+      }
+    },
+    createAdminAborted(taskResult, taskContext) {
+      console.error(`${taskContext.action} aborted`, taskResult);
+      this.error.createAdmin = this.$t("error.generic_error");
+      this.loading.createAdmin = false;
+    },
+    createAdminValidationFailed(validationErrors) {
+      this.loading.createAdmin = false;
+      for (const e of validationErrors) {
+        this.error.createAdmin = this.$t("settings." + e.error);
+      }
+    },
+    createAdminCompleted(taskContext, taskResult) {
+      this.loading.createAdmin = false;
+      this.adminCreated = taskResult.output.email;
+      // Never leave the password sitting in the page after it has been used.
+      this.admin = { name: "", email: "", password: "" };
+    },
     configureModuleCompleted() {
       this.loading.configureModule = false;
       this.getConfiguration();
@@ -701,6 +884,11 @@ export default {
 @import "../styles/carbon-utils";
 .mg-bottom {
   margin-bottom: $spacing-06;
+}
+
+.subtle {
+  color: $text-02;
+  margin-bottom: $spacing-05;
 }
 
 .maxwidth {

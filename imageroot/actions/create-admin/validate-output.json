@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "create-admin output",
+    "$id": "http://nethserver.org/json-schema/task/output/bigbluebutton/create-admin",
+    "description": "The administrator that was created",
+    "examples": [{"email": "alice@example.org"}],
+    "type": "object",
+    "required": ["email"],
+    "properties": {
+        "email": {"type": "string", "title": "Email address of the new administrator"}
+    }
+}

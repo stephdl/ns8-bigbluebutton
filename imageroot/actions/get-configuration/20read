@@ -25,6 +25,8 @@ config["private_address"] = os.getenv("PRIVATE_IP", "") or os.getenv("DETECTED_P
 config["stun_server"] = os.getenv("STUN_SERVER", "")
 config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
 
+config["registration_method"] = os.getenv("REGISTRATION_METHOD", "open")
+config["allowed_domains"] = os.getenv("ALLOWED_DOMAINS", "")
 config["enable_recording"] = os.getenv("ENABLE_RECORDING") == "true"
 config["remove_old_recording"] = os.getenv("REMOVE_OLD_RECORDING") == "true"
 config["recording_max_age_days"] = int(os.getenv("RECORDING_MAX_AGE_DAYS", "14"))

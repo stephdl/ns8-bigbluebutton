@@ -1,0 +1,35 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "create-admin input",
+    "$id": "http://nethserver.org/json-schema/task/input/bigbluebutton/create-admin",
+    "description": "Create a Greenlight administrator account",
+    "examples": [
+        {
+            "name": "Alice Smith",
+            "email": "alice@example.org",
+            "password": "a-long-passphrase"
+        }
+    ],
+    "type": "object",
+    "required": ["name", "email", "password"],
+    "properties": {
+        "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Display name",
+            "description": "Shown to other participants in meetings."
+        },
+        "email": {
+            "type": "string",
+            "format": "idn-email",
+            "title": "Email address",
+            "description": "Used to sign in. The account is created already verified, so no confirmation mail is needed."
+        },
+        "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "At least 8 characters. Greenlight stores only a hash of it."
+        }
+    }
+}
