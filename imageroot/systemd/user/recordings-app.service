@@ -3,6 +3,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+#
+# The recording pipeline: archive, sanity, process, publish, notify.
+#
+# It runs through a wrapper entrypoint because the image ships a Ruby that no
+# longer has File.exists?, which its own scripts still call. Without the
+# wrapper every recording stops at the sanity worker and nothing is ever
+# published. See overrides/recordings-entrypoint.sh.
+#
+# The last stage posts a recording-ready callback to Greenlight on the site's
+# public name, which is baked into each recording's metadata when the meeting
+# is created. That means validating the certificate answering for that name,
+# so this container gets the same treatment as Greenlight: the site name
+# resolves to the pod's own nginx, whose certificate is trusted here. Without
+# it the callback is refused, and a recording publishes correctly yet never
+# appears in any room's library.
+#
+
 [Unit]
 Description=Podman recordings-app.service
 BindsTo=bigbluebutton.service
@@ -25,8 +42,11 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/recordings-app.pid \
     --volume freeswitch-meetings:/var/freeswitch/meetings:z \
     --volume mediasoup:/var/mediasoup:z \
     --volume bbb-webrtc-recorder:/var/lib/bbb-webrtc-recorder:z \
+    --volume %S/state/overrides/recordings-entrypoint.sh:/recordings-entrypoint.sh:ro,z \
+    --volume %S/state/overrides/internal.crt:/usr/local/share/ca-certificates/bigbluebutton-internal.crt:ro,z \
     --tmpfs /var/log/bigbluebutton \
     --tmpfs /tmp \
+    --entrypoint=/recordings-entrypoint.sh \
     ${BBB_DOCKER_RECORDINGS_IMAGE}
 
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/recordings-app.ctr-id -t 10

@@ -12,6 +12,22 @@
 # (mod/bbb-webrtc-recorder/Dockerfile:32), so pointing it at the pod's published
 # Redis port needs no file override.
 #
+# The command below replaces the image's, which only chowns and drops
+# privileges. The extra mkdir is what makes webcam recording work at all.
+#
+# recordings-app mounts this same volume, to process what lands here, and its
+# image has no /var/lib/bbb-webrtc-recorder, so podman creates the mount point
+# owned by root. podman only does that while the volume is still empty, but it
+# does it on every start until then, so whichever of the two containers starts
+# last decides the owner. When recordings-app won, this service could no longer
+# write: MkdirAll failed, bbb-webrtc-sfu retried four times and gave up, and the
+# meeting produced a recording with sound and a blank picture. Nothing said why
+# outside this container's own log.
+#
+# Creating the directory here ends the race rather than ordering around it: the
+# volume is never empty again, so podman stops reassigning it and the owner
+# survives any later restart of either container, in any order.
+#
 
 [Unit]
 Description=Podman bbb-webrtc-recorder.service
@@ -30,7 +46,9 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-webrtc-recorder.pid \
     --network=host \
     --env=BBBRECORDER_PUBSUB_ADAPTERS_REDIS_ADDRESS=127.0.0.1:${REDIS_PORT} \
     --volume bbb-webrtc-recorder:/var/lib/bbb-webrtc-recorder:z \
-    ${BBB_DOCKER_WEBRTC_RECORDER_IMAGE}
+    --entrypoint=/bin/sh \
+    ${BBB_DOCKER_WEBRTC_RECORDER_IMAGE} \
+    -c 'mkdir -p /var/lib/bbb-webrtc-recorder/recordings && chown -R bigbluebutton:bigbluebutton /var/lib/bbb-webrtc-recorder && exec gosu bigbluebutton /usr/bin/bbb-webrtc-recorder'
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-webrtc-recorder.ctr-id -t 10
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-webrtc-recorder.ctr-id
 SyslogIdentifier=%u

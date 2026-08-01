@@ -68,15 +68,24 @@ http {
     }
 
     server {
-        # The pod answering for its own public name, for Greenlight's benefit.
+        # The pod answering for its own public name.
         #
-        # Greenlight has to call the API on the public name, because the same
-        # value becomes the join URL it hands the browser. That makes Ruby
-        # validate a certificate, and a certificate Traefik issued for another
-        # name fails no matter how well it is trusted. The Greenlight container
-        # resolves this name to 127.0.0.1, so the call lands here instead,
-        # against a certificate configure-module issued for exactly this name
-        # and put in that container's CA store.
+        # Several containers have to reach the site on that name rather than on
+        # a loopback address, because the name is what ends up in URLs handed
+        # to somebody else: Greenlight's API endpoint becomes the join URL for
+        # the browser, and the recording-ready callback address is baked into
+        # each recording's metadata. Both then validate the certificate
+        # answering for that name, and a certificate Traefik issued for another
+        # name fails however well it is trusted.
+        #
+        # Those containers resolve this name to 127.0.0.1, so the call lands
+        # here instead, against a certificate configure-module issued for
+        # exactly this name and placed in their CA stores.
+        #
+        # This proxies the whole site to 48087, the same place Traefik sends
+        # it, so it is a faithful local stand-in rather than a special case:
+        # Greenlight calling /bigbluebutton/api and the recordings container
+        # calling /recording_ready both work, and neither needs a rule here.
         #
         # Nothing outside the pod reaches this: the pod publishes only 48087
         # and Redis, both to the node loopback. Browsers are unaffected and
@@ -87,14 +96,15 @@ http {
         ssl_certificate     /etc/nginx/internal/internal.crt;
         ssl_certificate_key /etc/nginx/internal/internal.key;
 
-        location /bigbluebutton/api {
-            proxy_pass http://127.0.0.1:48087;
-        }
-
-        # Only the API is served here. Anything else arriving on this socket
-        # came from a misconfiguration, not from a browser.
         location / {
-            return 404;
+            proxy_pass http://127.0.0.1:48087;
+            proxy_set_header Host              $host;
+            proxy_set_header X-Real-IP         $remote_addr;
+            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+            # Traefik terminates TLS for real callers, so Greenlight expects to
+            # be told the scheme was https. Without it, it answers redirects to
+            # http and the caller loses the request.
+            proxy_set_header X-Forwarded-Proto https;
         }
     }
 
