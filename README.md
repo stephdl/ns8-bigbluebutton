@@ -117,6 +117,26 @@ Optional:
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
 | `enable_learning_dashboard` | `true` | |
 
+## First sign-in
+
+Greenlight's own start-up migrates the database but never seeds it, so a fresh
+instance would have no administrator and its admin panel would be hidden from
+everyone. The module creates a bootstrap account once Greenlight has finished
+migrating:
+
+| | |
+|---|---|
+| Email | `admin@nethserver.org` |
+| Password | `Nethesis,1234` |
+
+That password ships with this module, so it is known to anyone. Sign in, create
+your own account, give it the Administrator role, then change or delete the
+bootstrap one. The module checks the password on every `get-configuration` and
+keeps warning in the UI until it is changed.
+
+The account is only created when the instance has no administrator at all, so
+deleting it once you have your own does not bring it back.
+
 ## Get the configuration
 
     api-cli run get-configuration --agent module/bigbluebutton1

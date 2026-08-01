@@ -6,8 +6,8 @@
 #
 
 #
-# Report whether the default administrator still has the password Greenlight
-# publishes in db/seeds.rb.
+# Report whether the bootstrap administrator still has the password this module
+# ships.
 #
 # Prints "true" or "false". The digest is bcrypt, so this cannot be a string
 # comparison: it has to be verified against the stored salt, which is why the
@@ -17,8 +17,10 @@
 import subprocess
 import sys
 
-DEFAULT_EMAIL = "admin@admin.com"
-DEFAULT_PASSWORD = "Administrator1!"
+# Mirrored by bin/seed-default-admin and by the settings.default_admin_description
+# string in ui/public/i18n/en/translation.json. Change all three together.
+DEFAULT_EMAIL = "admin@nethserver.org"
+DEFAULT_PASSWORD = "Nethesis,1234"
 
 
 def run(cmd, **kwargs):

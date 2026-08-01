@@ -20,6 +20,11 @@
 Description=Podman greenlight-app.service
 BindsTo=bigbluebutton.service
 After=bigbluebutton.service postgres-app.service redis-app.service bbb-web-app.service
+# Greenlight's bin/start migrates but never seeds, so a fresh instance has no
+# administrator and its admin panel is hidden from everyone. The bootstrap
+# account is created by a separate oneshot, which can wait for the migration to
+# finish; an ExecStartPost here would run while it is still going.
+Wants=greenlight-seed-admin.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -46,10 +51,6 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --volume %S/state/overrides/traefik.crt:/usr/local/share/ca-certificates/traefik.crt:ro,z \
     --entrypoint=/greenlight-entrypoint.sh \
     ${GREENLIGHT_IMAGE}
-# Greenlight's bin/start migrates but never seeds, so a fresh instance has no
-# administrator and its admin panel is hidden from everyone. Only acts when
-# there is none, so it can never sit beside a real one.
-ExecStartPost=-runagent seed-default-admin
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/greenlight-app.ctr-id -t 10
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/greenlight-app.ctr-id
 SyslogIdentifier=%u

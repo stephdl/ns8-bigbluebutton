@@ -67,7 +67,7 @@
     "certificate_mismatch_title": "The certificate does not match this hostname",
     "certificate_mismatch_description": "Traefik serves a certificate issued for another name. Greenlight cannot reach the API and browsers will refuse microphone and camera access. Request a Let's Encrypt certificate above, or upload one for this hostname from Settings > TLS certificates.",
     "default_admin_title": "The default administrator password is still in use",
-    "default_admin_description": "This instance was created with Greenlight's built-in administrator, admin@admin.com, whose password is published in Greenlight's source code and is therefore known to anyone. Sign in with it at {url}, create your own account, give it the Administrator role, then change or delete the default one."
+    "default_admin_description": "This instance was created with a bootstrap administrator, admin@nethserver.org, whose password is Nethesis,1234. That password ships with this module and is therefore known to anyone. Sign in with it at {url}, create your own account, give it the Administrator role, then change or delete the bootstrap one."
   },
   "about": {
     "title": "About"

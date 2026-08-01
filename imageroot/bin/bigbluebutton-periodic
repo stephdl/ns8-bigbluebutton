@@ -64,7 +64,7 @@ fi
 #
 # Covers an instance whose database was not ready when Greenlight last started.
 #
-seed-default-admin || echo "bigbluebutton-periodic: administrator check failed"
+seed-default-admin --wait 0 || echo "bigbluebutton-periodic: administrator check failed"
 
 #
 # 3. Drop stale presentation upload directories

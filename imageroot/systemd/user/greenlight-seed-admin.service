@@ -1,0 +1,29 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Create the Greenlight bootstrap administrator.
+#
+# This cannot live in greenlight-app.service as an ExecStartPost: that fires the
+# moment podman run -d returns, while Greenlight is still doing
+# assets:precompile, db:create and db:migrate:with_data. The users table does not
+# exist yet at that point, so the seed found nothing to check and gave up.
+#
+# A separate oneshot can afford to wait. Pulled in by Wants= from
+# greenlight-app.service, so it needs no [Install] section and runs on every
+# Greenlight start; it returns immediately once an administrator exists.
+#
+
+[Unit]
+Description=Create the Greenlight bootstrap administrator
+After=greenlight-app.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+TimeoutStartSec=900
+ExecStart=runagent seed-default-admin --wait 600
+SyslogIdentifier=%u
