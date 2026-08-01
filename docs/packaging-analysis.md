@@ -410,7 +410,7 @@ Cleanly separable, as the brief anticipated.
 
 ## 5. Rootless blockers, by severity
 
-### Blocker 1 — `webrtc-sfu` `memlock: -1` and `seccomp:unconfined`
+### Blocker 1 (downgraded) — `webrtc-sfu` `memlock: -1` and `seccomp:unconfined`
 
 `docker-compose.tmpl.yml:256-259`, with upstream's own reasons inline:
 
@@ -421,18 +421,52 @@ ulimits:
   memlock: -1 # allow io_uring_register_buffers to allocate enough ram
 ```
 
-Both exist for **io_uring**. `--security-opt seccomp=unconfined` is available to rootless
-podman and needs no privilege. The memlock hard limit is the problem: a rootless process cannot
-raise `RLIMIT_MEMLOCK` above the hard limit it inherits, and `podman run --ulimit memlock=...`
-can only lower it. `install-core.sh:39` sets three sysctls and no limits
-(`net.ipv4.ip_unprivileged_port_start=23`, `user.max_user_namespaces=28633`,
-`net.ipv4.ip_forward=1`), so NS8 does not raise it for us.
+**This was ranked highest severity in the first draft. That was wrong**, and the correction
+matters because it removes the only item that looked like it might block the port outright.
 
-**To clear:** either a node-level drop-in raising `DefaultLimitMEMLOCK` (outside the module
-contract), or establish that mediasoup's io_uring path is optional and can be disabled. I did
-not find a config key disabling io_uring in `config/default.example.yml` — see section 8.
+`--security-opt seccomp=unconfined` is available to rootless podman and needs no privilege. The
+memlock limit genuinely cannot be raised from inside the module — a rootless process cannot
+raise `RLIMIT_MEMLOCK` above the hard limit it inherits, `podman run --ulimit` can only lower
+it, and `install-core.sh:39` sets three sysctls and no limits. All of that stands.
 
-Severity: highest, because it is the one item a module genuinely may not be able to fix itself.
+What is not true is that it breaks anything. mediasoup handles the shortfall itself
+(`worker/src/DepLibUring.cpp:335-370`, reading the `mconf/mediasoup#3.14.14-bbb.1` fork the SFU
+actually pins):
+
+```c
+err = io_uring_register_buffers(...);
+if (err < 0) {
+    if (error == ENOMEM) {
+        // getrlimit(), then:
+        "io_uring_register_buffers() failed due to low RLIMIT_MEMLOCK
+         (soft:%lu, hard:%lu), disabling zero copy"
+    } else {
+        MS_THROW_ERROR(...);   // only this path throws
+    }
+}
+```
+
+ENOMEM is exactly what a low memlock produces, and it is caught, logged with the rlimit values,
+and **not rethrown**. io_uring stays enabled; only the zero-copy send path is dropped. A second
+fallback sits above it: if io_uring cannot initialise at all, `DepLibUring.cpp:143-146` catches
+that too and runs without it.
+
+The arithmetic suggests it will not even degrade. `DepLibUring.hpp:31-32` gives
+`QueueDepth = 4096` and `SendBufferSize = 1500`, so registration needs 5.9 MB **per worker
+process**, against the 8 MB that systemd's `DefaultLimitMEMLOCK` gives each user service
+(verified: `systemctl show user@UID.service -p LimitMEMLOCK` returns 8388608). Roughly 26%
+headroom.
+
+There is also a clean switch, which the first draft said it could not find: `disableLiburing` is
+a `createWorker()` option (mediasoup `node/src/index.ts:117`), and bbb-webrtc-sfu passes
+`config.mediasoup.worker` through to `createWorker()` verbatim
+(`workers.js:220`, `configs.js:22`). It belongs in the mounted `production.yml` next to
+`rtcMinPort`/`rtcMaxPort` if zero copy ever needs to be off deterministically.
+
+**Revised severity: none for correctness.** The residual question is throughput — losing zero
+copy costs a memory copy per outbound packet — and that only matters at a scale the node's CPU
+is unlikely to reach first. Worth watching the SFU log for the `disabling zero copy` warning on
+the first real deployment.
 
 ### Blocker 2 — FreeSWITCH RTP range vs the core allocator
 
@@ -799,13 +833,15 @@ excluded services.
 
 ## 8. Unverified
 
-Ordered roughly by how much each would change the plan.
+Ordered roughly by how much each would change the plan. Items struck through were settled
+after the first draft.
 
-1. **Whether mediasoup's io_uring can be disabled.** Decides blocker 1, the most likely hard
-   stop. `grep -i "io_uring\|iouring"` over `bbb-webrtc-sfu/config/default.example.yml` returns
-   nothing. *To settle:* read mediasoup's own worker documentation for the version pinned by the
-   SFU image, and check whether `MEDIASOUP_*` env vars or a worker arg disable it. Then run the
-   container rootless with the inherited memlock limit and see whether it starts.
+1. ~~**Whether mediasoup's io_uring can be disabled.**~~ **Settled** by reading the
+   `mconf/mediasoup#3.14.14-bbb.1` fork the SFU pins: yes, via the `disableLiburing`
+   `createWorker()` option, and the low-memlock path degrades gracefully in any case. See
+   section 5, blocker 1. The grep that returned nothing was run against bbb-webrtc-sfu's own
+   config, not against mediasoup — the option is passed straight through, so it never appears
+   there.
 
 2. **Actual per-participant UDP port consumption.** The N²+2N estimate in section 3 is derived,
    not measured, and BBB's webcam pagination is unmodelled. *To settle:* run a meeting of known
