@@ -59,7 +59,7 @@ ExecStartPre=-/usr/bin/podman exec postgres-app psql -U postgres -c "CREATE DATA
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --cidfile %t/greenlight-app.ctr-id --cgroups=no-conmon \
     --pod-id-file %t/bigbluebutton.pod-id --replace -d --name greenlight-app \
-    --volume %S/state/overrides/greenlight-hosts:/etc/hosts:ro,z \
+    --volume %S/state/overrides/internal-hosts:/etc/hosts:ro,z \
     --env-file=%S/state/overrides/greenlight.env \
     --env-file=%S/state/smarthost.env \
     --volume greenlight:/usr/src/app/storage:z \

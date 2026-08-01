@@ -172,16 +172,23 @@ and why:
 - **Recordings produce the web player only, not MP4.** The `video` playback
   format is not built into the upstream recordings image.
 
-## Recovering recordings stuck by the sanity worker
+## Recovering recordings that never reached a room
 
-The recordings image ships a Ruby that no longer has `File.exists?`, which its
-own pipeline scripts still call. Every recording was archived and then died in
-the sanity worker, leaving a `.fail` marker and nothing in the room's library.
-`recordings-entrypoint.sh` patches the calls, but it only affects recordings
-processed from then on: the ones already marked failed are not retried on their
-own.
+Two separate faults kept recordings out of the room library, both fixed by the
+recordings container's wrapper entrypoint but neither retried on its own.
 
-To reprocess them, list what is stuck and rebuild each one:
+The image ships a Ruby that no longer has `File.exists?`, which its own
+pipeline scripts still call, so every recording was archived and then died in
+the sanity worker with a `.fail` marker.
+
+Recordings that got past that still went missing: the publish stage posts a
+recording-ready callback to Greenlight on the site's public name, and the
+container refused Traefik's certificate for it. The recording published, and
+nothing was ever told about it. The symptom is a `.done` under
+`recording/status/published/` with no matching row in Greenlight.
+
+Either way the recovery is the same. List what is stuck and rebuild each one,
+which re-runs the pipeline and fires the callback again:
 
     runagent -m bigbluebutton1 podman exec recordings-app \
       ls /var/bigbluebutton/recording/status/sanity/

@@ -165,12 +165,13 @@ if not covers_host(internal_crt, host):
         fp.write(cert.public_bytes(serialization.Encoding.PEM))
     print(f"issued an internal certificate for {host}", file=sys.stderr)
 
-# Mounted over /etc/hosts in the Greenlight container, so its API calls resolve
-# to the nginx above instead of going out to Traefik. Only that container gets
-# it: apps-akka calls the same URL over TLS and validates it against a JVM
-# trust store this module does not manage, so redirecting the name pod-wide
-# would break it on exactly the installations where it works today.
-with open(os.path.join(dst_dir, "greenlight-hosts"), "w") as fp:
+# Mounted over /etc/hosts in the Greenlight and recordings containers, so the
+# site name resolves to the nginx above instead of going out to Traefik. Only
+# those two get it: apps-akka and bbb-web call the same host over TLS and
+# validate it against a JVM trust store this module does not manage, so
+# redirecting the name pod-wide would break them on exactly the installations
+# where they work today.
+with open(os.path.join(dst_dir, "internal-hosts"), "w") as fp:
     print("127.0.0.1\tlocalhost", file=fp)
     print("::1\tlocalhost", file=fp)
     print(f"127.0.0.1\t{host}", file=fp)

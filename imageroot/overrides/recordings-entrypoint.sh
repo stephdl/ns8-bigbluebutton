@@ -36,4 +36,14 @@ do
     sed -i -e 's/File\.exists?/File.exist?/g' -e 's/Dir\.exists?/Dir.exist?/g' "$script"
 done
 
+# The publish stage posts a recording-ready callback to Greenlight on the site's
+# public name, taken from the recording's own metadata. This container resolves
+# that name to the pod's nginx, so trust the certificate it serves. Skipping
+# this loses the callback to "certificate verify failed" and the recording
+# never reaches a room's library, even though it published correctly.
+if [ -s /usr/local/share/ca-certificates/bigbluebutton-internal.crt ]; then
+    update-ca-certificates >/dev/null 2>&1 || \
+        echo "recordings: could not refresh the CA store, the ready callback may fail" >&2
+fi
+
 exec /entrypoint.sh
