@@ -51,19 +51,19 @@ os.chmod(os.path.join(dst_dir, "freeswitch-entrypoint.sh"), 0o755)
 # of its own, and it needs the allocated port numbers.
 placeholders = {
     "@@REDIS_PORT@@": env["REDIS_PORT"],
+    "@@TRAEFIK_HOST@@": env["TRAEFIK_HOST"],
     "@@MEDIASOUP_MIN_PORT@@": env["MEDIASOUP_MIN_PORT"],
     "@@MEDIASOUP_MAX_PORT@@": env["MEDIASOUP_MAX_PORT"],
 }
 
-with open(os.path.join(src_dir, "webrtc-sfu-config.yaml.in")) as fp:
-    content = fp.read()
-for key, value in placeholders.items():
-    content = content.replace(key, str(value))
-
-agent.assert_exp("@@" not in content, "unsubstituted placeholder in webrtc-sfu config")
-
-with open(os.path.join(dst_dir, "webrtc-sfu-config.yaml"), "w") as fp:
-    fp.write(content)
+for name in ("webrtc-sfu-config.yaml", "nginx.conf"):
+    with open(os.path.join(src_dir, name + ".in")) as fp:
+        content = fp.read()
+    for key, value in placeholders.items():
+        content = content.replace(key, str(value))
+    agent.assert_exp("@@" not in content, f"unsubstituted placeholder in {name}")
+    with open(os.path.join(dst_dir, name), "w") as fp:
+        fp.write(content)
 
 # Greenlight's environment. Rendered rather than passed on the podman command
 # line because DATABASE_URL embeds the PostgreSQL password, which ps would show.
@@ -73,7 +73,15 @@ gl_fd = os.open(gl_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
 with os.fdopen(gl_fd, "w") as fp:
     print(f"DATABASE_URL=postgres://postgres:{pw['POSTGRES_PASSWORD']}@127.0.0.1:5432/greenlight", file=fp)
     print("REDIS_URL=redis://127.0.0.1:6379", file=fp)
-    print(f"BIGBLUEBUTTON_ENDPOINT=https://{env['TRAEFIK_HOST']}/bigbluebutton/api", file=fp)
+    # Port 48083, not the public HTTPS name and not 48087 either.
+    #
+    # Greenlight uses this value twice: for its own server-side API calls, and
+    # to build the join URL it redirects the browser to. The public name fails
+    # the first (Ruby rejects Traefik's self-signed certificate); plain 48087
+    # fails the second (the browser cannot reach 127.0.0.1 on the server).
+    # The 48083 server block serves the API locally over HTTP and redirects
+    # /join out to the public name, which satisfies both.
+    print("BIGBLUEBUTTON_ENDPOINT=http://127.0.0.1:48083/bigbluebutton/api", file=fp)
     print(f"BIGBLUEBUTTON_SECRET={pw['SHARED_SECRET']}", file=fp)
     print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
     print("RELATIVE_URL_ROOT=/", file=fp)
