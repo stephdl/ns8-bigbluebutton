@@ -17,10 +17,21 @@
 # Both come from upstream (docker-compose.tmpl.yml:255-259) and exist for
 # io_uring, which the default podman seccomp profile blocks.
 #
-# The memlock limit is NOT raised here. A rootless process cannot raise its
-# RLIMIT_MEMLOCK hard limit, and --ulimit can only lower it. If mediasoup fails
-# to start with an io_uring_register_buffers error, the fix is a node-level
-# DefaultLimitMEMLOCK drop-in, outside the module contract.
+# The memlock limit is NOT raised here, and does not need to be. A rootless
+# process cannot raise its RLIMIT_MEMLOCK hard limit anyway (--ulimit can only
+# lower it), but mediasoup handles the shortfall itself: on ENOMEM from
+# io_uring_register_buffers it logs the rlimit values and disables zero copy
+# rather than failing, and only non-ENOMEM errors are fatal
+# (mediasoup worker/src/DepLibUring.cpp:335-370).
+#
+# The arithmetic says it should not even come to that: QueueDepth 4096 x
+# SendBufferSize 1500 is 5.9 MB per worker process (DepLibUring.hpp:31-32),
+# against the 8 MB that systemd's DefaultLimitMEMLOCK gives each user service.
+#
+# If zero copy ever needs to be off deterministically, mediasoup takes a
+# disableLiburing worker option and bbb-webrtc-sfu passes mediasoup.worker
+# through to createWorker() verbatim, so it belongs in the mounted config
+# rather than here.
 #
 
 [Unit]
