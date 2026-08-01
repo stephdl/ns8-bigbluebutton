@@ -21,6 +21,10 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-graphql-server-app.pid \
     --pod-id-file %t/bigbluebutton.pod-id --replace -d --name bbb-graphql-server-app \
     --env-file=%S/state/passwords.env \
     --env=POSTGRES_USER=postgres \
+    # The image bakes a healthcheck against port 8080 while its own
+    # entrypoint serves 8085, so the stock one always fails. Upstream
+    # hides this by overriding it in compose (docker-compose.tmpl.yml:327).
+    --health-cmd="curl -f http://localhost:8085/healthz" \
     ${BBB_DOCKER_GRAPHQL_SERVER_IMAGE}
 ExecStartPost=/usr/bin/bash -c "while ! podman exec bbb-graphql-server-app curl -sf http://localhost:8085/healthz >/dev/null; do sleep 2; done"
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-graphql-server-app.ctr-id -t 10
