@@ -46,7 +46,10 @@ else:
     agent.set_env("PRIVATE_IP", "")
     agent.set_env("BEHIND_NAT", "false")
 
-agent.set_env("MS_WEBRTC_LISTEN_IPS", json.dumps(listen_ips))
+# Compact separators on purpose: this lands in state/environment, which is read
+# both as a systemd EnvironmentFile and by shell helpers. Spaces in the value
+# are a trap for anything that treats the file as a script.
+agent.set_env("MS_WEBRTC_LISTEN_IPS", json.dumps(listen_ips, separators=(",", ":")))
 
 # --- STUN / TURN ------------------------------------------------------------
 #
