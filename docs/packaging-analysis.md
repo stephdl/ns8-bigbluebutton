@@ -3,6 +3,11 @@
 Read-only analysis. Every claim points at `path:line`. Anything the code did not settle is
 in section 8.
 
+> **Status.** This was written before any code, to plan the port. It has since been
+> reconciled with what was actually shipped: FreeSWITCH runs in the host network namespace
+> rather than in the pod, which changes sections 2b, 3, 4 and blocker 2. The reasoning that
+> led there is kept rather than rewritten, because the wrong turn is the useful part.
+
 ## Sources read
 
 | Repo | Ref | Local path |
@@ -182,14 +187,15 @@ The gap is 48083, whose only purpose is Greenlight in dev mode
 |---|---|---|---|
 | 48087/tcp | nginx | **published to node loopback** | Traefik's upstream. The only nginx listener without `proxy_protocol` (`mod/nginx/bigbluebutton:7-8`, `default_server`). 48081/48082 require PROXY protocol from haproxy and are unusable by Traefik. |
 | 6379/tcp | redis | **published to node loopback**, *not* on 6379 | `webrtc-sfu` and `bbb-webrtc-recorder` are host-netns and need Redis. The node's own Redis already holds `127.0.0.1:6379` (`ns8-core/core/imageroot/etc/systemd/system/redis.service:21`, `--network=host`). Must publish on a `TCP_PORTS_RANGE` port. |
-| 8021/tcp | freeswitch ESL | **published to node loopback** | `webrtc-sfu` needs it: `mod/webrtc-sfu/config.yaml:12-13` (`esl_ip: 10.7.7.10`, `esl_port: 8021`). Also needed by the `periodic` replacement (section 6). |
-| 5066/tcp | freeswitch SIP-over-WS | **published to node loopback** | `mod/webrtc-sfu/config.yaml:10-11` (`sip_ip: 10.7.7.10`, `port: 5066`). |
-| 16384–24576/udp | freeswitch RTP | **published to node loopback** | The SFU↔FreeSWITCH audio leg. `mod/webrtc-sfu/config.yaml:9` (`ip: 10.7.7.10`) plus the `PlainTransport`s in `lib/mcs-core/lib/adapters/mediasoup/transports.js:91`. |
+| 8021/tcp | freeswitch ESL | **host, not published** | `webrtc-sfu` needs it (`mod/webrtc-sfu/config.yaml:12-13`), and both are in the host namespace. Below 20000, outside the allocator span, so nothing else is handed it. `fsesl-akka`, which stays in the pod, reaches it through `10.0.2.2`. |
+| 5066/tcp | freeswitch SIP-over-WS | **host, not published** | `mod/webrtc-sfu/config.yaml:10-11`. Same reasoning. |
+| allocated 1024/udp | freeswitch RTP | **host, not public** | The SFU↔FreeSWITCH audio leg, node-local. Allocated rather than left at FreeSWITCH's 16384–24576 default, which overlaps the allocator span. |
 | 3008/tcp | webrtc-sfu | host loopback, reached **from** the pod | `mod/nginx/bbb/webrtc-sfu.nginx:1,10` — `location /bbb-webrtc-sfu` → `proxy_pass http://10.7.7.1:3008`. Default `clientPort: "3008"` (`bbb-webrtc-sfu/config/default.example.yml:37`). |
 | 3010/tcp | webrtc-sfu mcs | host loopback, internal to SFU | `default.example.yml:151` |
 | allocated 8192/udp | webrtc-sfu mediasoup | **public** | `default.example.yml:417-418` |
 | 5432, 8085, 8090, 8093, 8378, 8901, 9001, 9002, 48081, 48082, 8185 | see 2a | **pod-internal** | never leave the pod netns |
-| 5060, 15060, 7443 | freeswitch | **pod-internal, unused** | SIP dial-in excluded; `ports:` is gated on `SIP_IP_ALLOWLIST` upstream (`docker-compose.tmpl.yml:94-97`) |
+| 5060 | freeswitch | **not bound** | The `external-dialin` profile is deleted by the patched entrypoint: on the host namespace 5060 would collide with ns8-nethvoice-proxy. |
+| 15060, 7443 | freeswitch | **host, unused** | Bound by the `external` profile. Below 20000, unmanaged; residual collision risk, documented in section 7. |
 | ?/udp | bbb-webrtc-recorder | **public** (count unknown) | see section 8 |
 
 The FreeSWITCH RTP row is the one that breaks the brief's "only two ports" premise. It is not
@@ -203,7 +209,7 @@ packet crosses that boundary.
 | `docker-compose.tmpl.yml:42` | `10.7.7.2:8090` (bbb-web healthcheck) | `127.0.0.1:8090` |
 | `docker-compose.tmpl.yml:63,103,145,177,193,212,228,279,305,334,355,382,425,457,580` | per-service static IPs | all dropped — one pod netns |
 | `docker-compose.tmpl.yml:137-142` | nginx published on `127.0.0.1` and `10.7.7.1` | single `--publish 127.0.0.1:${TCP_PORT}:48087` |
-| `docker-compose.tmpl.yml:148-155` | nginx `extra_hosts`: `host.docker.internal:10.7.7.1`, `bbb-web:10.7.7.2`, `etherpad:10.7.7.4`, `webrtc-sfu:10.7.7.1`, `greenlight:10.7.7.21`, `bbb-graphql-server:10.7.7.31`, `bbb-graphql-middleware:10.7.7.32` | all `127.0.0.1` **except** `webrtc-sfu`, which becomes `10.0.2.2` (slirp4netns host loopback, as `ns8-nextcloud` does for `accountprovider`); `greenlight` dropped |
+| `docker-compose.tmpl.yml:148-155` | nginx `extra_hosts`: `host.docker.internal:10.7.7.1`, `bbb-web:10.7.7.2`, `etherpad:10.7.7.4`, `webrtc-sfu:10.7.7.1`, `greenlight:10.7.7.21`, `bbb-graphql-server:10.7.7.31`, `bbb-graphql-middleware:10.7.7.32` | all `127.0.0.1` **except** `webrtc-sfu` and `freeswitch`, which become `10.0.2.2` (slirp4netns host loopback, as `ns8-nextcloud` does for `accountprovider`); `greenlight` dropped |
 | `docker-compose.tmpl.yml:473` | `bbb-webrtc-recorder` `extra_hosts: redis:10.7.7.5` | host-netns container → pod Redis via its published loopback port |
 | `docker-compose.tmpl.yml:606-610` | `bbb-net` subnet `10.7.7.0/24` | dropped |
 | `mod/webrtc-sfu/config.yaml:2` | `redisHost: 10.7.7.5` | published Redis loopback port |
@@ -289,18 +295,16 @@ If both FreeSWITCH and the SFU end up in the host netns, that is 65% of the core
 25000-port span (`ports_manager.py:69-70`) for one module — untenable against decision 4's own
 "a third of the node's budget" reasoning.
 
-The pod does **not** make the FreeSWITCH range free. Because `webrtc-sfu` lives in the host
-netns, the FS RTP range has to be published to host loopback (section 2b), which occupies those
-host ports for real — including the 20000–24576 slice that overlaps the allocator.
+The pod does not make the FreeSWITCH range free: FreeSWITCH ends up in the host namespace too,
+alongside the SFU, so its RTP range is bound on the host and has to be allocated like any other.
 
-So the honest budget is: **8192 UDP for mediasoup (public) + however many the narrowed
-FreeSWITCH range needs (loopback-only, but still host ports)**. The second number is currently
-8193 and must come down; sizing it needs the measurement in section 8 item 2. See section 5,
-blocker 2.
+The shipped budget is **9216 UDP in one contiguous allocation**, split by
+`create-module/05setenvs` into 8192 for mediasoup (public) and 1024 for the FreeSWITCH RTP leg
+(host-local). That is 37% of the allocator's 25000-port span. See section 5, blocker 2.
 
-The pod/host split is still a port-budget decision as much as a networking one, and should be
-recorded as such in the ADR — but the saving it delivers is "remappable and narrowable", not
-"free".
+The pod/host split is still a port-budget decision as much as a networking one and should be
+recorded as such in the ADR — but what it buys is a narrowable, allocatable range with no
+userspace forwarding on the media path, not a free one.
 
 ---
 
@@ -312,11 +316,11 @@ compose` does not exist at runtime.
 
 | Service | Image | Volumes | Env | Flags | Ordering / gate | Restart |
 |---|---|---|---|---|---|---|
-| **pod** `bigbluebutton.service` | — | — | `%S/state/environment` | `--publish 127.0.0.1:${TCP_PORT}:48087`, `--publish 127.0.0.1:${REDIS_PORT}:6379`, `--publish 127.0.0.1:${ESL_PORT}:8021`, `--publish 127.0.0.1:${FSWS_PORT}:5066`, `--publish 127.0.0.1:16384-24576:16384-24576/udp`, `--network=slirp4netns:allow_host_loopback=true`, `--add-host` per service name → `127.0.0.1`, `--add-host=webrtc-sfu:10.0.2.2` | `Before=` all joiners | `always` |
+| **pod** `bigbluebutton.service` | — | — | `%S/state/environment` | `--publish 127.0.0.1:${NGINX_PORT}:48087`, `--publish 127.0.0.1:${REDIS_PORT}:6379`, `--network=slirp4netns:allow_host_loopback=true`, `--add-host` per service name → `127.0.0.1`, `--add-host=webrtc-sfu:10.0.2.2`, `--add-host=freeswitch:10.0.2.2` | `Before=` all joiners | `always` |
 | `postgres` | `postgres:16-alpine` (`:564`) | named volume ← `./data/postgres` (`:576`); `initdb.sh` as `%S/state/` bind (`:577`) | `POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app` (`:567`, drop `greenlight`), `POSTGRES_USER`, `POSTGRES_PASSWORD` ← secret | — | first; gate `pg_isready` (`:571`) | `unless-stopped` → `always` |
 | `redis` | `redis:8.4-alpine` (`:219`) | named volume ← `./data/redis` (`:230`) | — | — | gate `redis-cli ping` (`:222`) | `always` |
 | `bbb-web` | `alangecker/bbb-docker-web:${TAG_BBB}` (`:32`) | `bigbluebutton` volume (`:59`), `freeswitch-meetings` volume (`:60`) — **both backed up** | `DOMAIN`, `SHARED_SECRET`, `STUN_SERVER`, `TURN_SECRET`, `TURN_EXT_*`, `ENABLE_RECORDING`, `WELCOME_*`, `ENABLE_LEARNING_DASHBOARD` (`:44-57`); drop `COLLABORA_URL` | — | `After=` redis, etherpad, bbb-pads (`:34-37`); gate `/dev/tcp/127.0.0.1/8090` | `always` |
-| `freeswitch` | `alangecker/bbb-docker-freeswitch:...` (`:76`) | `conf/sip_profiles` (`:99`), `freeswitch-meetings` volume (`:100`); **plus** patched `vars.xml.tmpl` | `DOMAIN`, `EXTERNAL_IPv4`, `ESL_PASSWORD` ← secret, `SOUNDS_LANGUAGE`, `DISABLE_SOUND_*` (`:85-93`); drop `SIP_IP_ALLOWLIST` | `cap_add` per `:78-84` — see section 5 | gate `/dev/tcp/127.0.0.1/8021` | `always` |
+| `freeswitch` **(host netns)** | `alangecker/bbb-docker-freeswitch:...` (`:76`) | `conf/sip_profiles` (`:99`), `freeswitch-meetings` volume (`:100`); **plus** patched `vars.xml.tmpl` | `DOMAIN`, `EXTERNAL_IPv4`, `ESL_PASSWORD` ← secret, `SOUNDS_LANGUAGE`, `DISABLE_SOUND_*` (`:85-93`); drop `SIP_IP_ALLOWLIST` | `cap_add` per `:78-84` — see section 5 | gate `/dev/tcp/127.0.0.1/8021` | `always` |
 | `nginx` | `alangecker/bbb-docker-nginx:...` (`:122`) | `bigbluebutton` volume ro (`:125`), default presentation (`:126`), `--tmpfs /tmp` (`:146`) | — | — | `After=` bbb-web, graphql-middleware | `always` |
 | `etherpad` | `alangecker/bbb-docker-etherpad:...` (`:165`) | — | `ETHERPAD_API_KEY` ← secret (`:173`) | — | `After=` redis | `always` |
 | `bbb-pads` | `alangecker/bbb-docker-pads:${TAG_PADS}` (`:184`) | — | `ETHERPAD_API_KEY` ← secret (`:190`) | — | `After=` redis, etherpad (`:186-188`) | `always` |
@@ -436,27 +440,27 @@ FreeSWITCH defaults to 16384–24576 (`switch.conf.xml:147-148`), which overlaps
 20000–45000 (`ports_manager.py:69-70`) across 20000–24576.
 
 Keeping FreeSWITCH in the pod does **not** by itself clear this, contrary to my first reading.
-Section 2b requires publishing the FS RTP range to host loopback so the host-netns `webrtc-sfu`
-can reach it. `--publish 127.0.0.1:16384-24576:16384-24576/udp` occupies those 8193 ports *on
-the host*, and 20000–24576 of them sit inside the allocator's span — where the allocator may
-hand the same port to another module, unaware.
+With `webrtc-sfu` in the host namespace, the FS RTP range has to be published to host loopback
+for the SFU to reach it. Publishing 8193 ports occupies them *on the host*, 20000–24576 of them
+inside the allocator's span, and puts every audio packet through rootlessport in userspace.
 
-Three ways out, in order of preference:
+**Cleared, by moving FreeSWITCH into the host namespace as well.** Both ends of the audio leg
+then share a namespace and talk over `127.0.0.1`: no publishing, no port translation, no
+userspace proxy. The range is still allocated — FreeSWITCH binds it on the host, so the
+allocator has to know — but it is narrowed from 8193 to 1024 ports and comes out of the same
+contiguous UDP allocation as mediasoup, split by `create-module/05setenvs`. The narrowing is
+done by the patched entrypoint rather than by shipping a copy of `switch.conf.xml`, so upstream
+changes to that file are still picked up.
 
-1. **Narrow the FreeSWITCH RTP range and remap on publish.** The range only carries the
-   SFU↔FreeSWITCH audio leg — one port pair per audio participant, not per stream. 8193 ports is
-   wildly generous for that. Patch `switch.conf.xml:147-148` down (this becomes category B item
-   11), demand the narrowed count declaratively, and publish with an explicit host-side mapping
-   so the host ports come from the allocated block.
-2. **Demand both ranges declaratively** (section 9a) so the allocator knows about them. Costs
-   8192 + narrowed-FS ports of the 25000-port span — acceptable only after step 1.
-3. Move `webrtc-sfu` into the pod, eliminating the boundary entirely. Rejected by decision 6,
-   and slirp4netns is a poor fit for high-throughput media, but it is the only option that makes
-   the FS RTP range genuinely private.
+The residual cost is that FreeSWITCH also binds 15060 and 7443 on the host. Both sit below
+20000, outside the allocator span, so no NS8 module will be handed them — but nothing prevents
+another module from hardcoding them, the same class of risk as ns8-nethvoice-proxy hardcoding
+5060. Port 5060 itself is not bound: the patched entrypoint deletes the `external-dialin`
+profile.
 
-**To clear:** do (1) then (2). Sizing the narrowed range needs the measurement in section 8
-item 2. Record in the ADR that the pod/host split does not make the FreeSWITCH range free — it
-only makes it remappable.
+1024 is provisional. Sizing it properly needs the measurement in section 8 item 2; the audio leg
+uses one port per audio participant, not one per stream, so it is already generous against the
+node's CPU ceiling.
 
 ### Blocker 3 — `mod/freeswitch/entrypoint.sh` runs `iptables`
 
