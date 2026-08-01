@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 #
-# Read configuration
+# Read configuration. Mirrors configure-module's input: every field it accepts
+# is returned here, so the UI round-trips without losing settings.
 #
 
 import os
@@ -14,13 +15,29 @@ import sys
 import json
 import agent
 
-# Prepare return variable
 config = {}
 
-# Read current configuration from the environment file
-config["host"] = os.getenv("TRAEFIK_HOST","")
-config["http2https"] = os.getenv("TRAEFIK_HTTP2HTTPS") == "True"
-config["lets_encrypt"] = agent.get_route(os.environ['MODULE_ID']).get('lets_encrypt', False)
+config["host"] = os.getenv("TRAEFIK_HOST", "")
+config["http2https"] = os.getenv("TRAEFIK_HTTP2HTTPS") == "true"
+config["lets_encrypt"] = agent.get_route(os.environ["MODULE_ID"]).get("lets_encrypt", False)
 
-# Dump the configuration to stdout
+config["public_address"] = os.getenv("PUBLIC_IP", "")
+config["private_address"] = os.getenv("PRIVATE_IP", "")
+config["stun_server"] = os.getenv("STUN_SERVER", "")
+config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
+
+config["enable_recording"] = os.getenv("ENABLE_RECORDING") == "true"
+config["enable_learning_dashboard"] = os.getenv("ENABLE_LEARNING_DASHBOARD", "true") == "true"
+config["sounds_language"] = os.getenv("SOUNDS_LANGUAGE", "en-us-callie")
+config["disable_sound_muted"] = os.getenv("DISABLE_SOUND_MUTED") == "true"
+config["disable_sound_alone"] = os.getenv("DISABLE_SOUND_ALONE") == "true"
+config["welcome_message"] = os.getenv("WELCOME_MESSAGE", "")
+config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
+
+# Read-only, for the UI to show what the allocator handed out. This is the
+# range that must be reachable from the internet.
+config["mediasoup_port_range"] = "{}-{}".format(
+    os.getenv("MEDIASOUP_MIN_PORT", ""), os.getenv("MEDIASOUP_MAX_PORT", "")
+)
+
 json.dump(config, fp=sys.stdout)

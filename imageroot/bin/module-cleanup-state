@@ -1,8 +1,10 @@
 #!/bin/bash
 
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+# Runs with CWD=state/ right after Restic has taken the backup.
+#
 
-rm -vf kickstart.pg_dump
+rm -vf bbb_graphql.pg_dump hasura_app.pg_dump

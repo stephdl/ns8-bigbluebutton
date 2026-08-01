@@ -1,25 +1,38 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Get kickstart settings",
-    "$id": "http://nethserver.org/json-schema/task/input/kickstart/get-configuration",
-    "description": "Get kickstart settings",
+    "title": "Get bigbluebutton settings",
+    "$id": "http://nethserver.org/json-schema/task/output/bigbluebutton/get-configuration",
+    "description": "Get BigBlueButton settings",
     "examples": [
         {
-            "host": "kickstart.domain.org",
+            "host": "bbb.domain.org",
             "http2https": true,
-            "lets_encrypt": true
+            "lets_encrypt": true,
+            "public_address": "203.0.113.10",
+            "private_address": "192.168.1.10",
+            "stun_server": "",
+            "turn_ext_server": "",
+            "enable_recording": false,
+            "enable_learning_dashboard": true,
+            "sounds_language": "en-us-callie",
+            "disable_sound_muted": false,
+            "disable_sound_alone": false,
+            "welcome_message": "",
+            "welcome_footer": "",
+            "mediasoup_port_range": "20000-28191"
         }
     ],
     "type": "object",
     "required": [
         "host",
         "http2https",
-        "lets_encrypt"
+        "lets_encrypt",
+        "public_address"
     ],
     "properties": {
         "host": {
             "type": "string",
-            "description": "Host name for the application, like 'kickstart.domain.org'",
+            "description": "Host name for the application, like 'bbb.domain.org'",
             "format": "idn-hostname"
         },
         "lets_encrypt": {
@@ -31,6 +44,57 @@
             "type": "boolean",
             "title": "HTTP to HTTPS redirection",
             "description": "Redirect all the HTTP requests to HTTPS"
+        },
+        "public_address": {
+            "type": "string",
+            "title": "Public IP address",
+            "description": "Address announced by mediasoup to WebRTC clients"
+        },
+        "private_address": {
+            "type": "string",
+            "title": "LAN IP address",
+            "description": "Additional address advertised to clients on the local network"
+        },
+        "stun_server": {
+            "type": "string",
+            "title": "STUN server"
+        },
+        "turn_ext_server": {
+            "type": "string",
+            "title": "External TURN server"
+        },
+        "enable_recording": {
+            "type": "boolean",
+            "title": "Enable recording"
+        },
+        "enable_learning_dashboard": {
+            "type": "boolean",
+            "title": "Enable learning dashboard"
+        },
+        "sounds_language": {
+            "type": "string",
+            "title": "Sound announcements language"
+        },
+        "disable_sound_muted": {
+            "type": "boolean",
+            "title": "Disable muted announcement"
+        },
+        "disable_sound_alone": {
+            "type": "boolean",
+            "title": "Disable alone announcement"
+        },
+        "welcome_message": {
+            "type": "string",
+            "title": "Welcome message"
+        },
+        "welcome_footer": {
+            "type": "string",
+            "title": "Welcome footer"
+        },
+        "mediasoup_port_range": {
+            "type": "string",
+            "title": "Public UDP port range",
+            "description": "Read-only. The mediasoup RTC range allocated by the node, which must be reachable from the internet."
         }
     }
 }

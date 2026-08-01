@@ -1,15 +1,41 @@
 #!/bin/bash
 
 #
-# Copyright (C) 2023 Nethesis S.r.l.
+# Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-# If the control reaches this step, the service can be enabled and started
+#
+# Restart every unit, in dependency order.
+#
+# Unlike action steps, update-module.d scripts do NOT halt the sequence when one
+# fails: the next script runs regardless. Anything added before this file must
+# therefore be idempotent and must not assume its predecessor succeeded.
+#
+# The pod unit alone is not enough: systemd does not cascade a restart to the
+# containers that joined the pod.
+#
 
 set -e
 
 # Redirect any output to the journal (stderr)
 exec 1>&2
 
-systemctl --user try-restart kickstart.service
+systemctl --user try-restart \
+    bigbluebutton.service \
+    postgres-app.service \
+    redis-app.service \
+    freeswitch.service \
+    etherpad-app.service \
+    bbb-pads-app.service \
+    bbb-web-app.service \
+    apps-akka-app.service \
+    fsesl-akka-app.service \
+    bbb-graphql-actions-app.service \
+    bbb-graphql-server-app.service \
+    bbb-graphql-middleware-app.service \
+    bbb-export-annotations-app.service \
+    recordings-app.service \
+    nginx-app.service \
+    webrtc-sfu.service \
+    bbb-webrtc-recorder.service

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Replay the two PostgreSQL dumps into a fresh data directory, using an
+# ephemeral container. The postgres image entrypoint runs everything in
+# /docker-entrypoint-initdb.d on an empty data dir, so the databases are
+# created by our initdb script and then loaded here.
+#
+
+set -e -o pipefail
+exec 1>&2 # Redirect any output to the journal (stderr)
+
+# Nothing to do on a clone: clone-module gets a fresh database and no dumps.
+if [ ! -f bbb_graphql.pg_dump ]; then
+    echo "No dump found, skipping database restore"
+    exit 0
+fi
+
+# The password the restored secrets file carries: the data directory is being
+# created from scratch here, so it must match what the module will use later.
+set -a
+. ./passwords.env
+set +a
+
+mkdir -vp restore
+
+# Recreate the two databases before loading into them.
+cp -v "${AGENT_INSTALL_DIR}/overrides/postgres-initdb.sh" restore/10-create-databases.sh
+chmod 755 restore/10-create-databases.sh
+
+# One script per dump. pg_restore reads from a file rather than stdin here,
+# because two dumps cannot share a single standard input.
+cat - >restore/20-restore.sh <<'EOS'
+set -e
+for db in bbb_graphql hasura_app; do
+    echo "Restoring ${db}"
+    pg_restore --no-owner --no-privileges -U postgres -d "${db}" "/dumps/${db}.pg_dump"
+done
+docker_temp_server_stop
+EOS
+chmod 755 restore/20-restore.sh
+
+podman run \
+    --rm \
+    --network=none \
+    --volume=./restore:/docker-entrypoint-initdb.d/:Z \
+    --volume=.:/dumps:z \
+    --volume=postgres-data:/var/lib/postgresql/data:Z \
+    --replace --name=restore_db \
+    --env POSTGRES_USER=postgres \
+    --env POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
+    --env POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app \
+    --env TZ=UTC \
+    "${POSTGRES_IMAGE}"
+
+# If the restore is successful, clean up
+rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump

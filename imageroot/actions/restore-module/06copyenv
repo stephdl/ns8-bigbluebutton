@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Restore the non-secret environment. Secrets are not here: they live in
+# state/passwords.env, which Restic restores directly.
+#
+# Port variables are deliberately absent. The platform allocates a fresh range
+# on the restored node from the labels in build-images.sh, and create-module's
+# 05setenvs splits it: carrying over the old node's port numbers would restore
+# an allocation this node never made.
 #
 
 import sys
@@ -10,13 +20,27 @@ import json
 import agent
 
 request = json.load(sys.stdin)
-
-original_environment = request['environment']
+original_environment = request["environment"]
 
 for evar in [
         "TRAEFIK_HOST",
         "TRAEFIK_HTTP2HTTPS",
+        "TRAEFIK_LETS_ENCRYPT",
+        "PUBLIC_IP",
+        "PRIVATE_IP",
+        "BEHIND_NAT",
+        "MS_WEBRTC_LISTEN_IPS",
+        "STUN_SERVER",
+        "TURN_EXT_SERVER",
+        "ENABLE_RECORDING",
+        "ENABLE_LEARNING_DASHBOARD",
+        "SOUNDS_LANGUAGE",
+        "DISABLE_SOUND_MUTED",
+        "DISABLE_SOUND_ALONE",
+        "WELCOME_MESSAGE",
+        "WELCOME_FOOTER",
     ]:
-    agent.set_env(evar, original_environment[evar])
+    if evar in original_environment:
+        agent.set_env(evar, original_environment[evar])
 
 agent.dump_env()

@@ -1,11 +1,20 @@
 #!/bin/bash
 
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Runs with CWD=state/ just before Restic takes the backup.
+#
+# Only PostgreSQL is dumped. Redis is deliberately not: it holds live meeting
+# state and pub/sub channels, which are meaningless across a restore.
 #
 
 set -e
+exec 1>&2 # Redirect any output to the journal (stderr)
 
-echo "Dumping kickstart postgres database"
-podman exec postgresql-app pg_dump -U postgres --format=c  kickstart > kickstart.pg_dump
+# Custom format so pg_restore can be used on the way back in.
+for db in bbb_graphql hasura_app; do
+    echo "Dumping ${db}"
+    podman exec postgres-app pg_dump -U postgres --format=c "${db}" > "${db}.pg_dump"
+done

@@ -6,16 +6,19 @@
 #
 
 #
-# Re-run configure-module on the clone.
+# Re-run configure-module with the restored settings.
 #
-# No Restic restore and no database dump happen on a clone: the clone framework
-# copies the environment and this rebuilds everything derived from it, the
-# override files included.
+# Every field configure-module accepts must be passed. Anything omitted falls
+# back to its default and silently reconfigures the module differently from the
+# backup: the override files, the Traefik route and the mediasoup announced
+# address are all derived here.
 #
-# Same rule as the restore path: pass every field configure-module accepts.
+# The variables come from os.environ because 06copyenv already wrote them to
+# state/environment and the agent reloads it between actions.
 #
 
 import os
+import sys
 import agent
 
 config = {
@@ -35,9 +38,10 @@ config = {
     "welcome_footer": os.environ.get("WELCOME_FOOTER", ""),
 }
 
-configure_retval = agent.tasks.run(
-    agent_id=os.environ["AGENT_ID"],
+response = agent.tasks.run(
+    agent_id="module/" + os.environ["MODULE_ID"],
     action="configure-module",
     data=config,
 )
-agent.assert_exp(configure_retval["exit_code"] == 0, "The configure-module subtask failed!")
+
+agent.assert_exp(response["exit_code"] == 0, "configure-module failed during restore")
