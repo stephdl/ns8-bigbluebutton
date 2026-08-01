@@ -42,6 +42,9 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --env-file=%S/state/overrides/greenlight.env \
     --env-file=%S/state/smarthost.env \
     --volume greenlight:/usr/src/app/storage:z \
+    --volume %S/state/overrides/greenlight-entrypoint.sh:/greenlight-entrypoint.sh:ro,z \
+    --volume %S/state/overrides/traefik.crt:/usr/local/share/ca-certificates/traefik.crt:ro,z \
+    --entrypoint=/greenlight-entrypoint.sh \
     ${GREENLIGHT_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/greenlight-app.ctr-id -t 10
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/greenlight-app.ctr-id

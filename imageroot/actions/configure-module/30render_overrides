@@ -42,10 +42,12 @@ for name in (
     "webrtc-sfu.nginx",
     "nginx-default.conf",
     "freeswitch-entrypoint.sh",
+    "greenlight-entrypoint.sh",
 ):
     shutil.copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
 
 os.chmod(os.path.join(dst_dir, "freeswitch-entrypoint.sh"), 0o755)
+os.chmod(os.path.join(dst_dir, "greenlight-entrypoint.sh"), 0o755)
 
 # Substituted here: bbb-webrtc-sfu reads a plain YAML file with no templating
 # of its own, and it needs the allocated port numbers.
@@ -73,18 +75,41 @@ gl_fd = os.open(gl_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
 with os.fdopen(gl_fd, "w") as fp:
     print(f"DATABASE_URL=postgres://postgres:{pw['POSTGRES_PASSWORD']}@127.0.0.1:5432/greenlight", file=fp)
     print("REDIS_URL=redis://127.0.0.1:6379", file=fp)
-    # Port 48083, not the public HTTPS name and not 48087 either.
+    # The public name, and it has to be: Greenlight uses this value both for
+    # its own API calls and to build the join URL it redirects the browser to.
+    # Anything node-local satisfies the first and breaks the second.
     #
-    # Greenlight uses this value twice: for its own server-side API calls, and
-    # to build the join URL it redirects the browser to. The public name fails
-    # the first (Ruby rejects Traefik's self-signed certificate); plain 48087
-    # fails the second (the browser cannot reach 127.0.0.1 on the server).
-    # The 48083 server block serves the API locally over HTTP and redirects
-    # /join out to the public name, which satisfies both.
-    print("BIGBLUEBUTTON_ENDPOINT=http://127.0.0.1:48083/bigbluebutton/api", file=fp)
+    # That makes Ruby validate Traefik's certificate, which is why the one it
+    # serves is exported below and trusted by the container.
+    print(f"BIGBLUEBUTTON_ENDPOINT=https://{env['TRAEFIK_HOST']}/bigbluebutton/api", file=fp)
     print(f"BIGBLUEBUTTON_SECRET={pw['SHARED_SECRET']}", file=fp)
     print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
     print("RELATIVE_URL_ROOT=/", file=fp)
+
+# Export the certificate Traefik serves for this host, so Greenlight can
+# validate it. Without a publicly issued certificate this is self-signed and
+# Ruby refuses the connection, which surfaces as "The action can't be
+# completed" when a room is started.
+cert_path = os.path.join(dst_dir, "traefik.crt")
+try:
+    import socket
+    import ssl
+
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    with socket.create_connection(("127.0.0.1", 443), timeout=10) as sock:
+        # SNI matters: Traefik picks the certificate from the requested name.
+        with ctx.wrap_socket(sock, server_hostname=env["TRAEFIK_HOST"]) as tls:
+            der = tls.getpeercert(binary_form=True)
+    with open(cert_path, "w") as fp:
+        fp.write(ssl.DER_cert_to_PEM_cert(der))
+    print(f"Exported the Traefik certificate to {cert_path}", file=sys.stderr)
+except Exception as ex:
+    # Not fatal: Traefik may not be serving yet on a first install. Leave an
+    # empty file so the mount resolves, and let the entrypoint skip the import.
+    open(cert_path, "a").close()
+    print(agent.SD_WARNING + f"could not export the Traefik certificate: {ex}", file=sys.stderr)
 
 # Read by the postgres image's entrypoint to create the two BigBlueButton
 # databases on first start.
