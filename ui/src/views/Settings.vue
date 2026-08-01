@@ -82,20 +82,6 @@
                 />
               </cv-column>
             </cv-row>
-            <NsToggle
-              value="httpToHttps"
-              :label="$t('settings.http_to_https')"
-              v-model="isHttpToHttpsEnabled"
-              :disabled="stillLoading"
-              class="mg-bottom"
-            >
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
-            </NsToggle>
 
             <!-- network -->
             <h4 class="mg-bottom">{{ $t("settings.network") }}</h4>
@@ -390,7 +376,6 @@ export default {
       host: "",
       isLetsEncryptEnabled: false,
       isLetsEncryptCurrentlyEnabled: false,
-      isHttpToHttpsEnabled: true,
       publicAddress: "",
       privateAddress: "",
       mediasoupPortRange: "",
@@ -415,7 +400,6 @@ export default {
         getStatus: "",
         host: "",
         lets_encrypt: "",
-        http2https: "",
         public_address: "",
         private_address: "",
         stun_server: "",
@@ -543,7 +527,6 @@ export default {
       this.host = config.host;
       this.isLetsEncryptEnabled = config.lets_encrypt;
       this.isLetsEncryptCurrentlyEnabled = config.lets_encrypt;
-      this.isHttpToHttpsEnabled = config.http2https;
       this.publicAddress = config.public_address;
       this.privateAddress = config.private_address;
       this.mediasoupPortRange = config.mediasoup_port_range;
@@ -638,7 +621,6 @@ export default {
           data: {
             host: this.host,
             lets_encrypt: this.isLetsEncryptEnabled,
-            http2https: this.isHttpToHttpsEnabled,
             public_address: this.publicAddress,
             private_address: this.privateAddress,
             stun_server: this.stunServer,

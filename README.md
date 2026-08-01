@@ -84,7 +84,6 @@ Assuming the instance is named `bigbluebutton1`:
 api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
 {
   "host": "bbb.domain.com",
-  "http2https": true,
   "lets_encrypt": true,
   "public_address": "203.0.113.10",
   "private_address": "192.168.1.10",
@@ -96,6 +95,9 @@ EOF
 Required:
 
 - `host` — fully qualified domain name for the web client
+
+HTTP is always redirected to HTTPS: BigBlueButton is unusable without it, so it
+is not offered as a choice.
 - `public_address` — the address participants use to reach this node. It is
   *announced* to WebRTC clients, not bound locally, so a public address is
   correct even when the node sits behind NAT.

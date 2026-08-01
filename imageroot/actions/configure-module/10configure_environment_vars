@@ -15,9 +15,9 @@ data = json.load(sys.stdin)
 # --- Traefik ----------------------------------------------------------------
 
 agent.set_env("TRAEFIK_HOST", data["host"])
-# Lowercase, like every other boolean this module writes, so the restore and
-# clone paths can compare against "true" consistently.
-agent.set_env("TRAEFIK_HTTP2HTTPS", str(data.get("http2https", True)).lower())
+# Always on: BigBlueButton is unusable over plain HTTP, so this is not offered
+# as a choice. Kept in the environment because the Traefik route reads it.
+agent.set_env("TRAEFIK_HTTP2HTTPS", "true")
 agent.set_env("TRAEFIK_LETS_ENCRYPT", str(data.get("lets_encrypt", False)).lower())
 
 # --- Public address / NAT ---------------------------------------------------
