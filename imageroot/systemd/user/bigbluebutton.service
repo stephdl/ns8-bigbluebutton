@@ -30,13 +30,13 @@ Requires=postgres-app.service redis-app.service bbb-web-app.service \
     bbb-pads-app.service bbb-export-annotations-app.service \
     apps-akka-app.service fsesl-akka-app.service \
     bbb-graphql-server-app.service bbb-graphql-actions-app.service \
-    bbb-graphql-middleware-app.service recordings-app.service
+    bbb-graphql-middleware-app.service greenlight-app.service
 Before=postgres-app.service redis-app.service bbb-web-app.service \
     nginx-app.service etherpad-app.service \
     bbb-pads-app.service bbb-export-annotations-app.service \
     apps-akka-app.service fsesl-akka-app.service \
     bbb-graphql-server-app.service bbb-graphql-actions-app.service \
-    bbb-graphql-middleware-app.service recordings-app.service
+    bbb-graphql-middleware-app.service recordings-app.service greenlight-app.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -61,6 +61,7 @@ ExecStartPre=/usr/bin/podman pod create \
     --add-host=bbb-graphql-actions:127.0.0.1 \
     --add-host=bbb-graphql-middleware:127.0.0.1 \
     --add-host=nginx:127.0.0.1 \
+    --add-host=greenlight:127.0.0.1 \
     --add-host=freeswitch:10.0.2.2 \
     --add-host=webrtc-sfu:10.0.2.2 \
     --replace

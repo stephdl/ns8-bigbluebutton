@@ -6,7 +6,6 @@
     "examples": [
         {
             "host": "bbb.domain.org",
-            "http2https": true,
             "lets_encrypt": true,
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
@@ -21,13 +20,14 @@
             "welcome_footer": "",
             "mediasoup_port_range": "20000-28191",
             "remove_old_recording": false,
-            "recording_max_age_days": 14
+            "recording_max_age_days": 14,
+            "certificate_matches_host": true,
+            "default_admin_password_in_use": false
         }
     ],
     "type": "object",
     "required": [
         "host",
-        "http2https",
         "lets_encrypt",
         "public_address"
     ],
@@ -41,11 +41,6 @@
             "type": "boolean",
             "title": "Let's Encrypt certificate",
             "description": "Request a valid Let's Encrypt certificate."
-        },
-        "http2https": {
-            "type": "boolean",
-            "title": "HTTP to HTTPS redirection",
-            "description": "Redirect all the HTTP requests to HTTPS"
         },
         "public_address": {
             "type": "string",
@@ -105,6 +100,16 @@
         "recording_max_age_days": {
             "type": "integer",
             "title": "Recording retention (days)"
+        },
+        "certificate_matches_host": {
+            "type": "boolean",
+            "title": "Certificate matches the hostname",
+            "description": "Read-only. False when Traefik serves a certificate issued for another name."
+        },
+        "default_admin_password_in_use": {
+            "type": "boolean",
+            "title": "Default administrator password still in use",
+            "description": "Read-only. True while admin@admin.com still has the password Greenlight publishes in its source."
         }
     }
 }

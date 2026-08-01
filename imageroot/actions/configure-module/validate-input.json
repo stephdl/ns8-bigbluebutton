@@ -6,7 +6,6 @@
     "examples": [
         {
             "host": "bbb.domain.org",
-            "http2https": true,
             "lets_encrypt": true,
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
@@ -18,8 +17,7 @@
     ],
     "type": "object",
     "required": [
-        "host",
-        "public_address"
+        "host"
     ],
     "properties": {
         "host": {
@@ -33,15 +31,10 @@
             "title": "Let's Encrypt certificate",
             "description": "Request a valid Let's Encrypt certificate."
         },
-        "http2https": {
-            "type": "boolean",
-            "title": "HTTP to HTTPS redirection",
-            "description": "Redirect all the HTTP requests to HTTPS"
-        },
         "public_address": {
             "type": "string",
             "title": "Public IP address",
-            "description": "The address WebRTC clients use to reach this node. It is announced by mediasoup, not bound locally, so a NAT address is correct here."
+            "description": "The address WebRTC clients use to reach this node. It is announced by mediasoup, not bound locally, so a NAT address is correct here. Detected at install time; override when a port-forward uses a different address."
         },
         "private_address": {
             "type": "string",

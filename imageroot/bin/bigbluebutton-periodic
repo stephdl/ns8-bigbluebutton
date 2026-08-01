@@ -60,14 +60,21 @@ if [ -z "${BBB_VOLUME}" ] || [ ! -d "${BBB_VOLUME}" ]; then
 fi
 
 #
-# 2. Drop stale presentation upload directories
+# 2. Make sure the instance has an administrator
+#
+# Covers an instance whose database was not ready when Greenlight last started.
+#
+seed-default-admin --wait 0 || echo "bigbluebutton-periodic: administrator check failed"
+
+#
+# 3. Drop stale presentation upload directories
 #
 find "${BBB_VOLUME}/" -maxdepth 1 -type d -name "*-[0-9]*" \
     -mtime "+${PRESENTATION_MAX_AGE_DAYS}" -exec rm -rf '{}' + \
     || echo "bigbluebutton-periodic: presentation cleanup failed"
 
 #
-# 3. Delete recordings past their retention
+# 4. Delete recordings past their retention
 #
 # Both conditions must hold, as upstream required. bbb-record lives in the
 # recordings container and is what actually removes a recording's files and

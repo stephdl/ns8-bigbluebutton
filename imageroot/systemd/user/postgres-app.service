@@ -22,7 +22,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/postgres-app.pid \
     --pod-id-file %t/bigbluebutton.pod-id --replace -d --name postgres-app \
     --env-file=%S/state/passwords.env \
     --env=POSTGRES_USER=postgres \
-    --env=POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app \
+    --env=POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app,greenlight \
     --env=TZ=UTC \
     --volume postgres-data:/var/lib/postgresql/data:Z \
     --volume %S/state/initdb.d:/docker-entrypoint-initdb.d:z \

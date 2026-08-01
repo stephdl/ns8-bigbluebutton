@@ -7,4 +7,4 @@
 # Runs with CWD=state/ right after Restic has taken the backup.
 #
 
-rm -vf bbb_graphql.pg_dump hasura_app.pg_dump
+rm -vf bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump

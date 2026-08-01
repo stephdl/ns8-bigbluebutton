@@ -1,0 +1,101 @@
+# Rendered by configure-module into state/overrides/nginx.conf and mounted at
+# /etc/nginx/nginx.conf.
+#
+# Replaces the file from alangecker/bbb-docker-nginx. The only change is the
+# 48083 server block, whose redirects pointed at the hardcoded compose address
+# 10.7.7.35 and now point at this deployment's own hostname.
+#
+# That block is what lets Greenlight work behind a certificate it does not
+# trust. Greenlight uses BIGBLUEBUTTON_ENDPOINT for two different things: its
+# own server-to-server API calls, and the join URL it hands to the browser. A
+# plain-loopback endpoint fixes the first and breaks the second, since the
+# browser cannot reach 127.0.0.1 on the server. Port 48083 serves both: it
+# answers /bigbluebutton/api locally over HTTP, and redirects /join out to the
+# public HTTPS URL.
+#
+# Values wrapped in double at-signs are substituted by configure-module, which
+# then asserts that none are left. Do not write that marker anywhere it is not
+# meant to be replaced, comments included: the assertion reads the whole file.
+
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+worker_rlimit_nofile 20000;
+
+events {
+    worker_connections 10000;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    include /etc/nginx/conf.d/*.conf;
+
+
+    server {
+        # Used by Greenlight, which shares this pod. It reaches the API here
+        # over plain HTTP so it never has to validate Traefik's certificate,
+        # and anything meant for a browser is redirected to the public name.
+        listen 48083 http2;
+
+        location /bigbluebutton/api/join {
+            return 301 https://@@TRAEFIK_HOST@@$request_uri;
+        }
+        location /bigbluebutton/api {
+            proxy_pass http://127.0.0.1:48087;
+        }
+        location / {
+            return 301 https://@@TRAEFIK_HOST@@$request_uri;
+        }
+    }
+
+    server {
+        # The pod answering for its own public name, for Greenlight's benefit.
+        #
+        # Greenlight has to call the API on the public name, because the same
+        # value becomes the join URL it hands the browser. That makes Ruby
+        # validate a certificate, and a certificate Traefik issued for another
+        # name fails no matter how well it is trusted. The Greenlight container
+        # resolves this name to 127.0.0.1, so the call lands here instead,
+        # against a certificate configure-module issued for exactly this name
+        # and put in that container's CA store.
+        #
+        # Nothing outside the pod reaches this: the pod publishes only 48087
+        # and Redis, both to the node loopback. Browsers are unaffected and
+        # still go to Traefik on the real 443.
+        listen 443 ssl http2;
+        server_name @@TRAEFIK_HOST@@;
+
+        ssl_certificate     /etc/nginx/internal/internal.crt;
+        ssl_certificate_key /etc/nginx/internal/internal.key;
+
+        location /bigbluebutton/api {
+            proxy_pass http://127.0.0.1:48087;
+        }
+
+        # Only the API is served here. Anything else arriving on this socket
+        # came from a misconfiguration, not from a browser.
+        location / {
+            return 404;
+        }
+    }
+
+}

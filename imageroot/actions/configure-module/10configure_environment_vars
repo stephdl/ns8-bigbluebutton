@@ -6,6 +6,7 @@
 #
 
 import json
+import os
 import sys
 import agent
 
@@ -14,9 +15,6 @@ data = json.load(sys.stdin)
 # --- Traefik ----------------------------------------------------------------
 
 agent.set_env("TRAEFIK_HOST", data["host"])
-# Lowercase, like every other boolean this module writes, so the restore and
-# clone paths can compare against "true" consistently.
-agent.set_env("TRAEFIK_HTTP2HTTPS", str(data.get("http2https", True)).lower())
 agent.set_env("TRAEFIK_LETS_ENCRYPT", str(data.get("lets_encrypt", False)).lower())
 
 # --- Public address / NAT ---------------------------------------------------
@@ -30,14 +28,18 @@ agent.set_env("TRAEFIK_LETS_ENCRYPT", str(data.get("lets_encrypt", False)).lower
 # default_ipv4 but passes it through agent.facts.pseudo_ip(), so it is
 # anonymised and unusable here. The admin supplies it, as in ns8-nethvoice-proxy.
 
-public_address = data["public_address"]
+# create-module/06detect-addresses pre-filled these; an explicit value always
+# wins, since detection cannot know about a port-forward on a different address.
+public_address = data.get("public_address") or os.environ.get("DETECTED_PUBLIC_IP", "")
+agent.assert_exp(bool(public_address),
+                 "public_address is required and could not be detected")
 agent.set_env("PUBLIC_IP", public_address)
 
 listen_ips = [{"ip": "0.0.0.0", "announcedIp": public_address}]
 
 # A second entry advertising the LAN address lets internal clients connect
 # without relying on NAT reflection (hairpinning), which many routers lack.
-private_address = data.get("private_address", "")
+private_address = data.get("private_address", os.environ.get("DETECTED_PRIVATE_IP", ""))
 if private_address:
     listen_ips.append({"ip": private_address, "announcedIp": private_address})
     agent.set_env("PRIVATE_IP", private_address)

@@ -37,5 +37,6 @@ systemctl --user try-restart \
     bbb-export-annotations-app.service \
     recordings-app.service \
     nginx-app.service \
+    greenlight-app.service \
     webrtc-sfu.service \
     bbb-webrtc-recorder.service

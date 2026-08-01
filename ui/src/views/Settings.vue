@@ -19,6 +19,18 @@
         />
       </cv-column>
     </cv-row>
+    <cv-row v-if="defaultAdminPasswordInUse">
+      <cv-column>
+        <NsInlineNotification
+          kind="warning"
+          :title="$t('settings.default_admin_title')"
+          :description="$t('settings.default_admin_description')"
+          :showCloseButton="false"
+          :actionLabel="host ? $t('settings.open_bigbluebutton') : ''"
+          @action="goToBigBlueButton"
+        />
+      </cv-column>
+    </cv-row>
     <cv-row>
       <cv-column>
         <cv-tile light>
@@ -30,8 +42,14 @@
               class="mg-bottom"
               :invalid-message="$t(error.host)"
               :disabled="stillLoading"
+              tooltipAlignment="start"
+              tooltipDirection="right"
               ref="host"
-            />
+            >
+              <template #tooltip>
+                {{ $t("settings.bigbluebutton_fqdn_tooltip") }}
+              </template>
+            </NsTextInput>
             <NsToggle
               value="letsEncrypt"
               :label="core.$t('apps_lets_encrypt.request_https_certificate')"
@@ -49,8 +67,12 @@
                   </cv-link>
                 </div>
               </template>
-              <template slot="text-left">{{ $t("settings.disabled") }}</template>
-              <template slot="text-right">{{ $t("settings.enabled") }}</template>
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
             </NsToggle>
             <cv-row
               v-if="isLetsEncryptCurrentlyEnabled && !isLetsEncryptEnabled"
@@ -75,16 +97,15 @@
                 />
               </cv-column>
             </cv-row>
-            <NsToggle
-              value="httpToHttps"
-              :label="$t('settings.http_to_https')"
-              v-model="isHttpToHttpsEnabled"
-              :disabled="stillLoading"
+
+            <NsInlineNotification
+              v-if="!certificateMatchesHost"
+              kind="warning"
+              :title="$t('settings.certificate_mismatch_title')"
+              :description="$t('settings.certificate_mismatch_description')"
+              :showCloseButton="false"
               class="mg-bottom"
-            >
-              <template slot="text-left">{{ $t("settings.disabled") }}</template>
-              <template slot="text-right">{{ $t("settings.enabled") }}</template>
-            </NsToggle>
+            />
 
             <!-- network -->
             <h4 class="mg-bottom">{{ $t("settings.network") }}</h4>
@@ -95,11 +116,14 @@
               class="mg-bottom"
               :invalid-message="$t(error.public_address)"
               :disabled="stillLoading"
-              :tooltip="$t('settings.public_address_tooltip')"
               tooltipAlignment="start"
               tooltipDirection="right"
               ref="public_address"
-            />
+            >
+              <template #tooltip>
+                {{ $t("settings.public_address_tooltip") }}
+              </template>
+            </NsTextInput>
             <NsTextInput
               :label="$t('settings.private_address')"
               placeholder="192.168.1.10"
@@ -107,11 +131,14 @@
               class="mg-bottom"
               :invalid-message="$t(error.private_address)"
               :disabled="stillLoading"
-              :tooltip="$t('settings.private_address_tooltip')"
               tooltipAlignment="start"
               tooltipDirection="right"
               ref="private_address"
-            />
+            >
+              <template #tooltip>
+                {{ $t("settings.private_address_tooltip") }}
+              </template>
+            </NsTextInput>
             <!-- The firewall rule on this node is created by the module, but a
                  router in front of it is out of our reach: show the range. -->
             <NsInlineNotification
@@ -139,8 +166,12 @@
               <template #tooltip>
                 {{ $t("settings.enable_recording_tooltip") }}
               </template>
-              <template slot="text-left">{{ $t("settings.disabled") }}</template>
-              <template slot="text-right">{{ $t("settings.enabled") }}</template>
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
             </NsToggle>
             <template v-if="isRecordingEnabled">
               <NsToggle
@@ -150,6 +181,9 @@
                 :disabled="stillLoading"
                 class="mg-bottom"
               >
+                <template #tooltip>
+                  {{ $t("settings.remove_old_recording_tooltip") }}
+                </template>
                 <template slot="text-left">{{
                   $t("settings.disabled")
                 }}</template>
@@ -183,9 +217,15 @@
                     :title="$t('settings.sounds_language')"
                     :disabled="stillLoading"
                     :acceptUserInput="false"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
                     class="mg-bottom"
                     ref="sounds_language"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.sounds_language_tooltip") }}
+                    </template>
+                  </NsComboBox>
                   <NsToggle
                     value="disableSoundMuted"
                     :label="$t('settings.disable_sound_muted')"
@@ -221,11 +261,14 @@
                     class="mg-bottom"
                     :invalid-message="$t(error.stun_server)"
                     :disabled="stillLoading"
-                    :tooltip="$t('settings.stun_server_tooltip')"
                     tooltipAlignment="start"
                     tooltipDirection="right"
                     ref="stun_server"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.stun_server_tooltip") }}
+                    </template>
+                  </NsTextInput>
                   <NsTextInput
                     :label="$t('settings.turn_ext_server')"
                     placeholder="turns:turn.example.org:443?transport=tcp"
@@ -233,11 +276,14 @@
                     class="mg-bottom"
                     :invalid-message="$t(error.turn_ext_server)"
                     :disabled="stillLoading"
-                    :tooltip="$t('settings.turn_ext_server_tooltip')"
                     tooltipAlignment="start"
                     tooltipDirection="right"
                     ref="turn_ext_server"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.turn_ext_server_tooltip") }}
+                    </template>
+                  </NsTextInput>
 
                   <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
                   <NsTextInput
@@ -245,8 +291,14 @@
                     v-model.trim="welcomeMessage"
                     class="mg-bottom"
                     :disabled="stillLoading"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
                     ref="welcome_message"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.welcome_message_tooltip") }}
+                    </template>
+                  </NsTextInput>
                   <NsTextInput
                     :label="$t('settings.welcome_footer')"
                     v-model.trim="welcomeFooter"
@@ -366,10 +418,11 @@ export default {
       host: "",
       isLetsEncryptEnabled: false,
       isLetsEncryptCurrentlyEnabled: false,
-      isHttpToHttpsEnabled: true,
       publicAddress: "",
       privateAddress: "",
       mediasoupPortRange: "",
+      certificateMatchesHost: true,
+      defaultAdminPasswordInUse: false,
       stunServer: "",
       turnExtServer: "",
       isRecordingEnabled: false,
@@ -391,7 +444,6 @@ export default {
         getStatus: "",
         host: "",
         lets_encrypt: "",
-        http2https: "",
         public_address: "",
         private_address: "",
         stun_server: "",
@@ -434,6 +486,9 @@ export default {
   methods: {
     goToCertificates() {
       this.core.$router.push("/settings/tls-certificates");
+    },
+    goToBigBlueButton() {
+      window.open(`https://${this.host}`, "_blank");
     },
     async getStatus() {
       this.loading.getStatus = true;
@@ -519,10 +574,11 @@ export default {
       this.host = config.host;
       this.isLetsEncryptEnabled = config.lets_encrypt;
       this.isLetsEncryptCurrentlyEnabled = config.lets_encrypt;
-      this.isHttpToHttpsEnabled = config.http2https;
       this.publicAddress = config.public_address;
       this.privateAddress = config.private_address;
       this.mediasoupPortRange = config.mediasoup_port_range;
+      this.certificateMatchesHost = config.certificate_matches_host;
+      this.defaultAdminPasswordInUse = config.default_admin_password_in_use;
       this.stunServer = config.stun_server;
       this.turnExtServer = config.turn_ext_server;
       this.isRecordingEnabled = config.enable_recording;
@@ -614,7 +670,6 @@ export default {
           data: {
             host: this.host,
             lets_encrypt: this.isLetsEncryptEnabled,
-            http2https: this.isHttpToHttpsEnabled,
             public_address: this.publicAddress,
             private_address: this.privateAddress,
             stun_server: this.stunServer,
@@ -663,6 +718,11 @@ export default {
 @import "../styles/carbon-utils";
 .mg-bottom {
   margin-bottom: $spacing-06;
+}
+
+.subtle {
+  color: $text-02;
+  margin-bottom: $spacing-05;
 }
 
 .maxwidth {

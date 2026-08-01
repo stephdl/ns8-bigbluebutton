@@ -11,6 +11,7 @@
 #
 
 import os
+import subprocess
 import sys
 import json
 import agent
@@ -18,11 +19,10 @@ import agent
 config = {}
 
 config["host"] = os.getenv("TRAEFIK_HOST", "")
-config["http2https"] = os.getenv("TRAEFIK_HTTP2HTTPS") == "true"
 config["lets_encrypt"] = agent.get_route(os.environ["MODULE_ID"]).get("lets_encrypt", False)
 
-config["public_address"] = os.getenv("PUBLIC_IP", "")
-config["private_address"] = os.getenv("PRIVATE_IP", "")
+config["public_address"] = os.getenv("PUBLIC_IP", "") or os.getenv("DETECTED_PUBLIC_IP", "")
+config["private_address"] = os.getenv("PRIVATE_IP", "") or os.getenv("DETECTED_PRIVATE_IP", "")
 config["stun_server"] = os.getenv("STUN_SERVER", "")
 config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
 
@@ -35,6 +35,20 @@ config["disable_sound_muted"] = os.getenv("DISABLE_SOUND_MUTED") == "true"
 config["disable_sound_alone"] = os.getenv("DISABLE_SOUND_ALONE") == "true"
 config["welcome_message"] = os.getenv("WELCOME_MESSAGE", "")
 config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
+
+# Checked live rather than cached: the administrator changes this password in
+# Greenlight, which has no way to tell the module, and a warning that lingers
+# after it has been dealt with teaches people to ignore warnings.
+try:
+    probe = subprocess.run(["check-default-admin"], capture_output=True,
+                           text=True, timeout=30)
+    config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
+except Exception:
+    config["default_admin_password_in_use"] = False
+
+# Read-only. False means Traefik serves a certificate issued for some other
+# name, which breaks Greenlight and denies the browser microphone and camera.
+config["certificate_matches_host"] = os.getenv("CERTIFICATE_MATCHES_HOST", "true") == "true"
 
 # Read-only, for the UI to show what the allocator handed out. This is the
 # range that must be reachable from the internet.

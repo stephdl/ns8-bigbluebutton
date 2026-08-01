@@ -14,7 +14,7 @@ set -e
 exec 1>&2 # Redirect any output to the journal (stderr)
 
 # Custom format so pg_restore can be used on the way back in.
-for db in bbb_graphql hasura_app; do
+for db in bbb_graphql hasura_app greenlight; do
     echo "Dumping ${db}"
     podman exec postgres-app pg_dump -U postgres --format=c "${db}" > "${db}.pg_dump"
 done

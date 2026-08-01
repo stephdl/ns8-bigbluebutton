@@ -22,6 +22,21 @@ upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md)
 - **No TURN server is included.** Participants behind a firewall that blocks
   UDP cannot join unless you point the module at an external TURN server. See
   *Differences from upstream* below.
+- **A certificate the browser trusts, matching the site hostname.** WebRTC only
+  grants microphone and camera access in a secure context, so without one every
+  participant meets a warning page and stays without a microphone or a camera
+  until they accept it. Traefik's default self-signed certificate carries the
+  node's name, not the site's, and no amount of trusting it helps: the failure
+  is a hostname mismatch. Either publish the name and use Let's Encrypt, or
+  issue a certificate from an internal CA whose chain Traefik accepts. Note
+  that Traefik rejects a bare self-signed certificate on upload with
+  `cert_verification_failed_chain`: it wants a verifiable chain.
+
+  This affects the browser only. Greenlight's own server-side API calls do not
+  depend on it: the pod's nginx answers for the site name on its internal 443
+  with a certificate `configure-module` issues, and the Greenlight container
+  resolves that name to `127.0.0.1` and trusts it. Rooms therefore start with
+  or without a publicly trusted certificate.
 
 ## Architecture
 
@@ -74,7 +89,6 @@ Assuming the instance is named `bigbluebutton1`:
 api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
 {
   "host": "bbb.domain.com",
-  "http2https": true,
   "lets_encrypt": true,
   "public_address": "203.0.113.10",
   "private_address": "192.168.1.10",
@@ -86,6 +100,9 @@ EOF
 Required:
 
 - `host` — fully qualified domain name for the web client
+
+HTTP is always redirected to HTTPS: BigBlueButton is unusable without it, so it
+is not offered as a choice.
 - `public_address` — the address participants use to reach this node. It is
   *announced* to WebRTC clients, not bound locally, so a public address is
   correct even when the node sits behind NAT.
@@ -104,6 +121,26 @@ Optional:
 | `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
 | `enable_learning_dashboard` | `true` | |
+
+## First sign-in
+
+Greenlight's own start-up migrates the database but never seeds it, so a fresh
+instance would have no administrator and its admin panel would be hidden from
+everyone. The module creates a bootstrap account once Greenlight has finished
+migrating:
+
+| | |
+|---|---|
+| Email | `admin@nethserver.org` |
+| Password | `Nethesis,1234` |
+
+That password ships with this module, so it is known to anyone. Sign in, create
+your own account, give it the Administrator role, then change or delete the
+bootstrap one. The module checks the password on every `get-configuration` and
+keeps warning in the UI until it is changed.
+
+The account is only created when the instance has no administrator at all, so
+deleting it once you have your own does not bring it back.
 
 ## Get the configuration
 

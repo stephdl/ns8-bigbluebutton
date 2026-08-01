@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (C) 2022 Nethesis S.r.l.
+# Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
@@ -10,24 +10,37 @@ import sys
 import agent
 import os
 
-# Try to parse the stdin as JSON.
-# If parsing fails, output everything to stderr
 data = json.load(sys.stdin)
 
-# Setup default values
 host = data["host"]
-h2hs = data.get("http2https", True)
+previous_host = os.environ.get("TRAEFIK_HOST", "")
+lets_encrypt = data.get("lets_encrypt", False)
+previous_lets_encrypt = os.environ.get("TRAEFIK_LETS_ENCRYPT", "false") == "true"
 
-# Configure Traefik route for API
 set_route_data = {
     'instance': os.environ['MODULE_ID'],
     'url':  'http://127.0.0.1:' + os.environ["TCP_PORT"],
     'host': host,
-    'http2https': h2hs,
+    # Not a setting: BigBlueButton is unusable over plain HTTP. WebRTC grants
+    # microphone and camera access only in a secure context, and bbb-web builds
+    # every URL it returns with an https scheme regardless of the route.
+    'http2https': True,
     'lets_encrypt_check': True,
     'lets_encrypt_cleanup': True,
 }
-if 'lets_encrypt' in data:
-    set_route_data['lets_encrypt'] = data['lets_encrypt']
+
+# A certificate is tied to a name, so renaming the site invalidates the one in
+# use: Greenlight stops reaching the API and browsers stop granting microphone
+# and camera. Ask for a new one when the name changes.
+#
+# Only when it changes, though. Let's Encrypt enforces issuance rate limits, and
+# re-requesting on every save would spend that budget on nothing. Omitting the
+# key leaves the existing certificate untouched.
+if host != previous_host or lets_encrypt != previous_lets_encrypt:
+    reason = "hostname changed" if host != previous_host else "Let's Encrypt setting changed"
+    print(f"{reason}: requesting a certificate for {host}", file=sys.stderr)
+    set_route_data['lets_encrypt'] = lets_encrypt
+else:
+    print(f"certificate left alone, {host} is unchanged", file=sys.stderr)
 
 agent.set_route(set_route_data)

@@ -22,6 +22,10 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-app.pid \
     --env-file=%S/state/passwords.env \
     --volume bigbluebutton:/var/bigbluebutton:z \
     --volume %S/state/overrides/webrtc-sfu.nginx:/etc/nginx/bbb/webrtc-sfu.nginx:ro,z \
+    --volume %S/state/overrides/nginx-default.conf:/etc/nginx/conf.d/default.conf:ro,z \
+    --volume %S/state/overrides/nginx.conf:/etc/nginx/nginx.conf:ro,z \
+    --volume %S/state/overrides/internal.crt:/etc/nginx/internal/internal.crt:ro,z \
+    --volume %S/state/overrides/internal.key:/etc/nginx/internal/internal.key:ro,z \
     --tmpfs /tmp \
     ${BBB_DOCKER_NGINX_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/nginx-app.ctr-id -t 10

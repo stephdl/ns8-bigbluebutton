@@ -42,6 +42,7 @@ UNITS=(
     bbb-graphql-server-app.service
     bbb-graphql-middleware-app.service
     bbb-export-annotations-app.service
+    greenlight-app.service
     nginx-app.service
     webrtc-sfu.service
 )
