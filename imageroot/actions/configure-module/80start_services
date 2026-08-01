@@ -52,8 +52,11 @@ RECORDING_UNITS=(
     bbb-webrtc-recorder.service
 )
 
-# shellcheck source=/dev/null
-. "${AGENT_STATE_DIR}/environment"
+# Read the one value we need without sourcing the file. state/environment is a
+# systemd EnvironmentFile, not a shell script: MS_WEBRTC_LISTEN_IPS holds JSON
+# with spaces in it, and sourcing that makes bash try to run "0.0.0.0," as a
+# command.
+ENABLE_RECORDING=$(sed -n 's/^ENABLE_RECORDING=//p' "${AGENT_STATE_DIR}/environment" | head -1)
 
 if [ "${ENABLE_RECORDING}" = "true" ]; then
     UNITS+=("${RECORDING_UNITS[@]}")
