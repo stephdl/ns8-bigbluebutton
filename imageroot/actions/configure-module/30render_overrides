@@ -104,11 +104,40 @@ try:
             der = tls.getpeercert(binary_form=True)
     with open(cert_path, "w") as fp:
         fp.write(ssl.DER_cert_to_PEM_cert(der))
-    print(f"Exported the Traefik certificate to {cert_path}", file=sys.stderr)
+
+    # Does it actually cover this hostname? Trusting a certificate issued for a
+    # different name changes nothing: Ruby and every browser still refuse it.
+    # The failure is invisible until a room is started, so say it here.
+    from cryptography import x509
+    from cryptography.x509.oid import NameOID, ExtensionOID
+
+    parsed = x509.load_der_x509_certificate(der)
+    names = set()
+    try:
+        names.update(parsed.extensions.get_extension_for_oid(
+            ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value.get_values_for_type(x509.DNSName))
+    except x509.ExtensionNotFound:
+        pass
+    names.update(a.value for a in parsed.subject.get_attributes_for_oid(NameOID.COMMON_NAME))
+
+    host = env["TRAEFIK_HOST"]
+    matches = any(
+        n == host or (n.startswith("*.") and host.split(".", 1)[-1] == n[2:])
+        for n in names
+    )
+    agent.set_env("CERTIFICATE_MATCHES_HOST", str(matches).lower())
+    if matches:
+        print(f"Traefik serves a certificate valid for {host}", file=sys.stderr)
+    else:
+        print(agent.SD_WARNING + f"Traefik serves a certificate for {sorted(names)}, "
+              f"not for {host}. Greenlight will refuse to reach the API and browsers "
+              f"will refuse microphone and camera access until this is fixed.",
+              file=sys.stderr)
 except Exception as ex:
     # Not fatal: Traefik may not be serving yet on a first install. Leave an
     # empty file so the mount resolves, and let the entrypoint skip the import.
     open(cert_path, "a").close()
+    agent.set_env("CERTIFICATE_MATCHES_HOST", "false")
     print(agent.SD_WARNING + f"could not export the Traefik certificate: {ex}", file=sys.stderr)
 
 # Read by the postgres image's entrypoint to create the two BigBlueButton

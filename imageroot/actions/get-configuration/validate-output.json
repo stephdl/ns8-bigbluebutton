@@ -20,7 +20,8 @@
             "welcome_footer": "",
             "mediasoup_port_range": "20000-28191",
             "remove_old_recording": false,
-            "recording_max_age_days": 14
+            "recording_max_age_days": 14,
+            "certificate_matches_host": true
         }
     ],
     "type": "object",
@@ -98,6 +99,11 @@
         "recording_max_age_days": {
             "type": "integer",
             "title": "Recording retention (days)"
+        },
+        "certificate_matches_host": {
+            "type": "boolean",
+            "title": "Certificate matches the hostname",
+            "description": "Read-only. False when Traefik serves a certificate issued for another name."
         }
     }
 }

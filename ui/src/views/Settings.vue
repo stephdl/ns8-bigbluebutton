@@ -86,6 +86,15 @@
               </cv-column>
             </cv-row>
 
+            <NsInlineNotification
+              v-if="!certificateMatchesHost"
+              kind="warning"
+              :title="$t('settings.certificate_mismatch_title')"
+              :description="$t('settings.certificate_mismatch_description')"
+              :showCloseButton="false"
+              class="mg-bottom"
+            />
+
             <!-- network -->
             <h4 class="mg-bottom">{{ $t("settings.network") }}</h4>
             <NsTextInput
@@ -400,6 +409,7 @@ export default {
       publicAddress: "",
       privateAddress: "",
       mediasoupPortRange: "",
+      certificateMatchesHost: true,
       stunServer: "",
       turnExtServer: "",
       isRecordingEnabled: false,
@@ -551,6 +561,7 @@ export default {
       this.publicAddress = config.public_address;
       this.privateAddress = config.private_address;
       this.mediasoupPortRange = config.mediasoup_port_range;
+      this.certificateMatchesHost = config.certificate_matches_host;
       this.stunServer = config.stun_server;
       this.turnExtServer = config.turn_ext_server;
       this.isRecordingEnabled = config.enable_recording;
