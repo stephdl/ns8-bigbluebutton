@@ -37,6 +37,14 @@
 sed -i 's|data="local_ip_v4=[0-9.]*"|data="local_ip_v4=127.0.0.1"|' \
     /etc/freeswitch/vars.xml.tmpl
 
+# The event socket binds loopback (see the local_ip_v4 rewrite above), but the
+# stock inbound ACL is rfc1918.auto and 127.0.0.0/8 is not RFC1918 space, so
+# every ESL client would be refused: fsesl-akka, webrtc-sfu and the maintenance
+# timer alike, which silently breaks all conference audio. Upstream never hits
+# this because its ESL listens on 10.7.7.10, which is RFC1918.
+sed -i 's|"apply-inbound-acl" value="rfc1918.auto"|"apply-inbound-acl" value="loopback.auto"|' \
+    /etc/freeswitch/autoload_configs/event_socket.conf.xml
+
 # Never bind 5060: no SIP dial-in, and the port is contended on the host.
 rm -f /etc/freeswitch/sip_profiles/external-dialin.xml
 rm -rf /etc/freeswitch/sip_profiles/external-dialin
