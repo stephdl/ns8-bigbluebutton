@@ -16,17 +16,15 @@ data = json.load(sys.stdin)
 
 # Setup default values
 host = data["host"]
-# Not a setting: BigBlueButton is unusable over plain HTTP. WebRTC only
-# grants microphone and camera access in a secure context, and bbb-web
-# builds every URL it returns with an https scheme regardless.
-h2hs = True
-
 # Configure Traefik route for API
 set_route_data = {
     'instance': os.environ['MODULE_ID'],
     'url':  'http://127.0.0.1:' + os.environ["TCP_PORT"],
     'host': host,
-    'http2https': h2hs,
+    # Not a setting: BigBlueButton is unusable over plain HTTP. WebRTC grants
+    # microphone and camera access only in a secure context, and bbb-web builds
+    # every URL it returns with an https scheme regardless of the route.
+    'http2https': True,
     'lets_encrypt_check': True,
     'lets_encrypt_cleanup': True,
 }
