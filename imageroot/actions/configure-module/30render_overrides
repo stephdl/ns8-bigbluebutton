@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Materialise the config overrides into state/overrides/, where the systemd
+# units bind-mount them into the containers.
+#
+# These are the files whose peer addresses are baked into the images as IP
+# literals, so the pod's --add-host entries cannot redirect them. Everything
+# that refers to peers by hostname is handled by --add-host instead and needs no
+# override. See docs/packaging-analysis.md section 4.
+#
+# They are NOT backed up: they are regenerated here on every configure, so
+# restoring a stale copy over a newer template would be a regression.
+#
+
+import os
+import shutil
+import sys
+import agent
+
+install_dir = os.environ["AGENT_INSTALL_DIR"]
+state_dir = os.environ["AGENT_STATE_DIR"]
+
+src_dir = os.path.join(install_dir, "overrides")
+dst_dir = os.path.join(state_dir, "overrides")
+os.makedirs(dst_dir, exist_ok=True)
+
+# Ports were computed by create-module/05setenvs and live in state/environment.
+# agent.set_env() does not touch os.environ, so read the file back.
+env = agent.read_envfile(os.path.join(state_dir, "environment"))
+
+# Copied verbatim. Either they are dockerize templates resolved inside the
+# container, or they carry no runtime value at all.
+for name in (
+    "turn-stun-servers.xml",
+    "bbb-apps-akka.conf",
+    "webrtc-sfu.nginx",
+    "freeswitch-entrypoint.sh",
+):
+    shutil.copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
+
+os.chmod(os.path.join(dst_dir, "freeswitch-entrypoint.sh"), 0o755)
+
+# Substituted here: bbb-webrtc-sfu reads a plain YAML file with no templating
+# of its own, and it needs the allocated port numbers.
+placeholders = {
+    "@@REDIS_PORT@@": env["REDIS_PORT"],
+    "@@MEDIASOUP_MIN_PORT@@": env["MEDIASOUP_MIN_PORT"],
+    "@@MEDIASOUP_MAX_PORT@@": env["MEDIASOUP_MAX_PORT"],
+}
+
+with open(os.path.join(src_dir, "webrtc-sfu-config.yaml.in")) as fp:
+    content = fp.read()
+for key, value in placeholders.items():
+    content = content.replace(key, str(value))
+
+agent.assert_exp("@@" not in content, "unsubstituted placeholder in webrtc-sfu config")
+
+with open(os.path.join(dst_dir, "webrtc-sfu-config.yaml"), "w") as fp:
+    fp.write(content)
+
+# Read by the postgres image's entrypoint to create the two BigBlueButton
+# databases on first start.
+initdb_dir = os.path.join(state_dir, "initdb.d")
+os.makedirs(initdb_dir, exist_ok=True)
+shutil.copyfile(
+    os.path.join(src_dir, "postgres-initdb.sh"),
+    os.path.join(initdb_dir, "10-create-databases.sh"),
+)
+os.chmod(os.path.join(initdb_dir, "10-create-databases.sh"), 0o755)
+
+print(f"Rendered overrides in {dst_dir}", file=sys.stderr)

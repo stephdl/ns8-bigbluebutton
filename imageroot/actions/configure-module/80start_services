@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (C) 2023 Nethesis S.r.l.
+# Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 set -e
@@ -9,9 +9,57 @@ set -e
 # Redirect any output to the journal (stderr)
 exec 1>&2
 
-# If the control reaches this step, the service can be enabled and started
+#
+# Every unit is named explicitly, on purpose.
+#
+# systemd does NOT cascade a restart from the pod unit to the containers that
+# joined it: `systemctl --user restart bigbluebutton.service` on its own brings
+# the pod back up and leaves all sixteen containers down. Listing them here is
+# what makes the Before=/After= ordering actually run.
+#
+# Order matters: pod, then datastores, then the services that depend on them,
+# then the two host-network media containers.
+#
+# try-restart rather than restart: on the first configure the units are enabled
+# but not yet running.
+#
+UNITS=(
+    # pod, then its datastores
+    bigbluebutton.service
+    postgres-app.service
+    redis-app.service
+    # host namespace: freeswitch comes before its clients, fsesl-akka in the
+    # pod and webrtc-sfu on the host
+    freeswitch.service
+    etherpad-app.service
+    bbb-pads-app.service
+    bbb-web-app.service
+    apps-akka-app.service
+    fsesl-akka-app.service
+    bbb-graphql-actions-app.service
+    bbb-graphql-server-app.service
+    bbb-graphql-middleware-app.service
+    bbb-export-annotations-app.service
+    nginx-app.service
+    webrtc-sfu.service
+)
 
-touch smarthost.env
+# Recording is opt-in, as upstream gates both of these on ENABLE_RECORDING
+# (docker-compose.tmpl.yml:427-474). Recordings capture everything that happens
+# in a conference, so they stay off until explicitly enabled.
+RECORDING_UNITS=(
+    recordings-app.service
+    bbb-webrtc-recorder.service
+)
 
-systemctl --user enable kickstart.service
-systemctl --user restart kickstart.service
+# shellcheck source=/dev/null
+. "${AGENT_STATE_DIR}/environment"
+
+if [ "${ENABLE_RECORDING}" = "true" ]; then
+    UNITS+=("${RECORDING_UNITS[@]}")
+else
+    systemctl --user disable --now "${RECORDING_UNITS[@]}" || true
+fi
+
+systemctl --user enable "${UNITS[@]}"
+systemctl --user try-restart "${UNITS[@]}"

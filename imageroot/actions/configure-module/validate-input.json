@@ -1,23 +1,28 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Configure kickstart",
-    "$id": "http://nethserver.org/json-schema/task/input/kickstart/configure-module",
-    "description": "Configure kickstart",
+    "title": "Configure bigbluebutton",
+    "$id": "http://nethserver.org/json-schema/task/input/bigbluebutton/configure-module",
+    "description": "Configure BigBlueButton",
     "examples": [
         {
-            "host": "kickstart.domain.org",
+            "host": "bbb.domain.org",
             "http2https": true,
-            "lets_encrypt": true
+            "lets_encrypt": true,
+            "public_address": "203.0.113.10",
+            "private_address": "192.168.1.10",
+            "enable_recording": false,
+            "sounds_language": "en-us-callie"
         }
     ],
     "type": "object",
     "required": [
-        "host"
+        "host",
+        "public_address"
     ],
     "properties": {
         "host": {
             "type": "string",
-            "description": "Host name for the application, like 'kickstart.domain.org'",
+            "description": "Host name for the application, like 'bbb.domain.org'",
             "format": "hostname",
             "pattern": "\\."
         },
@@ -30,6 +35,75 @@
             "type": "boolean",
             "title": "HTTP to HTTPS redirection",
             "description": "Redirect all the HTTP requests to HTTPS"
+        },
+        "public_address": {
+            "type": "string",
+            "title": "Public IP address",
+            "description": "The address WebRTC clients use to reach this node. It is announced by mediasoup, not bound locally, so a NAT address is correct here."
+        },
+        "private_address": {
+            "type": "string",
+            "title": "LAN IP address",
+            "description": "Optional. When set, mediasoup also advertises this address so clients on the local network connect directly instead of relying on NAT reflection."
+        },
+        "stun_server": {
+            "type": "string",
+            "title": "STUN server",
+            "description": "Optional, like 'stun:stun.example.org:3478'. Empty by default: this module ships no coturn, and a public STUN server would receive every participant's IP address."
+        },
+        "turn_ext_server": {
+            "type": "string",
+            "title": "External TURN server",
+            "description": "Optional, like 'turns:turn.example.org:443?transport=tcp'. Without it, clients behind UDP-blocking firewalls cannot join."
+        },
+        "enable_recording": {
+            "type": "boolean",
+            "title": "Enable recording",
+            "description": "Record meetings. Recordings capture everything that happens in the conference: obtain participants' consent."
+        },
+        "enable_learning_dashboard": {
+            "type": "boolean",
+            "title": "Enable learning dashboard",
+            "description": "Expose the learning analytics dashboard"
+        },
+        "sounds_language": {
+            "type": "string",
+            "title": "Sound announcements language",
+            "enum": [
+                "en-ca-june",
+                "en-us-allison",
+                "en-us-callie",
+                "de-de-daedalus3",
+                "es-ar-mario",
+                "fr-ca-june",
+                "pt-br-karina",
+                "ru-RU-elena",
+                "ru-RU-kirill",
+                "ru-RU-vika",
+                "sv-se-jakob",
+                "zh-cn-sinmei",
+                "zh-hk-sinmei"
+            ]
+        },
+        "disable_sound_muted": {
+            "type": "boolean",
+            "title": "Disable muted announcement",
+            "description": "Suppress the \"You are now (un-)muted\" announcement"
+        },
+        "disable_sound_alone": {
+            "type": "boolean",
+            "title": "Disable alone announcement",
+            "description": "Suppress the \"You are the only person in this conference\" announcement"
+        },
+        "welcome_message": {
+            "type": "string",
+            "title": "Welcome message",
+            "description": "Replaces the default welcome message shown in the chat"
+        },
+        "welcome_footer": {
+            "type": "string",
+            "title": "Welcome footer",
+            "description": "Replaces the default welcome footer shown in the chat"
         }
     }
 }

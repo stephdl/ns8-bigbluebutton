@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Replaces /etc/bigbluebutton/turn-stun-servers.xml.tmpl from
+    alangecker/bbb-docker-web. Still a dockerize template: bbb-web's entrypoint
+    renders it at container start, so {{ .Env.X }} placeholders are resolved
+    there, not by this module.
+
+    Two changes from upstream:
+
+    1. The turn0 bean is gone. Upstream emits it unconditionally, with no
+       ENABLE_COTURN guard, pointing at turn:${DOMAIN}:3478. This module ships
+       no coturn, so every client would be handed a TURN candidate for a port
+       nothing listens on.
+
+    2. stun1 is now guarded. Upstream interpolates STUN_SERVER into the bean
+       constructor unconditionally; with no coturn there is no local STUN
+       listener either, and an empty value would produce an invalid bean.
+
+    Deployments needing TURN set TURN_EXT_SERVER / TURN_EXT_SECRET, which
+    upstream already guards correctly and which is kept below unchanged.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    {{if .Env.STUN_SERVER }}
+    <bean id="stun1" class="org.bigbluebutton.web.services.turn.StunServer">
+        <constructor-arg index="0" value="{{ .Env.STUN_SERVER }}"/>
+    </bean>
+    {{end}}
+
+    {{if .Env.TURN_EXT_SERVER }}
+        <bean id="turn2" class="org.bigbluebutton.web.services.turn.TurnServer">
+            <constructor-arg index="0" value="{{ .Env.TURN_EXT_SECRET }}"/>
+            <constructor-arg index="1" value="{{ .Env.TURN_EXT_SERVER }}"/>
+            <constructor-arg index="2" value="86400"/>
+        </bean>
+    {{end}}
+
+    <bean id="stunTurnService" class="org.bigbluebutton.web.services.turn.StunTurnService">
+        <property name="stunServers">
+            <set>
+                {{if .Env.STUN_SERVER }}
+                <ref bean="stun1" />
+                {{end}}
+            </set>
+        </property>
+        <property name="turnServers">
+            <set>
+                {{if .Env.TURN_EXT_SERVER }}
+                <ref bean="turn2" />
+                {{end}}
+            </set>
+        </property>
+        <property name="remoteIceCandidates">
+            <set>
+            </set>
+        </property>
+    </bean>
+</beans>

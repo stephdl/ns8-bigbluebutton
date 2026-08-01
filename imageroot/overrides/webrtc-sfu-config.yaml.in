@@ -1,0 +1,61 @@
+# Rendered by configure-module into state/overrides/webrtc-sfu-config.yaml and
+# mounted at /etc/bigbluebutton/bbb-webrtc-sfu/production.yml, the second entry
+# of NODE_CONFIG_DIR in the image, which overrides /app/config/production.yml.
+#
+# Replaces mod/webrtc-sfu/config.yaml from bigbluebutton/docker. Every address
+# upstream sets is a compose bridge IP literal, and this container runs in the
+# host network namespace, so it reaches the pod through the ports the pod
+# publishes to the node loopback rather than through container names.
+#
+# @@VAR@@ placeholders are substituted at configure time.
+
+kurento: []
+
+# Pod Redis, published to the node loopback. NOT 6379: the node's own Redis
+# already owns that port on the host.
+redisHost: 127.0.0.1
+redisPort: @@REDIS_PORT@@
+
+recordingAdapter: bbb-webrtc-recorder
+
+# Where the SFU listens for client WebSocket connections. nginx inside the pod
+# proxies /bbb-webrtc-sfu here via 10.0.2.2.
+clientHost: 127.0.0.1
+
+mcs-host: 127.0.0.1
+mcs-address: 127.0.0.1
+
+freeswitch:
+  # FreeSWITCH shares this network namespace, so it is reachable on loopback at
+  # its stock ports: no publishing, no port translation, and the RTP that flows
+  # between the two never crosses a userspace proxy.
+  ip: 127.0.0.1
+  sip_ip: 127.0.0.1
+  port: 5066
+  esl_ip: 127.0.0.1
+  esl_port: 8021
+
+log:
+  # trace|debug|info|warn|error
+  level: info
+  stdout: true
+  file: false
+
+mediasoup:
+  dedicatedMediaTypeWorkers:
+    audio: auto
+  workerBalancing:
+    strategy: least-loaded
+
+  worker:
+    # The RTC range allocated to this module by the NS8 port allocator, not
+    # mediasoup's 24577-32768 default. Shared by every worker: bbb-webrtc-sfu
+    # passes one settings object to every mediasoup.createWorker() call.
+    rtcMinPort: @@MEDIASOUP_MIN_PORT@@
+    rtcMaxPort: @@MEDIASOUP_MAX_PORT@@
+
+  plainRtp:
+    listenIp:
+      # The SFU<->FreeSWITCH leg never leaves the node.
+      ip: "127.0.0.1"
+      announcedIp: "127.0.0.1"
