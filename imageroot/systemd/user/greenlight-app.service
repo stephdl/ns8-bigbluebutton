@@ -29,6 +29,9 @@ WorkingDirectory=%S/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/greenlight-app.pid %t/greenlight-app.ctr-id
+# Refresh the SMTP relay settings from the cluster before every start, so a
+# smarthost change is picked up without reconfiguring the module.
+ExecStartPre=runagent discover-smarthost
 # POSTGRES_MULTIPLE_DATABASES only runs on a fresh data directory, so an
 # instance created before Greenlight existed has no greenlight database.
 # Create it if missing; "already exists" is the normal outcome.
@@ -37,6 +40,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --cidfile %t/greenlight-app.ctr-id --cgroups=no-conmon \
     --pod-id-file %t/bigbluebutton.pod-id --replace -d --name greenlight-app \
     --env-file=%S/state/overrides/greenlight.env \
+    --env-file=%S/state/smarthost.env \
     --volume greenlight:/usr/src/app/storage:z \
     ${GREENLIGHT_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/greenlight-app.ctr-id -t 10
