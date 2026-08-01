@@ -33,6 +33,8 @@ for evar in [
         "STUN_SERVER",
         "TURN_EXT_SERVER",
         "ENABLE_RECORDING",
+        "REMOVE_OLD_RECORDING",
+        "RECORDING_MAX_AGE_DAYS",
         "ENABLE_LEARNING_DASHBOARD",
         "SOUNDS_LANGUAGE",
         "DISABLE_SOUND_MUTED",

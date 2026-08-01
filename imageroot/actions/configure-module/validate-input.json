@@ -11,7 +11,9 @@
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
             "enable_recording": false,
-            "sounds_language": "en-us-callie"
+            "sounds_language": "en-us-callie",
+            "remove_old_recording": false,
+            "recording_max_age_days": 14
         }
     ],
     "type": "object",
@@ -104,6 +106,17 @@
             "type": "string",
             "title": "Welcome footer",
             "description": "Replaces the default welcome footer shown in the chat"
+        },
+        "remove_old_recording": {
+            "type": "boolean",
+            "title": "Delete old recordings",
+            "description": "Let the periodic maintenance job delete recordings past their retention. Requires recording to be enabled."
+        },
+        "recording_max_age_days": {
+            "type": "integer",
+            "title": "Recording retention (days)",
+            "minimum": 1,
+            "description": "Recordings older than this are deleted, provided deletion is enabled."
         }
     }
 }
