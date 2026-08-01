@@ -19,6 +19,14 @@
 
 set -e
 
+# Appended, never mounted over: podman generates this file with the pod's
+# --add-host names, and replacing it drops them. The resolver then falls
+# through to DNS, where a search domain and a wildcard record can answer for an
+# internal name with a public address.
+if [ -n "$DOMAIN" ] && ! grep -q "[[:space:]]${DOMAIN}\$" /etc/hosts; then
+    printf '127.0.0.1\t%s\n' "$DOMAIN" >> /etc/hosts
+fi
+
 if [ -s /usr/local/share/ca-certificates/bigbluebutton-internal.crt ]; then
     update-ca-certificates >/dev/null 2>&1 || \
         echo "greenlight: could not refresh the CA store, API calls may fail" >&2

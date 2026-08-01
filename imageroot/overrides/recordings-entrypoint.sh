@@ -37,10 +37,19 @@ do
 done
 
 # The publish stage posts a recording-ready callback to Greenlight on the site's
-# public name, taken from the recording's own metadata. This container resolves
-# that name to the pod's nginx, so trust the certificate it serves. Skipping
-# this loses the callback to "certificate verify failed" and the recording
-# never reaches a room's library, even though it published correctly.
+# public name, taken from the recording's own metadata. Send it to the pod's own
+# nginx and trust the certificate it serves there. Without this the callback
+# dies on "certificate verify failed" and the recording never reaches a room's
+# library, even though it published correctly.
+#
+# Appended, never mounted over: podman generates this file with the pod's
+# --add-host names, and replacing it drops them. The resolver then falls
+# through to DNS, where a search domain and a wildcard record answered for
+# "redis" with a public address and the resque queue timed out reaching it.
+if [ -n "$DOMAIN" ] && ! grep -q "[[:space:]]${DOMAIN}\$" /etc/hosts; then
+    printf '127.0.0.1\t%s\n' "$DOMAIN" >> /etc/hosts
+fi
+
 if [ -s /usr/local/share/ca-certificates/bigbluebutton-internal.crt ]; then
     update-ca-certificates >/dev/null 2>&1 || \
         echo "recordings: could not refresh the CA store, the ready callback may fail" >&2
