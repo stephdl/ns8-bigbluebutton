@@ -23,14 +23,14 @@ upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md)
   UDP cannot join unless you point the module at an external TURN server. See
   *Differences from upstream* below.
 - **A certificate the browser trusts, matching the site hostname.** WebRTC only
-  grants microphone and camera access in a secure context, so without one the
-  browser refuses the microphone and the camera. Traefik's default self-signed
-  certificate carries the node's name, not the site's, and no amount of
-  trusting it helps: the failure is a hostname mismatch. Either publish the
-  name and use Let's Encrypt, or issue a certificate from an internal CA whose
-  chain Traefik accepts. Note that Traefik rejects a bare self-signed
-  certificate on upload with `cert_verification_failed_chain`: it wants a
-  verifiable chain.
+  grants microphone and camera access in a secure context, so without one every
+  participant meets a warning page and stays without a microphone or a camera
+  until they accept it. Traefik's default self-signed certificate carries the
+  node's name, not the site's, and no amount of trusting it helps: the failure
+  is a hostname mismatch. Either publish the name and use Let's Encrypt, or
+  issue a certificate from an internal CA whose chain Traefik accepts. Note
+  that Traefik rejects a bare self-signed certificate on upload with
+  `cert_verification_failed_chain`: it wants a verifiable chain.
 
   This affects the browser only. Greenlight's own server-side API calls do not
   depend on it: the pod's nginx answers for the site name on its internal 443
