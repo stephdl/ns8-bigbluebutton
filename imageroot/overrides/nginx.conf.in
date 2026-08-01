@@ -67,4 +67,35 @@ http {
         }
     }
 
+    server {
+        # The pod answering for its own public name, for Greenlight's benefit.
+        #
+        # Greenlight has to call the API on the public name, because the same
+        # value becomes the join URL it hands the browser. That makes Ruby
+        # validate a certificate, and a certificate Traefik issued for another
+        # name fails no matter how well it is trusted. The Greenlight container
+        # resolves this name to 127.0.0.1, so the call lands here instead,
+        # against a certificate configure-module issued for exactly this name
+        # and put in that container's CA store.
+        #
+        # Nothing outside the pod reaches this: the pod publishes only 48087
+        # and Redis, both to the node loopback. Browsers are unaffected and
+        # still go to Traefik on the real 443.
+        listen 443 ssl http2;
+        server_name @@TRAEFIK_HOST@@;
+
+        ssl_certificate     /etc/nginx/internal/internal.crt;
+        ssl_certificate_key /etc/nginx/internal/internal.key;
+
+        location /bigbluebutton/api {
+            proxy_pass http://127.0.0.1:48087;
+        }
+
+        # Only the API is served here. Anything else arriving on this socket
+        # came from a misconfiguration, not from a browser.
+        location / {
+            return 404;
+        }
+    }
+
 }

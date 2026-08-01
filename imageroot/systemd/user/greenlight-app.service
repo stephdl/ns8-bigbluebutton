@@ -15,11 +15,26 @@
 # state/overrides/greenlight.env at configure time rather than passed on the
 # podman command line where ps would show it.
 #
+# The /etc/hosts mounted below is what makes the API reachable. Greenlight must
+# call it on the public name, since that same value becomes the join URL handed
+# to the browser, and Ruby then validates the certificate answering for that
+# name. Pointing the name at 127.0.0.1 sends the call to this pod's own nginx,
+# which serves a certificate configure-module issued for exactly this name and
+# mounted below into the CA store. Browsers are unaffected: they resolve the
+# name normally and still reach Traefik.
+#
+# It is a file mount rather than --add-host because podman refuses extra host
+# entries on a container sharing a pod's network namespace, and it is scoped to
+# this container rather than the pod because apps-akka calls the same URL and
+# has a JVM trust store this module does not manage. Greenlight needs none of
+# the pod's injected names: it reaches PostgreSQL and Redis on 127.0.0.1, and
+# names absent from the file still resolve through DNS.
+#
 
 [Unit]
 Description=Podman greenlight-app.service
 BindsTo=bigbluebutton.service
-After=bigbluebutton.service postgres-app.service redis-app.service bbb-web-app.service
+After=bigbluebutton.service postgres-app.service redis-app.service bbb-web-app.service nginx-app.service
 # Greenlight's bin/start migrates but never seeds, so a fresh instance has no
 # administrator and its admin panel is hidden from everyone. The bootstrap
 # account is created by a separate oneshot, which can wait for the migration to
@@ -44,11 +59,12 @@ ExecStartPre=-/usr/bin/podman exec postgres-app psql -U postgres -c "CREATE DATA
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --cidfile %t/greenlight-app.ctr-id --cgroups=no-conmon \
     --pod-id-file %t/bigbluebutton.pod-id --replace -d --name greenlight-app \
+    --volume %S/state/overrides/greenlight-hosts:/etc/hosts:ro,z \
     --env-file=%S/state/overrides/greenlight.env \
     --env-file=%S/state/smarthost.env \
     --volume greenlight:/usr/src/app/storage:z \
     --volume %S/state/overrides/greenlight-entrypoint.sh:/greenlight-entrypoint.sh:ro,z \
-    --volume %S/state/overrides/traefik.crt:/usr/local/share/ca-certificates/traefik.crt:ro,z \
+    --volume %S/state/overrides/internal.crt:/usr/local/share/ca-certificates/bigbluebutton-internal.crt:ro,z \
     --entrypoint=/greenlight-entrypoint.sh \
     ${GREENLIGHT_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/greenlight-app.ctr-id -t 10

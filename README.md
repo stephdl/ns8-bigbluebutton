@@ -22,16 +22,21 @@ upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md)
 - **No TURN server is included.** Participants behind a firewall that blocks
   UDP cannot join unless you point the module at an external TURN server. See
   *Differences from upstream* below.
-- **A certificate the browser trusts, matching the site hostname.** This is a
-  hard requirement, not a nicety, and it has two independent causes: WebRTC only
-  grants microphone and camera access in a secure context, and Greenlight
-  validates the certificate on its own server-side API calls. Traefik's default
-  self-signed certificate carries the node's name, not the site's, so it
-  satisfies neither -- and no amount of trusting it helps, because the failure
-  is a hostname mismatch. Either publish the name and use Let's Encrypt, or
-  issue a certificate from an internal CA whose chain Traefik accepts. Note
-  that Traefik rejects a bare self-signed certificate on upload with
-  `cert_verification_failed_chain`: it wants a verifiable chain.
+- **A certificate the browser trusts, matching the site hostname.** WebRTC only
+  grants microphone and camera access in a secure context, so without one the
+  browser refuses the microphone and the camera. Traefik's default self-signed
+  certificate carries the node's name, not the site's, and no amount of
+  trusting it helps: the failure is a hostname mismatch. Either publish the
+  name and use Let's Encrypt, or issue a certificate from an internal CA whose
+  chain Traefik accepts. Note that Traefik rejects a bare self-signed
+  certificate on upload with `cert_verification_failed_chain`: it wants a
+  verifiable chain.
+
+  This affects the browser only. Greenlight's own server-side API calls do not
+  depend on it: the pod's nginx answers for the site name on its internal 443
+  with a certificate `configure-module` issues, and the Greenlight container
+  resolves that name to `127.0.0.1` and trusts it. Rooms therefore start with
+  or without a publicly trusted certificate.
 
 ## Architecture
 

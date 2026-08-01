@@ -8,17 +8,18 @@
 #
 # Greenlight calls the BigBlueButton API over the site's public HTTPS name --
 # it has to, because the same value becomes the join URL it hands to the
-# browser, and a loopback address there is useless. Ruby therefore has to trust
-# whatever certificate Traefik serves, which on a node without a publicly
-# issued certificate is self-signed and rejected.
+# browser, and a loopback address there is useless. Ruby therefore validates
+# the certificate answering for that name.
 #
-# configure-module drops that certificate next to this script. Trusting it is a
-# no-op when Traefik already serves a publicly trusted one.
+# The container resolves that name to 127.0.0.1, so the answer comes from this
+# pod's own nginx, presenting a certificate configure-module issued for exactly
+# this name. Trust it here and both the name and the issuer check out, whether
+# or not Traefik has a Let's Encrypt certificate for the site.
 #
 
 set -e
 
-if [ -s /usr/local/share/ca-certificates/traefik.crt ]; then
+if [ -s /usr/local/share/ca-certificates/bigbluebutton-internal.crt ]; then
     update-ca-certificates >/dev/null 2>&1 || \
         echo "greenlight: could not refresh the CA store, API calls may fail" >&2
 fi

@@ -65,7 +65,7 @@
     "sounds_language_tooltip": "Language of the spoken announcements inside a conference. The sound pack is downloaded on first start.",
     "welcome_message_tooltip": "Shown in the chat when a meeting starts. Simple HTML is accepted.",
     "certificate_mismatch_title": "The certificate does not match this hostname",
-    "certificate_mismatch_description": "Traefik serves a certificate issued for another name. Greenlight cannot reach the API and browsers will refuse microphone and camera access. Request a Let's Encrypt certificate above, or upload one for this hostname from Settings > TLS certificates.",
+    "certificate_mismatch_description": "Traefik serves a certificate issued for another name. Rooms still start, because the front end reaches the API inside the pod, but browsers will refuse microphone and camera access. Request a Let's Encrypt certificate above, or upload one for this hostname from Settings > TLS certificates.",
     "default_admin_title": "The default administrator password is still in use",
     "default_admin_description": "This instance was created with a bootstrap administrator, admin@nethserver.org, whose password is Nethesis,1234. That password ships with this module and is therefore known to anyone. Sign in with it, create your own account, give it the Administrator role, then change or delete the bootstrap one.",
     "open_bigbluebutton": "Open BigBlueButton"
