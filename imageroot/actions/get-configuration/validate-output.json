@@ -22,7 +22,7 @@
             "remove_old_recording": false,
             "recording_max_age_days": 14,
             "certificate_matches_host": true,
-            "registration_method": "open"
+            "default_admin_password_in_use": false
         }
     ],
     "type": "object",
@@ -106,13 +106,10 @@
             "title": "Certificate matches the hostname",
             "description": "Read-only. False when Traefik serves a certificate issued for another name."
         },
-        "registration_method": {
-            "type": "string",
-            "title": "Who can create an account"
-        },
-        "allowed_domains": {
-            "type": "string",
-            "title": "Allowed email domains"
+        "default_admin_password_in_use": {
+            "type": "boolean",
+            "title": "Default administrator password still in use",
+            "description": "Read-only. True while admin@admin.com still has the password Greenlight publishes in its source."
         }
     }
 }

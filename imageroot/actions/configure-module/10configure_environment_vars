@@ -68,11 +68,6 @@ agent.set_env("TURN_EXT_SERVER", data.get("turn_ext_server", ""))
 
 # --- BigBlueButton behaviour ------------------------------------------------
 
-# Greenlight registration. Applied to its database by bin/apply-greenlight-settings,
-# because Greenlight keeps these in site_settings rather than in its environment.
-agent.set_env("REGISTRATION_METHOD", data.get("registration_method", "open"))
-agent.set_env("ALLOWED_DOMAINS", data.get("allowed_domains", ""))
-
 agent.set_env("ENABLE_RECORDING", str(data.get("enable_recording", False)).lower())
 agent.set_env("REMOVE_OLD_RECORDING", str(data.get("remove_old_recording", False)).lower())
 agent.set_env("RECORDING_MAX_AGE_DAYS", str(data.get("recording_max_age_days", 14)))

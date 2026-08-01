@@ -12,8 +12,7 @@
             "enable_recording": false,
             "sounds_language": "en-us-callie",
             "remove_old_recording": false,
-            "recording_max_age_days": 14,
-            "registration_method": "open"
+            "recording_max_age_days": 14
         }
     ],
     "type": "object",
@@ -111,21 +110,6 @@
             "title": "Recording retention (days)",
             "minimum": 1,
             "description": "Recordings older than this are deleted, provided deletion is enabled."
-        },
-        "registration_method": {
-            "type": "string",
-            "title": "Who can create an account",
-            "enum": [
-                "open",
-                "invite",
-                "approval"
-            ],
-            "description": "open: anyone can sign up. invite: only people an administrator invites. approval: anyone can sign up but an administrator must activate the account."
-        },
-        "allowed_domains": {
-            "type": "string",
-            "title": "Allowed email domains",
-            "description": "Comma-separated, for example example.org,example.com. Empty accepts any domain. Only meaningful when sign-up is open or by approval."
         }
     }
 }

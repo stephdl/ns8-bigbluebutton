@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Make sure the instance has an administrator, using Greenlight's own seed.
+#
+# Greenlight ships db/seeds.rb, which creates admin@admin.com with a fixed
+# password and logs the intended flow: sign in with it, sign up with a real
+# address, promote that account, and stop using the default. Its bin/start runs
+# db:create and db:migrate but never db:seed, so a fresh instance has no
+# administrator and the admin panel is hidden from everyone.
+#
+# The password this creates is published in Greenlight's public repository, so
+# it is not a secret and must not be treated as one. The module reports it as
+# in use -- see bin/check-default-admin -- and the UI keeps saying so until it
+# is changed.
+#
+# Only runs when the instance has no administrator at all, so it can never add a
+# second default account next to a real one.
+#
+
+import subprocess
+import sys
+
+import agent
+
+
+def psql(sql):
+    return subprocess.run(
+        ["podman", "exec", "postgres-app", "psql", "-U", "postgres",
+         "-d", "greenlight", "-tAc", sql],
+        capture_output=True, text=True, timeout=30,
+    )
+
+
+admins = psql(
+    "SELECT count(*) FROM users u JOIN roles r ON r.id = u.role_id "
+    "WHERE r.name IN ('Administrator', 'SuperAdmin')"
+)
+
+if admins.returncode != 0:
+    # Greenlight has not migrated its schema yet on a brand new instance. Not an
+    # error: the next start tries again.
+    print("Greenlight database is not ready, skipping the administrator check",
+          file=sys.stderr)
+    sys.exit(0)
+
+if admins.stdout.strip() not in ("", "0"):
+    sys.exit(0)  # an administrator already exists
+
+print("no administrator found, running Greenlight's seed", file=sys.stderr)
+seed = subprocess.run(
+    ["podman", "exec", "-w", "/usr/src/app", "greenlight-app",
+     "bundle", "exec", "rails", "db:seed"],
+    capture_output=True, text=True, timeout=300,
+)
+
+if seed.returncode != 0:
+    print(agent.SD_WARNING + "Greenlight seed failed", file=sys.stderr)
+    print(seed.stderr[-500:], file=sys.stderr)
+    sys.exit(0)  # not fatal, retried on the next run
+
+print(agent.SD_WARNING + "created the default administrator admin@admin.com "
+      "with Greenlight's published password: sign in and change it",
+      file=sys.stderr)

@@ -11,6 +11,7 @@
 #
 
 import os
+import subprocess
 import sys
 import json
 import agent
@@ -25,8 +26,6 @@ config["private_address"] = os.getenv("PRIVATE_IP", "") or os.getenv("DETECTED_P
 config["stun_server"] = os.getenv("STUN_SERVER", "")
 config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
 
-config["registration_method"] = os.getenv("REGISTRATION_METHOD", "open")
-config["allowed_domains"] = os.getenv("ALLOWED_DOMAINS", "")
 config["enable_recording"] = os.getenv("ENABLE_RECORDING") == "true"
 config["remove_old_recording"] = os.getenv("REMOVE_OLD_RECORDING") == "true"
 config["recording_max_age_days"] = int(os.getenv("RECORDING_MAX_AGE_DAYS", "14"))
@@ -36,6 +35,16 @@ config["disable_sound_muted"] = os.getenv("DISABLE_SOUND_MUTED") == "true"
 config["disable_sound_alone"] = os.getenv("DISABLE_SOUND_ALONE") == "true"
 config["welcome_message"] = os.getenv("WELCOME_MESSAGE", "")
 config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
+
+# Checked live rather than cached: the administrator changes this password in
+# Greenlight, which has no way to tell the module, and a warning that lingers
+# after it has been dealt with teaches people to ignore warnings.
+try:
+    probe = subprocess.run(["check-default-admin"], capture_output=True,
+                           text=True, timeout=30)
+    config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
+except Exception:
+    config["default_admin_password_in_use"] = False
 
 # Read-only. False means Traefik serves a certificate issued for some other
 # name, which breaks Greenlight and denies the browser microphone and camera.

@@ -31,8 +31,6 @@ for evar in [
         "MS_WEBRTC_LISTEN_IPS",
         "STUN_SERVER",
         "TURN_EXT_SERVER",
-        "REGISTRATION_METHOD",
-        "ALLOWED_DOMAINS",
         "ENABLE_RECORDING",
         "REMOVE_OLD_RECORDING",
         "RECORDING_MAX_AGE_DAYS",
