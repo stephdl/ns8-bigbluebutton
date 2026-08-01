@@ -7,7 +7,9 @@
 # host network namespace, so it reaches the pod through the ports the pod
 # publishes to the node loopback rather than through container names.
 #
-# @@VAR@@ placeholders are substituted at configure time.
+# Values wrapped in double at-signs are substituted by configure-module, which
+# then asserts that none are left. Do not write that marker anywhere it is not
+# meant to be replaced, comments included: the assertion reads the whole file.
 
 kurento: []
 
