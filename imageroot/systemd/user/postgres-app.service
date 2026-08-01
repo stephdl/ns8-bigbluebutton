@@ -1,0 +1,38 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman postgres-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/postgres-app.pid %t/postgres-app.ctr-id
+ExecStartPre=/bin/mkdir -p %S/state/initdb.d %S/state/restore
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/postgres-app.pid \
+    --cidfile %t/postgres-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name postgres-app \
+    --env-file=%S/state/passwords.env \
+    --env=POSTGRES_USER=postgres \
+    --env=POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app \
+    --env=TZ=UTC \
+    --volume postgres-data:/var/lib/postgresql/data:Z \
+    --volume %S/state/initdb.d:/docker-entrypoint-initdb.d:z \
+    ${POSTGRES_IMAGE}
+ExecStartPost=/usr/bin/bash -c "while ! podman exec postgres-app pg_isready -U postgres -q; do sleep 2; done"
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/postgres-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/postgres-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/postgres-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

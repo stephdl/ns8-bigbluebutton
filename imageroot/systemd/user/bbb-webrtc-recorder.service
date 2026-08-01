@@ -1,0 +1,41 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Runs in the HOST network namespace for the same reason as webrtc-sfu: it is a
+# WebRTC endpoint. Upstream notes the connection to bbb-webrtc-sfu only works
+# via the external IP (docker-compose.tmpl.yml:469-471).
+#
+# Its Redis address is a plain ENV in the image
+# (mod/bbb-webrtc-recorder/Dockerfile:32), so pointing it at the pod's published
+# Redis port needs no file override.
+#
+
+[Unit]
+Description=Podman bbb-webrtc-recorder.service
+After=bigbluebutton.service redis-app.service
+Wants=bigbluebutton.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/bbb-webrtc-recorder.pid %t/bbb-webrtc-recorder.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-webrtc-recorder.pid \
+    --cidfile %t/bbb-webrtc-recorder.ctr-id --cgroups=no-conmon \
+    --replace -d --name bbb-webrtc-recorder \
+    --network=host \
+    --env=BBBRECORDER_PUBSUB_ADAPTERS_REDIS_ADDRESS=127.0.0.1:${REDIS_PORT} \
+    --volume bbb-webrtc-recorder:/var/lib/bbb-webrtc-recorder:z \
+    ${BBB_DOCKER_WEBRTC_RECORDER_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-webrtc-recorder.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-webrtc-recorder.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/bbb-webrtc-recorder.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

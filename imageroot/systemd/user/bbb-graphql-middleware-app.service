@@ -1,0 +1,31 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman bbb-graphql-middleware-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service bbb-graphql-server-app.service bbb-graphql-actions-app.service bbb-web-app.service redis-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/bbb-graphql-middleware-app.pid %t/bbb-graphql-middleware-app.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-graphql-middleware-app.pid \
+    --cidfile %t/bbb-graphql-middleware-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name bbb-graphql-middleware-app \
+    --env-file=%S/state/passwords.env \
+    ${BBB_DOCKER_GRAPHQL_MIDDLEWARE_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-graphql-middleware-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-graphql-middleware-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/bbb-graphql-middleware-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

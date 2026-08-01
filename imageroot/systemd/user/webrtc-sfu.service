@@ -1,0 +1,57 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# mediasoup SFU. Runs in the HOST network namespace, not in the pod: WebRTC
+# media must bind the node's real addresses, and routing it through
+# slirp4netns port forwarding would add latency and CPU on every RTP packet.
+#
+# Consequences, both recorded in docs/packaging-analysis.md section 7:
+#   - this container can reach everything on the node's loopback, including the
+#     node's own Redis on 127.0.0.1:6379 which holds cluster state;
+#   - seccomp=unconfined removes syscall filtering for the single most
+#     attacker-reachable component in the stack.
+#
+# Both come from upstream (docker-compose.tmpl.yml:255-259) and exist for
+# io_uring, which the default podman seccomp profile blocks.
+#
+# The memlock limit is NOT raised here. A rootless process cannot raise its
+# RLIMIT_MEMLOCK hard limit, and --ulimit can only lower it. If mediasoup fails
+# to start with an io_uring_register_buffers error, the fix is a node-level
+# DefaultLimitMEMLOCK drop-in, outside the module contract.
+#
+
+[Unit]
+Description=Podman webrtc-sfu.service
+After=bigbluebutton.service freeswitch.service redis-app.service
+Wants=bigbluebutton.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/webrtc-sfu.pid %t/webrtc-sfu.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/webrtc-sfu.pid \
+    --cidfile %t/webrtc-sfu.ctr-id --cgroups=no-conmon \
+    --replace -d --name webrtc-sfu \
+    --network=host \
+    --security-opt seccomp=unconfined \
+    --env-file=%S/state/passwords.env \
+    --env=MS_WEBRTC_LISTEN_IPS=${MS_WEBRTC_LISTEN_IPS} \
+    --volume mediasoup:/var/mediasoup:z \
+    --volume %S/state/overrides/webrtc-sfu-config.yaml:/etc/bigbluebutton/bbb-webrtc-sfu/production.yml:ro,z \
+    --tmpfs /var/log/bbb-webrtc-sfu \
+    ${BBB_DOCKER_WEBRTC_SFU_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/webrtc-sfu.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/webrtc-sfu.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/webrtc-sfu.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

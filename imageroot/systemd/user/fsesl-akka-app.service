@@ -1,0 +1,32 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman fsesl-akka-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service redis-app.service freeswitch.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/fsesl-akka-app.pid %t/fsesl-akka-app.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/fsesl-akka-app.pid \
+    --cidfile %t/fsesl-akka-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name fsesl-akka-app \
+    --env-file=%S/state/passwords.env \
+    ${BBB_DOCKER_FSESL_AKKA_IMAGE}
+
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/fsesl-akka-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/fsesl-akka-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/fsesl-akka-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

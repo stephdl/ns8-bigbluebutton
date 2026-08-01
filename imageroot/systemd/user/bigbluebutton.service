@@ -1,0 +1,75 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Pod master unit. Creates the pod that holds the 13 control-plane containers.
+#
+# Three containers are NOT in this pod: freeswitch, webrtc-sfu and
+# bbb-webrtc-recorder all run in the host network namespace.
+#
+# FreeSWITCH is out here on purpose. It exchanges RTP with the SFU for every
+# conference audio leg; with FreeSWITCH inside the pod that traffic had to be
+# published to the node loopback, which means every audio packet crossing
+# rootlessport in userspace. Both endpoints in the host namespace talk over
+# 127.0.0.1 directly instead.
+#
+# The pod therefore publishes exactly two ports: nginx for Traefik, and Redis
+# for the three host-network containers.
+#
+# Every peer inside the pod resolves to 127.0.0.1: BigBlueButton is natively a
+# single-host product and the 10.7.7.x split in bigbluebutton/docker exists only
+# to fit compose. The --add-host entries restore the upstream addressing.
+#
+
+[Unit]
+Description=Podman bigbluebutton.service
+Requires=postgres-app.service redis-app.service bbb-web-app.service \
+    nginx-app.service etherpad-app.service \
+    bbb-pads-app.service bbb-export-annotations-app.service \
+    apps-akka-app.service fsesl-akka-app.service \
+    bbb-graphql-server-app.service bbb-graphql-actions-app.service \
+    bbb-graphql-middleware-app.service recordings-app.service
+Before=postgres-app.service redis-app.service bbb-web-app.service \
+    nginx-app.service etherpad-app.service \
+    bbb-pads-app.service bbb-export-annotations-app.service \
+    apps-akka-app.service fsesl-akka-app.service \
+    bbb-graphql-server-app.service bbb-graphql-actions-app.service \
+    bbb-graphql-middleware-app.service recordings-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/bigbluebutton.pid %t/bigbluebutton.pod-id
+ExecStartPre=/usr/bin/podman pod create \
+    --infra-conmon-pidfile %t/bigbluebutton.pid \
+    --pod-id-file %t/bigbluebutton.pod-id \
+    --name bigbluebutton \
+    --publish 127.0.0.1:${NGINX_PORT}:48087 \
+    --publish 127.0.0.1:${REDIS_PORT}:6379 \
+    --network=slirp4netns:allow_host_loopback=true \
+    --add-host=postgres:127.0.0.1 \
+    --add-host=redis:127.0.0.1 \
+    --add-host=bbb-web:127.0.0.1 \
+    --add-host=etherpad:127.0.0.1 \
+    --add-host=bbb-pads:127.0.0.1 \
+    --add-host=apps-akka:127.0.0.1 \
+    --add-host=bbb-graphql-server:127.0.0.1 \
+    --add-host=bbb-graphql-actions:127.0.0.1 \
+    --add-host=bbb-graphql-middleware:127.0.0.1 \
+    --add-host=nginx:127.0.0.1 \
+    --add-host=freeswitch:10.0.2.2 \
+    --add-host=webrtc-sfu:10.0.2.2 \
+    --replace
+ExecStart=/usr/bin/podman pod start --pod-id-file %t/bigbluebutton.pod-id
+ExecStop=/usr/bin/podman pod stop --ignore --pod-id-file %t/bigbluebutton.pod-id -t 10
+ExecStopPost=/usr/bin/podman pod rm --ignore -f --pod-id-file %t/bigbluebutton.pod-id
+PIDFile=%t/bigbluebutton.pid
+SyslogIdentifier=%u
+Type=forking
+
+[Install]
+WantedBy=default.target

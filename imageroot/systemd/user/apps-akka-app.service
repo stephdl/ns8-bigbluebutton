@@ -1,0 +1,34 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman apps-akka-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service redis-app.service postgres-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/apps-akka-app.pid %t/apps-akka-app.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/apps-akka-app.pid \
+    --cidfile %t/apps-akka-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name apps-akka-app \
+    --env-file=%S/state/passwords.env \
+    --env=DOMAIN=${TRAEFIK_HOST} \
+    --volume freeswitch-meetings:/var/freeswitch/meetings:z \
+    --volume %S/state/overrides/bbb-apps-akka.conf:/etc/bigbluebutton/bbb-apps-akka.conf.tmpl:ro,z \
+    ${BBB_DOCKER_APPS_AKKA_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/apps-akka-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/apps-akka-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/apps-akka-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

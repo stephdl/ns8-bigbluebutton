@@ -1,0 +1,31 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman etherpad-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service redis-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/etherpad-app.pid %t/etherpad-app.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/etherpad-app.pid \
+    --cidfile %t/etherpad-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name etherpad-app \
+    --env-file=%S/state/passwords.env \
+    ${BBB_DOCKER_ETHERPAD_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/etherpad-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/etherpad-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/etherpad-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,44 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman bbb-web-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service redis-app.service etherpad-app.service bbb-pads-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/bbb-web-app.pid %t/bbb-web-app.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-web-app.pid \
+    --cidfile %t/bbb-web-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name bbb-web-app \
+    --env-file=%S/state/passwords.env \
+    --env=DOMAIN=${TRAEFIK_HOST} \
+    --env=ENABLE_RECORDING=${ENABLE_RECORDING} \
+    --env=ENABLE_LEARNING_DASHBOARD=${ENABLE_LEARNING_DASHBOARD} \
+    --env=WELCOME_MESSAGE=${WELCOME_MESSAGE} \
+    --env=WELCOME_FOOTER=${WELCOME_FOOTER} \
+    --env=STUN_SERVER=${STUN_SERVER} \
+    --env=TURN_EXT_SERVER=${TURN_EXT_SERVER} \
+    --env=ENABLE_HTTPS_PROXY=false \
+    --env=IGNORE_TLS_CERT_ERRORS=false \
+    --volume bigbluebutton:/var/bigbluebutton:z \
+    --volume freeswitch-meetings:/var/freeswitch/meetings:z \
+    --volume %S/state/overrides/turn-stun-servers.xml:/etc/bigbluebutton/turn-stun-servers.xml.tmpl:ro,z \
+    ${BBB_DOCKER_WEB_IMAGE}
+ExecStartPost=/usr/bin/bash -c "while ! podman exec bbb-web-app wget --no-proxy --quiet --tries=1 --spider http://127.0.0.1:8090/bigbluebutton/api; do sleep 5; done"
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-web-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-web-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/bbb-web-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

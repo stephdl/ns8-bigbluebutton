@@ -1,0 +1,38 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# BigBlueButton's own Redis. Distinct from the node's Redis, which holds cluster
+# state and already owns 127.0.0.1:6379 on the host. This one keeps 6379 inside
+# the pod and is published to the host on ${REDIS_PORT} for the two
+# host-network media containers.
+#
+
+[Unit]
+Description=Podman redis-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/redis-app.pid %t/redis-app.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/redis-app.pid \
+    --cidfile %t/redis-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name redis-app \
+    --volume redis-data:/data:Z \
+    ${REDIS_IMAGE}
+ExecStartPost=/usr/bin/bash -c "while ! podman exec redis-app redis-cli ping >/dev/null 2>&1; do sleep 1; done"
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/redis-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/redis-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/redis-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

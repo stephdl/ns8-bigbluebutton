@@ -1,0 +1,39 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+[Unit]
+Description=Podman recordings-app.service
+BindsTo=bigbluebutton.service
+After=bigbluebutton.service redis-app.service bbb-pads-app.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+EnvironmentFile=-%S/state/passwords.env
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=70
+ExecStartPre=/bin/rm -f %t/recordings-app.pid %t/recordings-app.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/recordings-app.pid \
+    --cidfile %t/recordings-app.ctr-id --cgroups=no-conmon \
+    --pod-id-file %t/bigbluebutton.pod-id --replace -d --name recordings-app \
+    --env-file=%S/state/passwords.env \
+    --env=DOMAIN=${TRAEFIK_HOST} \
+    --volume bigbluebutton:/var/bigbluebutton:z \
+    --volume freeswitch-meetings:/var/freeswitch/meetings:z \
+    --volume mediasoup:/var/mediasoup:z \
+    --volume bbb-webrtc-recorder:/var/lib/bbb-webrtc-recorder:z \
+    --tmpfs /var/log/bigbluebutton \
+    --tmpfs /tmp \
+    ${BBB_DOCKER_RECORDINGS_IMAGE}
+
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/recordings-app.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/recordings-app.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/recordings-app.pid
+Type=forking
+
+[Install]
+WantedBy=default.target
