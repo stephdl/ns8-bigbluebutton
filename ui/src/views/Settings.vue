@@ -1,5 +1,5 @@
 <!--
-  Copyright (C) 2022 Nethesis S.r.l.
+  Copyright (C) 2026 Nethesis S.r.l.
   SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <template>
@@ -23,16 +23,15 @@
       <cv-column>
         <cv-tile light>
           <cv-form @submit.prevent="configureModule">
-            <cv-text-input
-              :label="$t('settings.kickstart_fqdn')"
-              placeholder="kickstart.example.org"
+            <NsTextInput
+              :label="$t('settings.bigbluebutton_fqdn')"
+              placeholder="bbb.example.org"
               v-model.trim="host"
               class="mg-bottom"
               :invalid-message="$t(error.host)"
-              :disabled="loading.getConfiguration || loading.configureModule"
+              :disabled="stillLoading"
               ref="host"
-            >
-            </cv-text-input>
+            />
             <NsToggle
               value="letsEncrypt"
               :label="core.$t('apps_lets_encrypt.request_https_certificate')"
@@ -50,12 +49,8 @@
                   </cv-link>
                 </div>
               </template>
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
+              <template slot="text-left">{{ $t("settings.disabled") }}</template>
+              <template slot="text-right">{{ $t("settings.enabled") }}</template>
             </NsToggle>
             <cv-row
               v-if="isLetsEncryptCurrentlyEnabled && !isLetsEncryptEnabled"
@@ -70,9 +65,9 @@
                     core.$t(
                       'apps_lets_encrypt.lets_encrypt_disabled_warning_description',
                       {
-                        node: this.status.node_ui_name
-                          ? this.status.node_ui_name
-                          : this.status.node,
+                        node: status.node_ui_name
+                          ? status.node_ui_name
+                          : status.node,
                       }
                     )
                   "
@@ -80,25 +75,186 @@
                 />
               </cv-column>
             </cv-row>
-            <cv-toggle
+            <NsToggle
               value="httpToHttps"
               :label="$t('settings.http_to_https')"
               v-model="isHttpToHttpsEnabled"
-              :disabled="loading.getConfiguration || loading.configureModule"
+              :disabled="stillLoading"
               class="mg-bottom"
             >
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
-            </cv-toggle>
+              <template slot="text-left">{{ $t("settings.disabled") }}</template>
+              <template slot="text-right">{{ $t("settings.enabled") }}</template>
+            </NsToggle>
+
+            <!-- network -->
+            <h4 class="mg-bottom">{{ $t("settings.network") }}</h4>
+            <NsTextInput
+              :label="$t('settings.public_address')"
+              placeholder="203.0.113.10"
+              v-model.trim="publicAddress"
+              class="mg-bottom"
+              :invalid-message="$t(error.public_address)"
+              :disabled="stillLoading"
+              :tooltip="$t('settings.public_address_tooltip')"
+              tooltipAlignment="start"
+              tooltipDirection="right"
+              ref="public_address"
+            />
+            <NsTextInput
+              :label="$t('settings.private_address')"
+              placeholder="192.168.1.10"
+              v-model.trim="privateAddress"
+              class="mg-bottom"
+              :invalid-message="$t(error.private_address)"
+              :disabled="stillLoading"
+              :tooltip="$t('settings.private_address_tooltip')"
+              tooltipAlignment="start"
+              tooltipDirection="right"
+              ref="private_address"
+            />
+            <!-- The firewall rule on this node is created by the module, but a
+                 router in front of it is out of our reach: show the range. -->
+            <NsInlineNotification
+              v-if="mediasoupPortRange"
+              kind="info"
+              :title="$t('settings.udp_ports_title')"
+              :description="
+                $t('settings.udp_ports_description', {
+                  range: mediasoupPortRange,
+                })
+              "
+              :showCloseButton="false"
+              class="mg-bottom"
+            />
+
+            <!-- recording -->
+            <h4 class="mg-bottom">{{ $t("settings.recording") }}</h4>
+            <NsToggle
+              value="enableRecording"
+              :label="$t('settings.enable_recording')"
+              v-model="isRecordingEnabled"
+              :disabled="stillLoading"
+              class="mg-bottom"
+            >
+              <template #tooltip>
+                {{ $t("settings.enable_recording_tooltip") }}
+              </template>
+              <template slot="text-left">{{ $t("settings.disabled") }}</template>
+              <template slot="text-right">{{ $t("settings.enabled") }}</template>
+            </NsToggle>
+            <template v-if="isRecordingEnabled">
+              <NsToggle
+                value="removeOldRecording"
+                :label="$t('settings.remove_old_recording')"
+                v-model="isRemoveOldRecordingEnabled"
+                :disabled="stillLoading"
+                class="mg-bottom"
+              >
+                <template slot="text-left">{{
+                  $t("settings.disabled")
+                }}</template>
+                <template slot="text-right">{{
+                  $t("settings.enabled")
+                }}</template>
+              </NsToggle>
+              <NsTextInput
+                v-if="isRemoveOldRecordingEnabled"
+                type="number"
+                min="1"
+                :label="$t('settings.recording_max_age_days')"
+                v-model.trim="recordingMaxAgeDays"
+                class="mg-bottom"
+                :invalid-message="$t(error.recording_max_age_days)"
+                :disabled="stillLoading"
+                ref="recording_max_age_days"
+              />
+            </template>
+
             <!-- advanced options -->
             <cv-accordion ref="accordion" class="maxwidth mg-bottom">
               <cv-accordion-item :open="toggleAccordion[0]">
                 <template slot="title">{{ $t("settings.advanced") }}</template>
-                <template slot="content"> </template>
+                <template slot="content">
+                  <h4 class="mg-bottom">{{ $t("settings.media") }}</h4>
+                  <NsComboBox
+                    v-model="soundsLanguage"
+                    :options="soundsLanguageOptions"
+                    :label="$t('settings.sounds_language')"
+                    :title="$t('settings.sounds_language')"
+                    :disabled="stillLoading"
+                    :acceptUserInput="false"
+                    class="mg-bottom"
+                    ref="sounds_language"
+                  />
+                  <NsToggle
+                    value="disableSoundMuted"
+                    :label="$t('settings.disable_sound_muted')"
+                    v-model="isSoundMutedDisabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <NsToggle
+                    value="disableSoundAlone"
+                    :label="$t('settings.disable_sound_alone')"
+                    v-model="isSoundAloneDisabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <NsTextInput
+                    :label="$t('settings.stun_server')"
+                    placeholder="stun:stun.example.org:3478"
+                    v-model.trim="stunServer"
+                    class="mg-bottom"
+                    :invalid-message="$t(error.stun_server)"
+                    :disabled="stillLoading"
+                    :tooltip="$t('settings.stun_server_tooltip')"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
+                    ref="stun_server"
+                  />
+                  <NsTextInput
+                    :label="$t('settings.turn_ext_server')"
+                    placeholder="turns:turn.example.org:443?transport=tcp"
+                    v-model.trim="turnExtServer"
+                    class="mg-bottom"
+                    :invalid-message="$t(error.turn_ext_server)"
+                    :disabled="stillLoading"
+                    :tooltip="$t('settings.turn_ext_server_tooltip')"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
+                    ref="turn_ext_server"
+                  />
+
+                  <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
+                  <NsTextInput
+                    :label="$t('settings.welcome_message')"
+                    v-model.trim="welcomeMessage"
+                    class="mg-bottom"
+                    :disabled="stillLoading"
+                    ref="welcome_message"
+                  />
+                  <NsTextInput
+                    :label="$t('settings.welcome_footer')"
+                    v-model.trim="welcomeFooter"
+                    class="mg-bottom"
+                    :disabled="stillLoading"
+                    ref="welcome_footer"
+                  />
+                </template>
               </cv-accordion-item>
             </cv-accordion>
             <cv-row v-if="error.configureModule">
@@ -147,7 +303,7 @@
               kind="primary"
               :icon="Save20"
               :loading="loading.configureModule"
-              :disabled="loading.getConfiguration || loading.configureModule"
+              :disabled="stillLoading"
               >{{ $t("settings.save") }}</NsButton
             >
           </cv-form>
@@ -167,6 +323,24 @@ import {
   IconService,
   PageTitleService,
 } from "@nethserver/ns8-ui-lib";
+
+// Sound packages the FreeSWITCH entrypoint knows how to install. Keep in sync
+// with the enum in imageroot/actions/configure-module/validate-input.json.
+const SOUNDS_LANGUAGES = [
+  "en-ca-june",
+  "en-us-allison",
+  "en-us-callie",
+  "de-de-daedalus3",
+  "es-ar-mario",
+  "fr-ca-june",
+  "pt-br-karina",
+  "ru-RU-elena",
+  "ru-RU-kirill",
+  "ru-RU-vika",
+  "sv-se-jakob",
+  "zh-cn-sinmei",
+  "zh-hk-sinmei",
+];
 
 export default {
   name: "Settings",
@@ -188,10 +362,24 @@ export default {
       status: {},
       validationErrorDetails: [],
       urlCheckInterval: null,
+      toggleAccordion: [false],
       host: "",
       isLetsEncryptEnabled: false,
       isLetsEncryptCurrentlyEnabled: false,
       isHttpToHttpsEnabled: true,
+      publicAddress: "",
+      privateAddress: "",
+      mediasoupPortRange: "",
+      stunServer: "",
+      turnExtServer: "",
+      isRecordingEnabled: false,
+      isRemoveOldRecordingEnabled: false,
+      recordingMaxAgeDays: "14",
+      soundsLanguage: "en-us-callie",
+      isSoundMutedDisabled: false,
+      isSoundAloneDisabled: false,
+      welcomeMessage: "",
+      welcomeFooter: "",
       loading: {
         getConfiguration: false,
         configureModule: false,
@@ -200,10 +388,15 @@ export default {
       error: {
         getConfiguration: "",
         configureModule: "",
+        getStatus: "",
         host: "",
         lets_encrypt: "",
         http2https: "",
-        getStatus: false,
+        public_address: "",
+        private_address: "",
+        stun_server: "",
+        turn_ext_server: "",
+        recording_max_age_days: "",
       },
     };
   },
@@ -215,6 +408,13 @@ export default {
         this.loading.configureModule ||
         this.loading.getStatus
       );
+    },
+    soundsLanguageOptions() {
+      return SOUNDS_LANGUAGES.map((code) => ({
+        name: code,
+        label: code,
+        value: code,
+      }));
     },
   },
   created() {
@@ -240,12 +440,10 @@ export default {
       this.error.getStatus = "";
       const taskAction = "get-status";
       const eventId = this.getUuid();
-      // register to task error
       this.core.$root.$once(
         `${taskAction}-aborted-${eventId}`,
         this.getStatusAborted
       );
-      // register to task completion
       this.core.$root.$once(
         `${taskAction}-completed-${eventId}`,
         this.getStatusCompleted
@@ -283,13 +481,10 @@ export default {
       const taskAction = "get-configuration";
       const eventId = this.getUuid();
 
-      // register to task error
       this.core.$root.$once(
         `${taskAction}-aborted-${eventId}`,
         this.getConfigurationAborted
       );
-
-      // register to task completion
       this.core.$root.$once(
         `${taskAction}-completed-${eventId}`,
         this.getConfigurationCompleted
@@ -325,6 +520,19 @@ export default {
       this.isLetsEncryptEnabled = config.lets_encrypt;
       this.isLetsEncryptCurrentlyEnabled = config.lets_encrypt;
       this.isHttpToHttpsEnabled = config.http2https;
+      this.publicAddress = config.public_address;
+      this.privateAddress = config.private_address;
+      this.mediasoupPortRange = config.mediasoup_port_range;
+      this.stunServer = config.stun_server;
+      this.turnExtServer = config.turn_ext_server;
+      this.isRecordingEnabled = config.enable_recording;
+      this.isRemoveOldRecordingEnabled = config.remove_old_recording;
+      this.recordingMaxAgeDays = String(config.recording_max_age_days);
+      this.soundsLanguage = config.sounds_language;
+      this.isSoundMutedDisabled = config.disable_sound_muted;
+      this.isSoundAloneDisabled = config.disable_sound_alone;
+      this.welcomeMessage = config.welcome_message;
+      this.welcomeFooter = config.welcome_footer;
 
       this.loading.getConfiguration = false;
       this.focusElement("host");
@@ -334,13 +542,30 @@ export default {
       this.validationErrorDetails = [];
 
       let isValidationOk = true;
-      if (!this.host) {
-        this.error.host = "common.required";
-
+      const fail = (field, message) => {
+        this.error[field] = message;
         if (isValidationOk) {
-          this.focusElement("host");
+          this.focusElement(field);
         }
         isValidationOk = false;
+      };
+
+      if (!this.host) {
+        fail("host", "common.required");
+      }
+      // mediasoup cannot announce an address it was never given: without it
+      // clients end up with no reachable candidate at all.
+      if (!this.publicAddress) {
+        fail("public_address", "common.required");
+      }
+      if (this.isRecordingEnabled && this.isRemoveOldRecordingEnabled) {
+        const days = Number(this.recordingMaxAgeDays);
+        if (!Number.isInteger(days) || days < 1) {
+          fail(
+            "recording_max_age_days",
+            "settings.recording_max_age_days_invalid"
+          );
+        }
       }
       return isValidationOk;
     },
@@ -350,12 +575,10 @@ export default {
       for (const validationError of validationErrors) {
         const param = validationError.parameter;
         if (validationError.details) {
-          // show inline error notification with details
           this.validationErrorDetails = validationError.details
             .split("\n")
             .filter((detail) => detail.trim() !== "");
         } else {
-          // set i18n error message
           this.error[param] = this.$t("settings." + validationError.error);
           if (!focusAlreadySet) {
             this.focusElement(param);
@@ -365,10 +588,7 @@ export default {
       }
     },
     async configureModule() {
-      this.error.test_imap = false;
-      this.error.test_smtp = false;
-      const isValidationOk = this.validateConfigureModule();
-      if (!isValidationOk) {
+      if (!this.validateConfigureModule()) {
         return;
       }
 
@@ -376,19 +596,14 @@ export default {
       const taskAction = "configure-module";
       const eventId = this.getUuid();
 
-      // register to task error
       this.core.$root.$once(
         `${taskAction}-aborted-${eventId}`,
         this.configureModuleAborted
       );
-
-      // register to task validation
       this.core.$root.$once(
         `${taskAction}-validation-failed-${eventId}`,
         this.configureModuleValidationFailed
       );
-
-      // register to task completion
       this.core.$root.$once(
         `${taskAction}-completed-${eventId}`,
         this.configureModuleCompleted
@@ -400,6 +615,18 @@ export default {
             host: this.host,
             lets_encrypt: this.isLetsEncryptEnabled,
             http2https: this.isHttpToHttpsEnabled,
+            public_address: this.publicAddress,
+            private_address: this.privateAddress,
+            stun_server: this.stunServer,
+            turn_ext_server: this.turnExtServer,
+            enable_recording: this.isRecordingEnabled,
+            remove_old_recording: this.isRemoveOldRecordingEnabled,
+            recording_max_age_days: Number(this.recordingMaxAgeDays),
+            sounds_language: this.soundsLanguage,
+            disable_sound_muted: this.isSoundMutedDisabled,
+            disable_sound_alone: this.isSoundAloneDisabled,
+            welcome_message: this.welcomeMessage,
+            welcome_footer: this.welcomeFooter,
           },
           extra: {
             title: this.$t("settings.instance_configuration", {
@@ -426,8 +653,6 @@ export default {
     },
     configureModuleCompleted() {
       this.loading.configureModule = false;
-
-      // reload configuration
       this.getConfiguration();
     },
   },
