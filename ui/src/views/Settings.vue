@@ -24,12 +24,10 @@
         <NsInlineNotification
           kind="warning"
           :title="$t('settings.default_admin_title')"
-          :description="
-            $t('settings.default_admin_description', {
-              url: host ? 'https://' + host : 'the BigBlueButton page',
-            })
-          "
+          :description="$t('settings.default_admin_description')"
           :showCloseButton="false"
+          :actionLabel="host ? $t('settings.open_bigbluebutton') : ''"
+          @action="goToBigBlueButton"
         />
       </cv-column>
     </cv-row>
@@ -488,6 +486,9 @@ export default {
   methods: {
     goToCertificates() {
       this.core.$router.push("/settings/tls-certificates");
+    },
+    goToBigBlueButton() {
+      window.open(`https://${this.host}`, "_blank");
     },
     async getStatus() {
       this.loading.getStatus = true;
