@@ -64,6 +64,8 @@ agent.set_env("TURN_EXT_SERVER", data.get("turn_ext_server", ""))
 # --- BigBlueButton behaviour ------------------------------------------------
 
 agent.set_env("ENABLE_RECORDING", str(data.get("enable_recording", False)).lower())
+agent.set_env("REMOVE_OLD_RECORDING", str(data.get("remove_old_recording", False)).lower())
+agent.set_env("RECORDING_MAX_AGE_DAYS", str(data.get("recording_max_age_days", 14)))
 agent.set_env("ENABLE_LEARNING_DASHBOARD", str(data.get("enable_learning_dashboard", True)).lower())
 agent.set_env("SOUNDS_LANGUAGE", data.get("sounds_language", "en-us-callie"))
 agent.set_env("DISABLE_SOUND_MUTED", str(data.get("disable_sound_muted", False)).lower())

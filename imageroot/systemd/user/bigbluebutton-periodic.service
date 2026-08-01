@@ -1,0 +1,20 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Triggered by bigbluebutton-periodic.timer. Not enabled on its own.
+#
+# runagent puts the script in the module's agent environment and changes to
+# AGENT_STATE_DIR, which is how the other module helpers are invoked.
+#
+
+[Unit]
+Description=BigBlueButton periodic maintenance
+After=bigbluebutton.service
+
+[Service]
+Type=oneshot
+ExecStart=runagent bigbluebutton-periodic
+SyslogIdentifier=%u

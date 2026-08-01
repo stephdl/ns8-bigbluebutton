@@ -19,7 +19,9 @@
             "disable_sound_alone": false,
             "welcome_message": "",
             "welcome_footer": "",
-            "mediasoup_port_range": "20000-28191"
+            "mediasoup_port_range": "20000-28191",
+            "remove_old_recording": false,
+            "recording_max_age_days": 14
         }
     ],
     "type": "object",
@@ -95,6 +97,14 @@
             "type": "string",
             "title": "Public UDP port range",
             "description": "Read-only. The mediasoup RTC range allocated by the node, which must be reachable from the internet."
+        },
+        "remove_old_recording": {
+            "type": "boolean",
+            "title": "Delete old recordings"
+        },
+        "recording_max_age_days": {
+            "type": "integer",
+            "title": "Recording retention (days)"
         }
     }
 }

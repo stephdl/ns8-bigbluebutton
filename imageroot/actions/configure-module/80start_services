@@ -63,3 +63,7 @@ fi
 
 systemctl --user enable "${UNITS[@]}"
 systemctl --user try-restart "${UNITS[@]}"
+
+# Maintenance timer: FreeSWITCH clock resync, stale presentation cleanup and,
+# when enabled, recording retention. Replaces the upstream `periodic` container.
+systemctl --user enable --now bigbluebutton-periodic.timer
