@@ -30,6 +30,9 @@
               class="mg-bottom"
               :invalid-message="$t(error.host)"
               :disabled="stillLoading"
+              :tooltip="$t('settings.bigbluebutton_fqdn_tooltip')"
+              tooltipAlignment="start"
+              tooltipDirection="right"
               ref="host"
             />
             <NsToggle
@@ -49,8 +52,12 @@
                   </cv-link>
                 </div>
               </template>
-              <template slot="text-left">{{ $t("settings.disabled") }}</template>
-              <template slot="text-right">{{ $t("settings.enabled") }}</template>
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
             </NsToggle>
             <cv-row
               v-if="isLetsEncryptCurrentlyEnabled && !isLetsEncryptEnabled"
@@ -82,8 +89,12 @@
               :disabled="stillLoading"
               class="mg-bottom"
             >
-              <template slot="text-left">{{ $t("settings.disabled") }}</template>
-              <template slot="text-right">{{ $t("settings.enabled") }}</template>
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
             </NsToggle>
 
             <!-- network -->
@@ -139,8 +150,12 @@
               <template #tooltip>
                 {{ $t("settings.enable_recording_tooltip") }}
               </template>
-              <template slot="text-left">{{ $t("settings.disabled") }}</template>
-              <template slot="text-right">{{ $t("settings.enabled") }}</template>
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
             </NsToggle>
             <template v-if="isRecordingEnabled">
               <NsToggle
@@ -150,6 +165,9 @@
                 :disabled="stillLoading"
                 class="mg-bottom"
               >
+                <template #tooltip>
+                  {{ $t("settings.remove_old_recording_tooltip") }}
+                </template>
                 <template slot="text-left">{{
                   $t("settings.disabled")
                 }}</template>
@@ -183,6 +201,9 @@
                     :title="$t('settings.sounds_language')"
                     :disabled="stillLoading"
                     :acceptUserInput="false"
+                    :tooltip="$t('settings.sounds_language_tooltip')"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
                     class="mg-bottom"
                     ref="sounds_language"
                   />
@@ -245,6 +266,9 @@
                     v-model.trim="welcomeMessage"
                     class="mg-bottom"
                     :disabled="stillLoading"
+                    :tooltip="$t('settings.welcome_message_tooltip')"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
                     ref="welcome_message"
                   />
                   <NsTextInput

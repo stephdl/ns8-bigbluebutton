@@ -18,8 +18,7 @@
     ],
     "type": "object",
     "required": [
-        "host",
-        "public_address"
+        "host"
     ],
     "properties": {
         "host": {
@@ -41,7 +40,7 @@
         "public_address": {
             "type": "string",
             "title": "Public IP address",
-            "description": "The address WebRTC clients use to reach this node. It is announced by mediasoup, not bound locally, so a NAT address is correct here."
+            "description": "The address WebRTC clients use to reach this node. It is announced by mediasoup, not bound locally, so a NAT address is correct here. Detected at install time; override when a port-forward uses a different address."
         },
         "private_address": {
             "type": "string",

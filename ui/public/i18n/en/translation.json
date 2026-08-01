@@ -39,34 +39,34 @@
     "domain_already_used_in_traefik": "Domain already used in traefik",
     "host_pattern": "Must be a valid fully qualified domain name",
     "host_format": "Must be a valid fully qualified domain name",
-
     "network": "Network",
     "public_address": "Public IP address",
-    "public_address_tooltip": "The address participants use to reach this server. It is announced to WebRTC clients, not bound locally, so a public address is correct even when this node is behind NAT.",
+    "public_address_tooltip": "Announced to participants, not bound locally, so a NAT address is correct here. Detected at install; change it if a port forward uses a different address.",
     "private_address": "LAN IP address (optional)",
-    "private_address_tooltip": "Set this when participants also connect from the local network. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection, which many routers do not support.",
+    "private_address_tooltip": "Only needed when participants also connect from the local network. The server then announces both addresses, so internal clients do not depend on NAT hairpinning.",
     "udp_ports_title": "Open these UDP ports",
-    "udp_ports_description": "Audio and video travel over UDP on the range {range}. Participants cannot connect unless it is reachable from the internet. The firewall rule is created automatically on this node; forward the range on any router in front of it.",
-
+    "udp_ports_description": "Audio and video travel over UDP on the range {range}, not over HTTPS. Participants cannot connect unless it is reachable from the internet. The rule on this node is created automatically; forward the range on any router in front of it.",
     "media": "Audio and video",
     "stun_server": "STUN server (optional)",
-    "stun_server_tooltip": "Leave empty unless you run your own STUN server. A public one would receive the IP address of every participant.",
+    "stun_server_tooltip": "Leave empty unless you run your own. A public STUN server receives the IP address of every participant.",
     "turn_ext_server": "External TURN server (optional)",
-    "turn_ext_server_tooltip": "Without a TURN server, participants behind a firewall that blocks UDP cannot join. This app ships no TURN server of its own; point this at an external one if you need it.",
+    "turn_ext_server_tooltip": "Participants behind a firewall that blocks UDP cannot join without TURN. This app does not provide one.",
     "sounds_language": "Language of spoken announcements",
     "disable_sound_muted": "Disable the muted announcement",
     "disable_sound_alone": "Disable the alone-in-conference announcement",
-
     "recording": "Recording",
     "enable_recording": "Record meetings",
-    "enable_recording_tooltip": "Recordings capture audio, video, chat, shared notes and presentations. Tell participants they are being recorded and obtain their consent.",
+    "enable_recording_tooltip": "Captures audio, video, chat, shared notes and presentations. Tell participants before you enable it.",
     "remove_old_recording": "Delete old recordings automatically",
     "recording_max_age_days": "Delete recordings after (days)",
     "recording_max_age_days_invalid": "Enter a whole number of days, at least 1",
-
     "welcome": "Welcome message",
     "welcome_message": "Message shown in the chat when a meeting starts",
-    "welcome_footer": "Footer appended to the welcome message"
+    "welcome_footer": "Footer appended to the welcome message",
+    "bigbluebutton_fqdn_tooltip": "The name participants will type. It must resolve to this server and have a certificate the browser trusts: without one, browsers refuse microphone and camera access.",
+    "remove_old_recording_tooltip": "Deletion runs from the maintenance job, every 30 minutes.",
+    "sounds_language_tooltip": "Language of the spoken announcements inside a conference. The sound pack is downloaded on first start.",
+    "welcome_message_tooltip": "Shown in the chat when a meeting starts. Simple HTML is accepted."
   },
   "about": {
     "title": "About"

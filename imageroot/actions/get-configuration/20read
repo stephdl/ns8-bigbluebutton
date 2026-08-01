@@ -21,8 +21,8 @@ config["host"] = os.getenv("TRAEFIK_HOST", "")
 config["http2https"] = os.getenv("TRAEFIK_HTTP2HTTPS") == "true"
 config["lets_encrypt"] = agent.get_route(os.environ["MODULE_ID"]).get("lets_encrypt", False)
 
-config["public_address"] = os.getenv("PUBLIC_IP", "")
-config["private_address"] = os.getenv("PRIVATE_IP", "")
+config["public_address"] = os.getenv("PUBLIC_IP", "") or os.getenv("DETECTED_PUBLIC_IP", "")
+config["private_address"] = os.getenv("PRIVATE_IP", "") or os.getenv("DETECTED_PRIVATE_IP", "")
 config["stun_server"] = os.getenv("STUN_SERVER", "")
 config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
 
