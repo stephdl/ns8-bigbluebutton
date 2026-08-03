@@ -32,6 +32,10 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-web-app.pid \
     --volume bigbluebutton:/var/bigbluebutton:z \
     --volume freeswitch-meetings:/var/freeswitch/meetings:z \
     --volume %S/state/overrides/turn-stun-servers.xml:/etc/bigbluebutton/turn-stun-servers.xml.tmpl:ro,z \
+    --volume %S/state/overrides/bbb-web.properties.tmpl:/etc/bigbluebutton/bbb-web.properties.tmpl:ro,z \
+    --volume %S/state/overrides/bbb-web-entrypoint.sh:/bbb-web-entrypoint.sh:ro,z \
+    --volume %S/state/overrides/internal.crt:/usr/local/share/ca-certificates/bigbluebutton-internal.crt:ro,z \
+    --entrypoint=/bbb-web-entrypoint.sh \
     ${BBB_DOCKER_WEB_IMAGE}
 ExecStartPost=/usr/bin/bash -c "while ! podman exec bbb-web-app wget --no-proxy --quiet --tries=1 --spider http://127.0.0.1:8090/bigbluebutton/api; do sleep 5; done"
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-web-app.ctr-id -t 3

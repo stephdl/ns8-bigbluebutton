@@ -26,6 +26,9 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/nginx-app.pid \
     --volume %S/state/overrides/nginx.conf:/etc/nginx/nginx.conf:ro,z \
     --volume %S/state/overrides/internal.crt:/etc/nginx/internal/internal.crt:ro,z \
     --volume %S/state/overrides/internal.key:/etc/nginx/internal/internal.key:ro,z \
+    --volume %S/state/overrides/default.pdf:/www/default.pdf:ro,z \
+    --volume %S/state/overrides/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro,z \
+    --entrypoint=/nginx-entrypoint.sh \
     --tmpfs /tmp \
     ${BBB_DOCKER_NGINX_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/nginx-app.ctr-id -t 10
