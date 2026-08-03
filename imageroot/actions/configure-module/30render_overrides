@@ -8,9 +8,9 @@
 #
 # Render state/overrides/, then report on the certificate Traefik serves.
 #
-# The rendering is bin/render-overrides, shared with update-module.d. Only the
-# certificate check lives here: it needs Traefik listening and it writes to
-# state/environment, so it belongs to configuring rather than to rendering.
+# The rendering is bin/render-overrides, shared with the pod unit's ExecStartPre.
+# Only the certificate check lives here: it needs Traefik listening and it writes
+# to state/environment, so it belongs to configuring rather than to rendering.
 #
 
 import os
