@@ -44,10 +44,11 @@ EnvironmentFile=%S/state/environment
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/bigbluebutton.pid %t/bigbluebutton.pod-id
-# Render state/overrides/ before anything mounts from it -- every other unit is
-# After= this one. Belt and braces: configure-module and update-module.d render
-# too, but podman answers a missing bind mount source by creating a directory,
-# and an entrypoint mounted that way crash-loops.
+# Render state/overrides/ before anything mounts from it. This is what covers the
+# update path, where nothing else renders, and it reaches every container because
+# they are all After= this unit -- so do not drop that ordering. podman answers a
+# missing bind mount source by creating a directory, and an entrypoint mounted
+# that way crash-loops.
 ExecStartPre=runagent render-overrides
 ExecStartPre=/usr/bin/podman pod create \
     --infra-conmon-pidfile %t/bigbluebutton.pid \

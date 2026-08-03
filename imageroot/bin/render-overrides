@@ -18,8 +18,10 @@
 # stale copy over a newer template would be a regression.
 #
 # Lives here because it has two callers that are peers, not layers: the
-# configure-module step and update-module.d/10overrides. Requires TRAEFIK_HOST
-# and the allocated ports, so callers must skip it before the first configure.
+# configure-module step and bigbluebutton.service's ExecStartPre. Reads
+# TRAEFIK_HOST and the allocated ports, and raises without them -- safe only
+# because the units are enabled by 80start_services, so the pod cannot start
+# before the first configure has written them.
 #
 
 import datetime
