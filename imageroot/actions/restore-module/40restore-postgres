@@ -25,14 +25,25 @@ set -a
 . ./passwords.env
 set +a
 
-mkdir -vp restore
+mkdir -vp restore/initdb
 
-# Recreate the two databases before loading into them.
-cp -v "${AGENT_INSTALL_DIR}/overrides/postgres-initdb.sh" restore/10-create-databases.sh
-chmod 755 restore/10-create-databases.sh
+# Recreate the databases before loading into them. This one does belong in
+# /docker-entrypoint-initdb.d: it only needs the temporary server the image's
+# entrypoint runs while initialising an empty data directory.
+cp -v "${AGENT_INSTALL_DIR}/overrides/postgres-initdb.sh" restore/initdb/10-create-databases.sh
+chmod 755 restore/initdb/10-create-databases.sh
 
-# One script per dump. pg_restore reads from a file rather than stdin here,
-# because two dumps cannot share a single standard input.
+# The restore does not. It used to, and ended with docker_temp_server_stop to
+# make the container exit -- a call that only exists as a shell function inside
+# the entrypoint, and the entrypoint *executes* an init script that carries the
+# exec bit rather than sourcing it. The child shell has no such function, so the
+# step died on "docker_temp_server_stop: command not found" after every database
+# had already been restored: data in place, action reported failed, cleanup never
+# reached. Before the search_path fix it never got that far, which is why the
+# call looked harmless.
+#
+# So the container is started detached and stopped once the restore has run,
+# rather than being asked to end itself from inside a hook.
 #
 # The dump is converted to SQL and piped through psql rather than replayed
 # directly, for one substitution. pg_dump emits
@@ -60,6 +71,9 @@ chmod 755 restore/10-create-databases.sh
 # set_config and setval calls would otherwise fill the journal with result rows;
 # errors go to standard error and are kept.
 cat - >restore/20-restore.sh <<'EOS'
+#!/bin/bash
+# bash, not sh: pipefail. The image's own entrypoint is #!/usr/bin/env bash, so
+# it is there.
 set -e -o pipefail
 for db in bbb_graphql hasura_app greenlight; do
     echo "Restoring ${db}"
@@ -67,14 +81,14 @@ for db in bbb_graphql hasura_app greenlight; do
         | sed "s/set_config('search_path', '', false)/set_config('search_path', 'public', false)/" \
         | psql -v ON_ERROR_STOP=1 -U postgres -q -d "${db}" >/dev/null
 done
-docker_temp_server_stop
 EOS
 chmod 755 restore/20-restore.sh
 
 podman run \
-    --rm \
+    --rm --detach \
     --network=none \
-    --volume=./restore:/docker-entrypoint-initdb.d/:Z \
+    --volume=./restore/initdb:/docker-entrypoint-initdb.d/:Z \
+    --volume=./restore/20-restore.sh:/restore.sh:ro,Z \
     --volume=.:/dumps:z \
     --volume=postgres-data:/var/lib/postgresql/data:Z \
     --replace --name=restore_db \
@@ -82,7 +96,36 @@ podman run \
     --env POSTGRES_PASSWORD="${POSTGRES_PASSWORD}" \
     --env POSTGRES_MULTIPLE_DATABASES=bbb_graphql,hasura_app,greenlight \
     --env TZ=UTC \
-    "${POSTGRES_IMAGE}"
+    "${POSTGRES_IMAGE}" >/dev/null
+
+# TCP is the signal that initialisation is over. While the entrypoint runs
+# initdb and the scripts above, its temporary server listens on the Unix socket
+# only; 5432 starts answering when it execs the real postgres, which it does
+# once every init script has completed. Measured: socket answers from 6s and TCP
+# from 15s on a data directory being created, and the database that an init
+# script creates appears in the same tick as TCP.
+deadline=$(( SECONDS + 180 ))
+until podman exec restore_db pg_isready -h 127.0.0.1 -q 2>/dev/null; do
+    if ! podman container exists restore_db; then
+        echo "the database container stopped while initialising:" 1>&2
+        podman logs restore_db 2>&1 | tail -30 1>&2 || true
+        exit 1
+    fi
+    if [ "${SECONDS}" -ge "${deadline}" ]; then
+        echo "the database did not finish initialising within 180s" 1>&2
+        podman logs restore_db 2>&1 | tail -30 1>&2
+        podman stop --time 20 restore_db >/dev/null || true
+        exit 1
+    fi
+    sleep 2
+done
+
+# Errors surface here rather than in a container's exit code.
+podman exec restore_db /restore.sh
+
+# Shut it down cleanly: this is the same cluster the module's own postgres-app
+# will open next, and a fast shutdown leaves it needing crash recovery.
+podman stop --time 60 restore_db >/dev/null
 
 # If the restore is successful, clean up
 rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump
