@@ -27,7 +27,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-graphql-server-app.pid \
     --health-cmd="curl -f http://localhost:8085/healthz" \
     ${BBB_DOCKER_GRAPHQL_SERVER_IMAGE}
 ExecStartPost=/usr/bin/bash -c "while ! podman exec bbb-graphql-server-app curl -sf http://localhost:8085/healthz >/dev/null; do sleep 2; done"
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-graphql-server-app.ctr-id -t 10
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-graphql-server-app.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-graphql-server-app.ctr-id
 SyslogIdentifier=%u
 PIDFile=%t/bbb-graphql-server-app.pid

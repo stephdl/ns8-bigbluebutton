@@ -21,7 +21,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-graphql-actions-app.pid \
     --pod-id-file %t/bigbluebutton.pod-id --replace -d --name bbb-graphql-actions-app \
     --env-file=%S/state/passwords.env \
     ${BBB_DOCKER_GRAPHQL_ACTIONS_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-graphql-actions-app.ctr-id -t 10
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-graphql-actions-app.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-graphql-actions-app.ctr-id
 SyslogIdentifier=%u
 PIDFile=%t/bbb-graphql-actions-app.pid

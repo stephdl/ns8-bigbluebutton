@@ -34,7 +34,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-web-app.pid \
     --volume %S/state/overrides/turn-stun-servers.xml:/etc/bigbluebutton/turn-stun-servers.xml.tmpl:ro,z \
     ${BBB_DOCKER_WEB_IMAGE}
 ExecStartPost=/usr/bin/bash -c "while ! podman exec bbb-web-app wget --no-proxy --quiet --tries=1 --spider http://127.0.0.1:8090/bigbluebutton/api; do sleep 5; done"
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-web-app.ctr-id -t 10
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-web-app.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-web-app.ctr-id
 SyslogIdentifier=%u
 PIDFile=%t/bbb-web-app.pid

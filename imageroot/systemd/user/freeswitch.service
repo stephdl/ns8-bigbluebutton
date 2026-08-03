@@ -63,7 +63,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/freeswitch.pid \
     --volume freeswitch-meetings:/var/freeswitch/meetings:z \
     --volume %S/state/overrides/freeswitch-entrypoint.sh:/entrypoint.sh:ro,z \
     ${BBB_DOCKER_FREESWITCH_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/freeswitch.ctr-id -t 10
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/freeswitch.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/freeswitch.ctr-id
 SyslogIdentifier=%u
 PIDFile=%t/freeswitch.pid
