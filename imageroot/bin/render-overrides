@@ -69,7 +69,7 @@ ENTRYPOINTS = (
     "freeswitch-entrypoint.sh",
     "greenlight-entrypoint.sh",
     "recordings-entrypoint.sh",
-    "nginx-entrypoint.sh",
+    "apps-akka-entrypoint.sh",
     "bbb-web-entrypoint.sh",
 )
 
