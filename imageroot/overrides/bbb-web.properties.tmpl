@@ -13,16 +13,11 @@ securitySalt={{ .Env.SHARED_SECRET }}
 
 redisHost=redis
 
-# Verbatim copy of the image's own template, with one line changed. Upstream
-# swings this property to raw.githubusercontent.com whenever
-# IGNORE_TLS_CERT_ERRORS is set, which makes every meeting create reach out to
-# the internet for the deck on any node with a self-signed certificate. Pinned
-# to the local copy instead: nginx-app serves the identical file from
-# /www/default.pdf, and configure-module's trust probe already relaxes
-# verification when the certificate cannot be validated.
+# Verbatim copy of the image's template, one line changed: upstream swings this
+# property to raw.githubusercontent.com whenever IGNORE_TLS_CERT_ERRORS is set,
+# fetching the deck over the internet on every meeting create. Pinned local.
 #
-# Because this is a copy, a key added to the upstream template will be lost
-# here silently. Re-diff it against the image on every BigBlueButton bump.
+# Being a copy, a key added upstream is lost here silently. Re-diff on every bump.
 beans.presentationService.defaultUploadedPresentation=${bigbluebutton.web.serverURL}/default.pdf
 
 learningDashboardEnabled={{ .Env.ENABLE_LEARNING_DASHBOARD }}

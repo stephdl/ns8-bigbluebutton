@@ -6,26 +6,15 @@
 #
 # Wraps /entrypoint.sh from the bbb-docker recordings image.
 #
-# The image ships a Ruby newer than its own scripts. File.exists? was removed
-# from Ruby, and the recording pipeline still calls it, so every recording dies
-# at the first worker that touches it:
+# The image ships a Ruby newer than its own scripts: File.exists? was removed from
+# the language and the recording pipeline still calls it, so every recording dies
+# in the sanity worker, leaves a .fail marker, and never reaches getRecordings --
+# the room's recordings list just stays empty.
 #
-#   ERROR -- : error in sanity check: undefined method `exists?' for File:Class
-#   .../core/scripts/sanity/sanity.rb:53:in `check_events_xml'
-#
-# The recording is archived, then the sanity worker leaves a .fail marker and
-# nothing else in the chain ever picks it up. Nothing is published, nothing
-# reaches getRecordings, and the room's recordings list stays empty with no
-# error surfaced anywhere the administrator would look.
-#
-# Patching in place rather than shipping copies of the scripts: they are
-# upstream code that changes between releases, and a rename that the language
-# itself forced is the whole of the difference. Once the image ships scripts
-# that no longer call it, these substitutions match nothing and cost nothing.
-#
-# rap-process-worker.rb matters as much as sanity.rb here. Fixing only the
-# sanity check would move the failure one stage down the pipeline rather than
-# clear it.
+# Patched in place rather than shipping copies: these are upstream scripts that
+# change between releases, and once they stop calling it the substitutions match
+# nothing. rap-process-worker.rb matters as much as sanity.rb -- fixing only the
+# sanity check moves the failure one stage down instead of clearing it.
 #
 
 for script in \

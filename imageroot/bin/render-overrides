@@ -17,11 +17,9 @@
 # They are NOT backed up: they are regenerated on every configure, so restoring a
 # stale copy over a newer template would be a regression.
 #
-# Lives here rather than inside configure-module because it has two callers that
-# are peers, not layers: the configure-module step and update-module.d/10overrides,
-# which has to re-render when an upgrade starts mounting a file the instance has
-# never rendered. Requires TRAEFIK_HOST and the allocated ports in
-# state/environment, so callers must skip it before the first configure.
+# Lives here because it has two callers that are peers, not layers: the
+# configure-module step and update-module.d/10overrides. Requires TRAEFIK_HOST
+# and the allocated ports, so callers must skip it before the first configure.
 #
 
 import datetime
@@ -53,12 +51,9 @@ VERBATIM = (
     "bbb-apps-akka.conf",
     "webrtc-sfu.nginx",
     "nginx-default.conf",
-    # nginx-default.conf serves this at /default.pdf, and bbb-web fetches that
-    # URL as every room's first slide. Upstream leaves the bind mount pointing
-    # at /dev/null unless the operator supplies a file, which means no slide and
-    # therefore no whiteboard surface: tldraw only draws over a presentation.
-    # This is BigBlueButton's own deck, byte for byte, so a room here opens the
-    # same way it does on a native install.
+    # nginx serves this at /default.pdf and bbb-web fetches it as every room's
+    # first slide. Without it there is no slide, and tldraw only draws over a
+    # presentation. BigBlueButton's own deck, byte for byte.
     "default.pdf",
     # Pins the presentation URL to the local copy above. See the file itself.
     "bbb-web.properties.tmpl",
@@ -119,23 +114,15 @@ with os.fdopen(gl_fd, "w") as fp:
 #
 # The certificate the pod answers with for its own name.
 #
-# Greenlight calls the API over the site's public name -- it has to, because the
-# same value becomes the join URL handed to the browser. Ruby therefore
-# validates whatever certificate answers, and on a node without a publicly
-# issued one that fails on the name, not merely on the issuer: trusting a
-# certificate issued for a different host changes nothing. bbb-web fetches the
-# default presentation over that same name and has the same problem.
+# Greenlight and bbb-web both call the site's public name, so they validate
+# whatever certificate answers -- and on a node without a public one that fails on
+# the name, not just the issuer. Traefik cannot supply it: its upload-certificate
+# action rejects a self-signed certificate unless the whole instance switches to
+# selfsign verification, a node-wide policy not ours to change.
 #
-# Traefik cannot supply one. Its upload-certificate action rejects a
-# self-signed certificate unless the whole instance is switched to selfsign
-# verification, which is a node-wide policy this module has no business
-# changing.
-#
-# So the pod answers for itself: nginx serves this certificate on the pod's own
-# 443, the containers that need it resolve the public name to 127.0.0.1, and this
-# certificate sits in their trust store. Name and issuer both check out, with or
-# without Let's Encrypt. None of it touches the browser, which still reaches
-# Traefik on the real 443.
+# So the pod answers for itself: nginx serves this on the pod's own 443, the
+# containers resolve the public name to 127.0.0.1, and this sits in their trust
+# store. The browser is untouched and still reaches Traefik on the real 443.
 #
 internal_crt = os.path.join(dst_dir, "internal.crt")
 internal_key = os.path.join(dst_dir, "internal.key")

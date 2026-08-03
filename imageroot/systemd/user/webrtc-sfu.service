@@ -4,34 +4,21 @@
 #
 
 #
-# mediasoup SFU. Runs in the HOST network namespace, not in the pod: WebRTC
-# media must bind the node's real addresses, and routing it through
-# slirp4netns port forwarding would add latency and CPU on every RTP packet.
+# mediasoup SFU. HOST network namespace, not the pod: WebRTC media must bind the
+# node's real addresses, and slirp4netns forwarding would cost latency and CPU on
+# every RTP packet.
 #
-# Consequences, both recorded in docs/packaging-analysis.md section 7:
-#   - this container can reach everything on the node's loopback, including the
-#     node's own Redis on 127.0.0.1:6379 which holds cluster state;
-#   - seccomp=unconfined removes syscall filtering for the single most
-#     attacker-reachable component in the stack.
+# Security consequences, both from upstream (docker-compose.tmpl.yml:255-259) and
+# both recorded in docs/packaging-analysis.md section 7: this container reaches
+# everything on the node's loopback, including the cluster Redis on 6379, and
+# seccomp=unconfined drops syscall filtering on the most attacker-reachable
+# component in the stack. It is unconfined for io_uring, which the default podman
+# seccomp profile blocks.
 #
-# Both come from upstream (docker-compose.tmpl.yml:255-259) and exist for
-# io_uring, which the default podman seccomp profile blocks.
-#
-# The memlock limit is NOT raised here, and does not need to be. A rootless
-# process cannot raise its RLIMIT_MEMLOCK hard limit anyway (--ulimit can only
-# lower it), but mediasoup handles the shortfall itself: on ENOMEM from
-# io_uring_register_buffers it logs the rlimit values and disables zero copy
-# rather than failing, and only non-ENOMEM errors are fatal
-# (mediasoup worker/src/DepLibUring.cpp:335-370).
-#
-# The arithmetic says it should not even come to that: QueueDepth 4096 x
-# SendBufferSize 1500 is 5.9 MB per worker process (DepLibUring.hpp:31-32),
-# against the 8 MB that systemd's DefaultLimitMEMLOCK gives each user service.
-#
-# If zero copy ever needs to be off deterministically, mediasoup takes a
-# disableLiburing worker option and bbb-webrtc-sfu passes mediasoup.worker
-# through to createWorker() verbatim, so it belongs in the mounted config
-# rather than here.
+# No memlock limit is set and none is needed: a rootless process cannot raise its
+# hard limit anyway, and mediasoup disables zero copy on ENOMEM rather than
+# failing. To turn zero copy off deterministically, use mediasoup's
+# disableLiburing option in the mounted config, not a limit here.
 #
 
 [Unit]

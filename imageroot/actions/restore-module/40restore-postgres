@@ -14,10 +14,6 @@ set -e -o pipefail
 exec 1>&2 # Redirect any output to the journal (stderr)
 
 # Nothing to do on a clone: clone-module gets a fresh database and no dumps.
-#
-# greenlight is the one to test for. It carries the rooms, the accounts and the
-# recording metadata, so a backup without it is not a backup -- whereas
-# bbb_graphql, which this used to test, is no longer dumped at all.
 if [ ! -f greenlight.pg_dump ]; then
     echo "No dump found, skipping database restore"
     exit 0
@@ -31,54 +27,22 @@ set +a
 
 mkdir -vp restore/initdb
 
-# Recreate the databases before loading into them. This one does belong in
-# /docker-entrypoint-initdb.d: it only needs the temporary server the image's
-# entrypoint runs while initialising an empty data directory.
+# Recreate the databases before loading into them. This one belongs in
+# /docker-entrypoint-initdb.d; the restore below does not.
 cp -v "${AGENT_INSTALL_DIR}/overrides/postgres-initdb.sh" restore/initdb/10-create-databases.sh
 chmod 755 restore/initdb/10-create-databases.sh
 
-# The restore does not. It used to, and ended with docker_temp_server_stop to
-# make the container exit -- a call that only exists as a shell function inside
-# the entrypoint, and the entrypoint *executes* an init script that carries the
-# exec bit rather than sourcing it. The child shell has no such function, so the
-# step died on "docker_temp_server_stop: command not found" after every database
-# had already been restored: data in place, action reported failed, cleanup never
-# reached. Before the search_path fix it never got that far, which is why the
-# call looked harmless.
+# It runs through psql rather than pg_restore for one substitution: pg_dump emits
+# `set_config('search_path', '', false)` and
+# schema-qualifies its own output, but not function bodies it carries across --
+# an unqualified call inside a generated column then resolves against nothing and
+# the table is never created. Restoring into public instead is enough.
 #
-# So the container is started detached and stopped once the restore has run,
-# rather than being asked to end itself from inside a hook.
-#
-# The dump is converted to SQL and piped through psql rather than replayed
-# directly, for one substitution. pg_dump emits
-#
-#     SELECT pg_catalog.set_config('search_path', '', false);
-#
-# and schema-qualifies everything it writes, which is safe for its own output but
-# not for function bodies it merely carries across. BigBlueButton declares
-#
-#     immutable_lower_unaccent(text) AS SELECT lower(unaccent('unaccent', $1))
-#
-# with unaccent unqualified, and the user table has ten columns GENERATED ALWAYS
-# from it. Creating that table inlines the function, which resolves unaccent
-# against the session search_path -- empty -- and fails. The table is never
-# created, and every foreign key pointing at it fails in turn: 67 errors, and a
-# database missing 22 tables including public.user.
-#
-# That was bbb_graphql, which is no longer dumped at all. The substitution stays
-# as insurance: nothing about it is specific to that schema, and the next upstream
-# function declared the same way would fail the same silent way. Restoring into
-# public rather than into nothing leaves the statement's intent intact.
-#
-# ON_ERROR_STOP because the old form ignored all 67 errors and reported failure
-# only from pg_restore's exit code, which is how a database could have come back
-# quietly incomplete. psql's standard output is dropped because the dump's own
-# set_config and setval calls would otherwise fill the journal with result rows;
-# errors go to standard error and are kept.
+# ON_ERROR_STOP because pg_restore's exit code alone let a database come back
+# quietly incomplete. psql's stdout is dropped: the dump's own set_config and
+# setval calls would fill the journal with result rows.
 cat - >restore/20-restore.sh <<'EOS'
 #!/bin/bash
-# bash, not sh: pipefail. The image's own entrypoint is #!/usr/bin/env bash, so
-# it is there.
 set -e -o pipefail
 for db in hasura_app greenlight; do
     echo "Restoring ${db}"
@@ -89,9 +53,8 @@ done
 EOS
 chmod 755 restore/20-restore.sh
 
-# bbb_graphql stays in POSTGRES_MULTIPLE_DATABASES although it is no longer
-# dumped: the empty database is what the module's own postgres-app starts with,
-# so creating it here keeps a restored data directory identical to a fresh one.
+# bbb_graphql is still created, though no longer dumped: a restored data
+# directory has to look like a fresh one.
 podman run \
     --rm --detach \
     --network=none \
@@ -106,12 +69,9 @@ podman run \
     --env TZ=UTC \
     "${POSTGRES_IMAGE}" >/dev/null
 
-# TCP is the signal that initialisation is over. While the entrypoint runs
-# initdb and the scripts above, its temporary server listens on the Unix socket
-# only; 5432 starts answering when it execs the real postgres, which it does
-# once every init script has completed. Measured: socket answers from 6s and TCP
-# from 15s on a data directory being created, and the database that an init
-# script creates appears in the same tick as TCP.
+# TCP is the signal that initialisation is over: the entrypoint's temporary
+# server listens on the Unix socket only, and 5432 starts answering when it execs
+# the real postgres, after the last init script.
 deadline=$(( SECONDS + 180 ))
 until podman exec restore_db pg_isready -h 127.0.0.1 -q 2>/dev/null; do
     if ! podman container exists restore_db; then
@@ -135,7 +95,6 @@ podman exec restore_db /restore.sh
 # will open next, and a fast shutdown leaves it needing crash recovery.
 podman stop --time 60 restore_db >/dev/null
 
-# If the restore is successful, clean up. bbb_graphql.pg_dump is named although
-# it is no longer produced: a backup taken by an earlier version still carries
-# one, and nothing else would clear it.
+# If the restore is successful, clean up. bbb_graphql.pg_dump is named because a
+# backup taken by an earlier version still carries one.
 rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump

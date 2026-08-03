@@ -10,20 +10,13 @@ set -e
 exec 1>&2
 
 #
-# Every unit is named explicitly, on purpose.
+# Every unit is named explicitly: systemd does NOT cascade a restart from the pod
+# unit to the containers that joined it, so restarting bigbluebutton.service alone
+# brings the pod up and leaves all sixteen containers down.
 #
-# systemd does NOT cascade a restart from the pod unit to the containers that
-# joined it: `systemctl --user restart bigbluebutton.service` on its own brings
-# the pod back up and leaves all sixteen containers down. Listing them here is
-# what makes the Before=/After= ordering actually run.
-#
-# Order matters: pod, then datastores, then the services that depend on them,
-# then the two host-network media containers.
-#
-# restart, not try-restart: try-restart is a no-op on a unit that is not already
-# running, so on the first configure it enables all sixteen units and starts
-# none of them. update-module.d/20restart is the case where try-restart is
-# correct, because there the units are running.
+# restart, not try-restart, which is a no-op on a unit that is not running and
+# would start nothing on the first configure. update-module.d/20restart is where
+# try-restart is the correct one.
 #
 UNITS=(
     # pod, then its datastores
