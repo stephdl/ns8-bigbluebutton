@@ -13,12 +13,9 @@
 set -e
 exec 1>&2 # Redirect any output to the journal (stderr)
 
-# bbb_graphql is deliberately absent. bbb-graphql-server drops and recreates it
-# from its own bbb_schema.sql on every single start (/app/start.sh:14-21, no
-# condition), so anything captured here is destroyed seconds after a restore
-# brings it back -- measured: a restored meeting_clientSettings row was gone once
-# the stack came up. It holds live meeting state, which apps-akka rebuilds per
-# meeting anyway. hasura_app is different: start.sh creates it only when absent.
+# bbb_graphql is deliberately absent: bbb-graphql-server drops and recreates it
+# from its own schema on every start, so a restored copy dies seconds later.
+# hasura_app is different -- start.sh creates that one only when absent.
 #
 # Custom format so pg_restore can be used on the way back in.
 for db in hasura_app greenlight; do

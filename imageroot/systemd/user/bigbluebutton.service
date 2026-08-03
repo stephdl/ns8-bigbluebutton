@@ -44,21 +44,10 @@ EnvironmentFile=%S/state/environment
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/bigbluebutton.pid %t/bigbluebutton.pod-id
-# Render state/overrides/ before anything mounts from it. Every other unit is
-# After= this one, including the two host-network containers outside the pod, so
-# this covers all of them.
-#
-# configure-module and update-module.d/10overrides already render on their own,
-# and state/overrides/ survives a reboot, so nothing in the normal lifecycle
-# depends on this. It is here so the invariant belongs to starting the stack
-# rather than to every caller having remembered: podman answers a missing bind
-# mount source by creating a directory, so a container then starts against a
-# directory where it expected a file, and an entrypoint mounted that way fails
-# instantly into a Restart=always loop.
-#
-# Left to fail hard, as greenlight-app.service does with discover-smarthost: a
-# stack that refuses to start says so, where one started on half-rendered files
-# crashes somewhere else entirely.
+# Render state/overrides/ before anything mounts from it -- every other unit is
+# After= this one. Belt and braces: configure-module and update-module.d render
+# too, but podman answers a missing bind mount source by creating a directory,
+# and an entrypoint mounted that way crash-loops.
 ExecStartPre=runagent render-overrides
 ExecStartPre=/usr/bin/podman pod create \
     --infra-conmon-pidfile %t/bigbluebutton.pid \

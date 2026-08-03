@@ -17,11 +17,9 @@
 # They are NOT backed up: they are regenerated on every configure, so restoring a
 # stale copy over a newer template would be a regression.
 #
-# Lives here rather than inside configure-module because it has two callers that
-# are peers, not layers: the configure-module step and update-module.d/10overrides,
-# which has to re-render when an upgrade starts mounting a file the instance has
-# never rendered. Requires TRAEFIK_HOST and the allocated ports in
-# state/environment, so callers must skip it before the first configure.
+# Lives here because it has two callers that are peers, not layers: the
+# configure-module step and update-module.d/10overrides. Requires TRAEFIK_HOST
+# and the allocated ports, so callers must skip it before the first configure.
 #
 
 import datetime
@@ -53,12 +51,9 @@ VERBATIM = (
     "bbb-apps-akka.conf",
     "webrtc-sfu.nginx",
     "nginx-default.conf",
-    # nginx-default.conf serves this at /default.pdf, and bbb-web fetches that
-    # URL as every room's first slide. Upstream leaves the bind mount pointing
-    # at /dev/null unless the operator supplies a file, which means no slide and
-    # therefore no whiteboard surface: tldraw only draws over a presentation.
-    # This is BigBlueButton's own deck, byte for byte, so a room here opens the
-    # same way it does on a native install.
+    # nginx serves this at /default.pdf and bbb-web fetches it as every room's
+    # first slide. Without it there is no slide, and tldraw only draws over a
+    # presentation. BigBlueButton's own deck, byte for byte.
     "default.pdf",
     # Pins the presentation URL to the local copy above. See the file itself.
     "bbb-web.properties.tmpl",
