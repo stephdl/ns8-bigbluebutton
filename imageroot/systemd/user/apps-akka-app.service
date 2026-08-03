@@ -24,7 +24,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/apps-akka-app.pid \
     --volume freeswitch-meetings:/var/freeswitch/meetings:z \
     --volume %S/state/overrides/bbb-apps-akka.conf:/etc/bigbluebutton/bbb-apps-akka.conf.tmpl:ro,z \
     ${BBB_DOCKER_APPS_AKKA_IMAGE}
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/apps-akka-app.ctr-id -t 10
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/apps-akka-app.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/apps-akka-app.ctr-id
 SyslogIdentifier=%u
 PIDFile=%t/apps-akka-app.pid

@@ -24,7 +24,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-export-annotations-app.pid
     --tmpfs /tmp \
     ${BBB_DOCKER_BBB_EXPORT_ANNOTATIONS_IMAGE}
 
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-export-annotations-app.ctr-id -t 10
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/bbb-export-annotations-app.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/bbb-export-annotations-app.ctr-id
 SyslogIdentifier=%u
 PIDFile=%t/bbb-export-annotations-app.pid

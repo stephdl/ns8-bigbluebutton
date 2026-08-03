@@ -22,7 +22,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/fsesl-akka-app.pid \
     --env-file=%S/state/passwords.env \
     ${BBB_DOCKER_FSESL_AKKA_IMAGE}
 
-ExecStop=/usr/bin/podman stop --ignore --cidfile %t/fsesl-akka-app.ctr-id -t 10
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/fsesl-akka-app.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/fsesl-akka-app.ctr-id
 SyslogIdentifier=%u
 PIDFile=%t/fsesl-akka-app.pid
