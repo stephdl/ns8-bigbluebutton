@@ -4,8 +4,8 @@
 ported from the community [bigbluebutton/docker](https://github.com/bigbluebutton/docker)
 compose stack.
 
-Sixteen containers, a mediasoup SFU and a FreeSWITCH audio mixer, running
-rootless under podman.
+Seventeen containers, a mediasoup SFU and a FreeSWITCH audio mixer, running
+rootless under podman, with Greenlight as the front end.
 
 A detailed gap analysis of what the port required, with references into the
 upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md).
@@ -38,20 +38,61 @@ upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md)
   resolves that name to `127.0.0.1` and trusts it. Rooms therefore start with
   or without a publicly trusted certificate.
 
+## Sizing
+
+BigBlueButton asks for 8 cores and 16 GB for a server of this shape. The stack
+starts on less, and the first thing to run out is memory, not CPU.
+
+**What the stack costs before anybody joins.** Measured on an idle instance with
+two participants connected, the containers hold about 3.2 GB between them —
+`bbb-web` 759 MB, `apps-akka` 398 MB, `etherpad` 393 MB, `fsesl-akka` 355 MB,
+`webrtc-sfu` 353 MB, `bbb-graphql-server` 314 MB, the rest below 200 MB each.
+Three JVMs, a Hasura engine, a Rails application and a Node SFU are running
+whether or not a meeting is. On a 7.5 GB node that is 4.5 GB gone at rest.
+
+**Cores.** The SFU forwards every video stream to every subscriber without
+transcoding, and FreeSWITCH mixes the audio of everyone in a conference. Both
+scale with participants, and neither parallelises beyond the workers it starts —
+mediasoup runs one worker per core by default. Recording is the heaviest
+consumer of all, and it is off by default: turning it on cuts capacity
+noticeably, because the post-processing competes with the live meeting.
+
+**Bandwidth is rarely the wall**, thanks to `cameraQualityThresholds`. Every
+camera drops to 100 kbps once a meeting reaches 8 participants, then 90, 70, 50,
+40 and 30 kbps at 12, 15, 20, 25 and 30. A 20-person meeting showing five
+cameras each therefore costs about 20 × 5 × 50 kbps = 5 Mbps upstream, plus
+roughly 40 kbps of mixed audio per participant. Do not tune those thresholds
+away: an SFU multiplies every extra kbps by the number of receivers.
+
+**Ports are never the wall.** The allocated 8192 mediasoup ports allow 4096
+concurrent transports, since each binds one socket per announced address and this
+module declares two. Memory and CPU are exhausted long before that.
+
+**What to expect.** On 8 vCPU and 7.5 GB with recording off, somewhere around 25
+to 40 participants with cameras, or 60 to 80 with audio only. Treat that as an
+order of magnitude rather than a guarantee: it is reasoning from the measured
+idle footprint and from how the components scale, **not** the result of a load
+test. Doubling the memory to 16 GB moves the ceiling from RAM to CPU, which is
+where upstream's own recommendation puts it.
+
+The failure mode is not a refused connection. It is audio breaking up, cameras
+freezing and clients reconnecting, so watch memory and load before the meeting
+that matters rather than after.
+
 ## Architecture
 
-Thirteen containers share one rootless pod, reachable only through the two
+Fourteen containers share one rootless pod, reachable only through the two
 ports it publishes to the node loopback:
 
 | | Containers |
 |---|---|
-| **Pod** | postgres, redis, bbb-web, nginx, etherpad, bbb-pads, bbb-export-annotations, apps-akka, fsesl-akka, bbb-graphql-server, bbb-graphql-actions, bbb-graphql-middleware, recordings |
+| **Pod** | postgres, redis, bbb-web, nginx, greenlight, etherpad, bbb-pads, bbb-export-annotations, apps-akka, fsesl-akka, bbb-graphql-server, bbb-graphql-actions, bbb-graphql-middleware, recordings |
 | **Host network** | freeswitch, webrtc-sfu, bbb-webrtc-recorder |
 
 Inside the pod every peer resolves to `127.0.0.1` through `--add-host`.
 BigBlueButton is natively a single-host product; the `10.7.7.x` addressing in
 `bigbluebutton/docker` exists only to fit compose, and collapsing it back onto
-one loopback restores the upstream shape. None of the thirteen services collide
+one loopback restores the upstream shape. None of the fourteen services collide
 on a port number, so nothing had to be renumbered.
 
 FreeSWITCH is on the host network on purpose. It exchanges RTP with the SFU for
@@ -100,12 +141,13 @@ EOF
 Required:
 
 - `host` — fully qualified domain name for the web client
+- `public_address` — the address participants use to reach this node. It is
+  *announced* to WebRTC clients, not bound locally, so a public address is
+  correct even when the node sits behind NAT. Detected automatically when
+  omitted.
 
 HTTP is always redirected to HTTPS: BigBlueButton is unusable without it, so it
 is not offered as a choice.
-- `public_address` — the address participants use to reach this node. It is
-  *announced* to WebRTC clients, not bound locally, so a public address is
-  correct even when the node sits behind NAT.
 
 Optional:
 
@@ -162,8 +204,9 @@ and why:
   port nothing listens on. Use `turn_ext_server` instead.
 - **STUN is empty by default.** `sample.env` ships a third-party public STUN
   server, which would receive the IP address of every participant.
-- **Greenlight is not included.** BigBlueButton is exposed through its API; the
-  front end is a separate concern.
+- **Greenlight is the front end**, served at the site root, and the module seeds
+  a bootstrap administrator for it. The BigBlueButton API stays available for
+  another front end to drive.
 - **haproxy is replaced by Traefik**, and `periodic` by a systemd timer.
 - **Collabora, webhooks and the Prometheus exporter are not included.**
 - **SIP dial-in is disabled.** The `external-dialin` FreeSWITCH profile is
@@ -187,12 +230,14 @@ and why:
 
 ## Backup and restore
 
-Backed up: the recordings volume, both PostgreSQL databases, the raw recorder
-output, and the generated secrets.
+Backed up: the recordings volume, the `greenlight` and `hasura_app` PostgreSQL
+databases, the raw recorder output, and the generated secrets.
 
-Not backed up: Redis, and the per-meeting scratch volumes. Redis holds live
-meeting state and the recording job queues, which are meaningless across a
-restore.
+Not backed up: Redis, the per-meeting scratch volumes, and the `bbb_graphql`
+database. Redis holds live meeting state and the recording job queues, which are
+meaningless across a restore. `bbb_graphql` is skipped for a blunter reason:
+`bbb-graphql-server` drops and recreates it from its own schema on every start,
+so a copy would be restored and destroyed seconds later.
 
 **A restore therefore loses every in-progress meeting, and any recording still
 queued for processing at backup time.** The raw media survives, but the job that
@@ -231,9 +276,16 @@ Reach the FreeSWITCH console:
     source state/passwords.env
     podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD"
 
-Confirm the SFU is actually holding UDP ports in the allocated range:
+Confirm the SFU is actually holding UDP ports. Match on the process rather than
+on a port range: the sockets are unconnected, the local address is not always the
+same column, and the recorder holds ports of its own outside the mediasoup range.
 
-    ss -ulnp | awk '$5 ~ /:(2[0-9]{4}|3[0-9]{4})$/'
+    ss -uanp | grep mediasoup
+
+Expect nothing when no meeting is running — the ports are bound per stream and
+released when it ends. With one meeting, two participants and three cameras the
+count was 25, because each WebRTC transport binds one socket per entry in
+`MS_WEBRTC_LISTEN_IPS`, and this module declares two.
 
 ## Testing
 
