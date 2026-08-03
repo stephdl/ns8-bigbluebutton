@@ -23,6 +23,8 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/apps-akka-app.pid \
     --env=DOMAIN=${TRAEFIK_HOST} \
     --volume freeswitch-meetings:/var/freeswitch/meetings:z \
     --volume %S/state/overrides/bbb-apps-akka.conf:/etc/bigbluebutton/bbb-apps-akka.conf.tmpl:ro,z \
+    --volume %S/state/overrides/apps-akka-entrypoint.sh:/apps-akka-entrypoint.sh:ro,z \
+    --entrypoint=/apps-akka-entrypoint.sh \
     ${BBB_DOCKER_APPS_AKKA_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/apps-akka-app.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/apps-akka-app.ctr-id
