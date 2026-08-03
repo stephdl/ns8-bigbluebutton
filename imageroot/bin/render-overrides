@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Materialise the config overrides into state/overrides/, where the systemd
+# units bind-mount them into the containers.
+#
+# These are the files whose peer addresses are baked into the images as IP
+# literals, so the pod's --add-host entries cannot redirect them. Everything
+# that refers to peers by hostname is handled by --add-host instead and needs no
+# override. See docs/packaging-analysis.md section 4.
+#
+# They are NOT backed up: they are regenerated on every configure, so restoring a
+# stale copy over a newer template would be a regression.
+#
+# Lives here rather than inside configure-module because it has two callers that
+# are peers, not layers: the configure-module step and update-module.d/10overrides,
+# which has to re-render when an upgrade starts mounting a file the instance has
+# never rendered. Requires TRAEFIK_HOST and the allocated ports in
+# state/environment, so callers must skip it before the first configure.
+#
+
+import datetime
+import os
+import shutil
+import sys
+
+import agent
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
+
+install_dir = os.environ["AGENT_INSTALL_DIR"]
+state_dir = os.environ["AGENT_STATE_DIR"]
+
+src_dir = os.path.join(install_dir, "overrides")
+dst_dir = os.path.join(state_dir, "overrides")
+os.makedirs(dst_dir, exist_ok=True)
+
+# Ports were computed by create-module/05setenvs and live in state/environment.
+# agent.set_env() does not touch os.environ, so read the file back.
+env = agent.read_envfile(os.path.join(state_dir, "environment"))
+
+# Copied verbatim. Either they are dockerize templates resolved inside the
+# container, or they carry no runtime value at all.
+VERBATIM = (
+    "turn-stun-servers.xml",
+    "bbb-apps-akka.conf",
+    "webrtc-sfu.nginx",
+    "nginx-default.conf",
+)
+
+# Same, but mounted as a container entrypoint, so the exec bit matters.
+ENTRYPOINTS = (
+    "freeswitch-entrypoint.sh",
+    "greenlight-entrypoint.sh",
+    "recordings-entrypoint.sh",
+)
+
+for name in VERBATIM + ENTRYPOINTS:
+    shutil.copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
+
+for name in ENTRYPOINTS:
+    os.chmod(os.path.join(dst_dir, name), 0o755)
+
+# Substituted here: bbb-webrtc-sfu reads a plain YAML file with no templating
+# of its own, and it needs the allocated port numbers.
+placeholders = {
+    "@@REDIS_PORT@@": env["REDIS_PORT"],
+    "@@TRAEFIK_HOST@@": env["TRAEFIK_HOST"],
+    "@@MEDIASOUP_MIN_PORT@@": env["MEDIASOUP_MIN_PORT"],
+    "@@MEDIASOUP_MAX_PORT@@": env["MEDIASOUP_MAX_PORT"],
+}
+
+for name in ("webrtc-sfu-config.yaml", "nginx.conf"):
+    with open(os.path.join(src_dir, name + ".in")) as fp:
+        content = fp.read()
+    for key, value in placeholders.items():
+        content = content.replace(key, str(value))
+    agent.assert_exp("@@" not in content, f"unsubstituted placeholder in {name}")
+    with open(os.path.join(dst_dir, name), "w") as fp:
+        fp.write(content)
+
+# Greenlight's environment. Rendered rather than passed on the podman command
+# line because DATABASE_URL embeds the PostgreSQL password, which ps would show.
+pw = agent.read_envfile(os.path.join(state_dir, "passwords.env"))
+gl_path = os.path.join(dst_dir, "greenlight.env")
+gl_fd = os.open(gl_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(gl_fd, "w") as fp:
+    print(f"DATABASE_URL=postgres://postgres:{pw['POSTGRES_PASSWORD']}@127.0.0.1:5432/greenlight", file=fp)
+    print("REDIS_URL=redis://127.0.0.1:6379", file=fp)
+    # The public name, and it has to be: Greenlight uses this value both for
+    # its own API calls and to build the join URL it redirects the browser to.
+    # Anything node-local satisfies the first and breaks the second.
+    #
+    # That makes Ruby validate Traefik's certificate, which is why the one it
+    # serves is exported below and trusted by the container.
+    print(f"BIGBLUEBUTTON_ENDPOINT=https://{env['TRAEFIK_HOST']}/bigbluebutton/api", file=fp)
+    print(f"BIGBLUEBUTTON_SECRET={pw['SHARED_SECRET']}", file=fp)
+    print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
+    print("RELATIVE_URL_ROOT=/", file=fp)
+
+#
+# The certificate the pod answers with for its own name.
+#
+# Greenlight calls the API over the site's public name -- it has to, because the
+# same value becomes the join URL handed to the browser. Ruby therefore
+# validates whatever certificate answers, and on a node without a publicly
+# issued one that fails on the name, not merely on the issuer: trusting a
+# certificate issued for a different host changes nothing.
+#
+# Traefik cannot supply one. Its upload-certificate action rejects a
+# self-signed certificate unless the whole instance is switched to selfsign
+# verification, which is a node-wide policy this module has no business
+# changing.
+#
+# So the pod answers for itself: nginx serves this certificate on the pod's own
+# 443, the Greenlight container resolves the public name to 127.0.0.1, and this
+# certificate sits in its CA store. Name and issuer both check out, with or
+# without Let's Encrypt. None of it touches the browser, which still reaches
+# Traefik on the real 443.
+#
+internal_crt = os.path.join(dst_dir, "internal.crt")
+internal_key = os.path.join(dst_dir, "internal.key")
+host = env["TRAEFIK_HOST"]
+
+
+def covers_host(path, name):
+    """True when the certificate on disk is still usable for this hostname."""
+    try:
+        with open(path, "rb") as fp:
+            cert = x509.load_pem_x509_certificate(fp.read())
+        if cert.not_valid_after_utc < datetime.datetime.now(datetime.timezone.utc):
+            return False
+        return name in cert.extensions.get_extension_for_class(
+            x509.SubjectAlternativeName).value.get_values_for_type(x509.DNSName)
+    except Exception:
+        return False
+
+
+# Renaming the site invalidates the certificate, so reissue when the name no
+# longer matches. Otherwise keep it: replacing it on every save would churn the
+# CA store for nothing.
+if not covers_host(internal_crt, host):
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, host)])
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        # Backdated an hour so a clock skew between pod and node cannot make a
+        # freshly issued certificate look not-yet-valid.
+        .not_valid_before(now - datetime.timedelta(hours=1))
+        .not_valid_after(now + datetime.timedelta(days=3650))
+        .add_extension(x509.SubjectAlternativeName([x509.DNSName(host)]), critical=False)
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .sign(key, hashes.SHA256())
+    )
+    key_fd = os.open(internal_key, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(key_fd, "wb") as fp:
+        fp.write(key.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+            serialization.NoEncryption(),
+        ))
+    with open(internal_crt, "wb") as fp:
+        fp.write(cert.public_bytes(serialization.Encoding.PEM))
+    print(f"issued an internal certificate for {host}", file=sys.stderr)
+
+# The site name is not redirected here. The containers that need it append the
+# entry to their own /etc/hosts at startup, because that file is generated by
+# podman and carries the pod's --add-host names. Mounting a replacement over it
+# drops them, and the resolver then falls through to DNS, where a search domain
+# and a wildcard record can answer for an internal name: on one node "redis"
+# resolved to a public address and the recording queue timed out talking to it.
+
+# Read by the postgres image's entrypoint to create the two BigBlueButton
+# databases on first start.
+initdb_dir = os.path.join(state_dir, "initdb.d")
+os.makedirs(initdb_dir, exist_ok=True)
+shutil.copyfile(
+    os.path.join(src_dir, "postgres-initdb.sh"),
+    os.path.join(initdb_dir, "10-create-databases.sh"),
+)
+os.chmod(os.path.join(initdb_dir, "10-create-databases.sh"), 0o755)
+
+print(f"Rendered overrides in {dst_dir}", file=sys.stderr)

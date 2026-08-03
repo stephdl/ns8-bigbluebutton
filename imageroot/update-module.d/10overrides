@@ -26,4 +26,4 @@ if ! grep -q '^TRAEFIK_HOST=' "${AGENT_STATE_DIR}/environment" 2>/dev/null; then
     exit 0
 fi
 
-exec "${AGENT_INSTALL_DIR}/actions/configure-module/30render_overrides"
+exec "${AGENT_INSTALL_DIR}/bin/render-overrides"
