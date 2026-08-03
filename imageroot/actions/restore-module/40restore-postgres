@@ -14,7 +14,11 @@ set -e -o pipefail
 exec 1>&2 # Redirect any output to the journal (stderr)
 
 # Nothing to do on a clone: clone-module gets a fresh database and no dumps.
-if [ ! -f bbb_graphql.pg_dump ]; then
+#
+# greenlight is the one to test for. It carries the rooms, the accounts and the
+# recording metadata, so a backup without it is not a backup -- whereas
+# bbb_graphql, which this used to test, is no longer dumped at all.
+if [ ! -f greenlight.pg_dump ]; then
     echo "No dump found, skipping database restore"
     exit 0
 fi
@@ -61,9 +65,10 @@ chmod 755 restore/initdb/10-create-databases.sh
 # created, and every foreign key pointing at it fails in turn: 67 errors, and a
 # database missing 22 tables including public.user.
 #
-# It works in normal operation because Hasura builds the schema with search_path
-# at its default. Only a restore hits it. Restoring into public rather than into
-# nothing is enough, and leaves the statement's intent intact.
+# That was bbb_graphql, which is no longer dumped at all. The substitution stays
+# as insurance: nothing about it is specific to that schema, and the next upstream
+# function declared the same way would fail the same silent way. Restoring into
+# public rather than into nothing leaves the statement's intent intact.
 #
 # ON_ERROR_STOP because the old form ignored all 67 errors and reported failure
 # only from pg_restore's exit code, which is how a database could have come back
@@ -75,7 +80,7 @@ cat - >restore/20-restore.sh <<'EOS'
 # bash, not sh: pipefail. The image's own entrypoint is #!/usr/bin/env bash, so
 # it is there.
 set -e -o pipefail
-for db in bbb_graphql hasura_app greenlight; do
+for db in hasura_app greenlight; do
     echo "Restoring ${db}"
     pg_restore --no-owner --no-privileges --file=- "/dumps/${db}.pg_dump" \
         | sed "s/set_config('search_path', '', false)/set_config('search_path', 'public', false)/" \
@@ -84,6 +89,9 @@ done
 EOS
 chmod 755 restore/20-restore.sh
 
+# bbb_graphql stays in POSTGRES_MULTIPLE_DATABASES although it is no longer
+# dumped: the empty database is what the module's own postgres-app starts with,
+# so creating it here keeps a restored data directory identical to a fresh one.
 podman run \
     --rm --detach \
     --network=none \
@@ -127,5 +135,7 @@ podman exec restore_db /restore.sh
 # will open next, and a fast shutdown leaves it needing crash recovery.
 podman stop --time 60 restore_db >/dev/null
 
-# If the restore is successful, clean up
+# If the restore is successful, clean up. bbb_graphql.pg_dump is named although
+# it is no longer produced: a backup taken by an earlier version still carries
+# one, and nothing else would clear it.
 rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump
