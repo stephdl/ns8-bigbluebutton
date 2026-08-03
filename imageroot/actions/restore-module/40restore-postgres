@@ -33,11 +33,39 @@ chmod 755 restore/10-create-databases.sh
 
 # One script per dump. pg_restore reads from a file rather than stdin here,
 # because two dumps cannot share a single standard input.
+#
+# The dump is converted to SQL and piped through psql rather than replayed
+# directly, for one substitution. pg_dump emits
+#
+#     SELECT pg_catalog.set_config('search_path', '', false);
+#
+# and schema-qualifies everything it writes, which is safe for its own output but
+# not for function bodies it merely carries across. BigBlueButton declares
+#
+#     immutable_lower_unaccent(text) AS SELECT lower(unaccent('unaccent', $1))
+#
+# with unaccent unqualified, and the user table has ten columns GENERATED ALWAYS
+# from it. Creating that table inlines the function, which resolves unaccent
+# against the session search_path -- empty -- and fails. The table is never
+# created, and every foreign key pointing at it fails in turn: 67 errors, and a
+# database missing 22 tables including public.user.
+#
+# It works in normal operation because Hasura builds the schema with search_path
+# at its default. Only a restore hits it. Restoring into public rather than into
+# nothing is enough, and leaves the statement's intent intact.
+#
+# ON_ERROR_STOP because the old form ignored all 67 errors and reported failure
+# only from pg_restore's exit code, which is how a database could have come back
+# quietly incomplete. psql's standard output is dropped because the dump's own
+# set_config and setval calls would otherwise fill the journal with result rows;
+# errors go to standard error and are kept.
 cat - >restore/20-restore.sh <<'EOS'
-set -e
+set -e -o pipefail
 for db in bbb_graphql hasura_app greenlight; do
     echo "Restoring ${db}"
-    pg_restore --no-owner --no-privileges -U postgres -d "${db}" "/dumps/${db}.pg_dump"
+    pg_restore --no-owner --no-privileges --file=- "/dumps/${db}.pg_dump" \
+        | sed "s/set_config('search_path', '', false)/set_config('search_path', 'public', false)/" \
+        | psql -v ON_ERROR_STOP=1 -U postgres -q -d "${db}" >/dev/null
 done
 docker_temp_server_stop
 EOS
