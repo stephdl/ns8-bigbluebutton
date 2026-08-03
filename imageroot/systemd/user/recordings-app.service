@@ -4,20 +4,14 @@
 #
 
 #
-# The recording pipeline: archive, sanity, process, publish, notify.
-#
-# It runs through a wrapper entrypoint because the image ships a Ruby that no
-# longer has File.exists?, which its own scripts still call. Without the
-# wrapper every recording stops at the sanity worker and nothing is ever
-# published. See overrides/recordings-entrypoint.sh.
+# The recording pipeline: archive, sanity, process, publish, notify. It runs
+# through a wrapper entrypoint for a Ruby incompatibility -- see
+# overrides/recordings-entrypoint.sh.
 #
 # The last stage posts a recording-ready callback to Greenlight on the site's
-# public name, which is baked into each recording's metadata when the meeting
-# is created. That means validating the certificate answering for that name,
-# so this container gets the same treatment as Greenlight: the site name
-# resolves to the pod's own nginx, whose certificate is trusted here. Without
-# it the callback is refused, and a recording publishes correctly yet never
-# appears in any room's library.
+# public name, so it needs the same certificate treatment as Greenlight. Without
+# it the callback is refused and a recording publishes correctly yet never appears
+# in any room's library.
 #
 
 [Unit]

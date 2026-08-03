@@ -6,30 +6,19 @@
 #
 # Replaces /entrypoint.sh from alangecker/bbb-docker-freeswitch.
 #
-# Two differences from upstream, both required to run rootless inside a pod:
+# Three differences from upstream, all needed to run rootless in a pod:
 #
-# 1. The upstream entrypoint opens with an iptables block that flushes and
-#    re-adds INPUT rules for SIP port 5060. It cannot run here: the script is
-#    `bash -e`, so a failing iptables aborts before FreeSWITCH starts, and the
-#    rules would apply to the whole shared pod network namespace rather than to
-#    FreeSWITCH alone. SIP dial-in is out of scope for this module, so the block
-#    is dead code and is simply gone.
+# 1. The iptables block for SIP 5060 is gone. Under `bash -e` a failing iptables
+#    aborts before FreeSWITCH starts, and the rules would apply to the whole pod
+#    namespace. SIP dial-in is out of scope, so it is dead code.
 #
-# 2. Two config values are patched in place rather than shipped as full file
-#    copies, so upstream changes to those files are still picked up:
-#      - vars.xml.tmpl pins local_ip_v4 to the compose bridge address 10.7.7.10;
-#        here webrtc-sfu shares this namespace and reaches us on loopback.
-#      - switch.conf.xml defaults the RTP range to 16384-24576, which overlaps
-#        the NS8 port allocator span and is far wider than the
-#        SFU<->FreeSWITCH audio leg needs.
+# 2. local_ip_v4 and the RTP range are patched in place rather than shipped as
+#    file copies, so upstream changes still land. Upstream pins the compose bridge
+#    address; the RTP default 16384-24576 overlaps the NS8 allocator span.
 #
-# 3. The external-dialin SIP profile is removed. It binds port 5060, which on
-#    the host network namespace would collide with ns8-nethvoice-proxy on the
-#    same node. SIP dial-in is out of scope for this module, so the profile has
-#    no purpose here. The external profile, which carries the
-#    SIP-over-WebSocket transport the SFU actually uses, is left alone.
-#
-# The sounds-package logic below is kept verbatim from upstream.
+# 3. The external-dialin profile is removed: it binds 5060, which on the host
+#    namespace collides with ns8-nethvoice-proxy. The external profile, which
+#    carries the SIP-over-WebSocket transport the SFU uses, is left alone.
 #
 
 # Point FreeSWITCH at loopback: webrtc-sfu shares this network namespace and is

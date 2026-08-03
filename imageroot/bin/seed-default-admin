@@ -7,24 +7,18 @@
 
 #
 # Make sure the instance has an administrator, so somebody can get in.
+# Greenlight's bin/start migrates but never seeds, leaving the admin panel hidden
+# from everyone.
 #
-# Greenlight's bin/start runs db:create and db:migrate:with_data but never
-# db:seed, so a fresh instance has no administrator and the admin panel is
-# hidden from everyone.
+# Not through db:seed: Greenlight's seeds.rb calls User.create without the bang
+# and logs at debug, so a validation failure is silent and db:seed still exits 0.
+# rails runner gives a real exit code and the actual errors.
 #
-# Greenlight's own db/seeds.rb is not used to close that gap. It calls
-# User.create without the bang and reports through Rails.logger.debug, which is
-# below the production log level, so a validation failure is silent and db:seed
-# still exits 0. This creates the account through rails runner instead, which
-# gives a real exit code and the actual validation errors.
+# The password below ships with this module and is not a secret --
+# bin/check-default-admin reports it as in use until it is changed.
 #
-# The password below ships with this module, so it is not a secret and must not
-# be treated as one. The module reports it as in use -- see
-# bin/check-default-admin -- and the UI keeps saying so until it is changed.
-#
-# Only runs when the instance has no administrator at all, so it can never add a
-# second default account next to a real one, and deleting it once a real
-# administrator exists does not bring it back.
+# Only runs when there is no administrator at all, so it never sits next to a
+# real one and deleting it does not bring it back.
 #
 
 import json

@@ -4,16 +4,12 @@
 # Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Re-render state/overrides/ so an existing instance picks up templates and
-# generated files added since it was last configured.
+# Re-render state/overrides/ so an existing instance picks up files added since it
+# was last configured: update-module does not run configure-module, and an
+# upgraded instance mounting a new override would start containers whose bind
+# mount has no source.
 #
-# update-module does not run configure-module, and state/overrides/ is not
-# restored from backup either -- it is regenerated on every configure. So an
-# instance upgraded to a version that mounts a new override file would start
-# containers whose bind mount has no source, and podman fails them.
-#
-# Runs after 05secrets, which the render reads, and before 20restart, so the
-# services come back with the files already in place.
+# After 05secrets, which the render reads, and before 20restart.
 #
 
 set -e

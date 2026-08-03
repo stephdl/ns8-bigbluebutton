@@ -4,30 +4,19 @@
 #
 
 #
-# Greenlight, the BigBlueButton front end.
-#
-# Note what this implies: Greenlight holds user accounts, so identity lives in
-# this module rather than being kept out of it. Participants are no longer
-# pseudonymous by construction; if that property is needed, it has to come from
-# how Greenlight is configured or from a different front end.
+# Greenlight, the BigBlueButton front end. It holds user accounts, so identity
+# lives in this module: participants are no longer pseudonymous by construction.
 #
 # Its database URL carries the PostgreSQL password, so it is rendered into
-# state/overrides/greenlight.env at configure time rather than passed on the
-# podman command line where ps would show it.
+# state/overrides/greenlight.env rather than passed on the command line where ps
+# would show it.
 #
-# DOMAIN below is what makes the API reachable. Greenlight must call it on the
-# public name, since that same value becomes the join URL handed to the browser,
-# and Ruby then validates the certificate answering for that name. The entrypoint
-# appends the name to /etc/hosts pointing at 127.0.0.1, so the call goes to this
-# pod's own nginx, which serves a certificate configure-module issued for
-# exactly this name and mounted below into the CA store. Browsers are
-# unaffected: they resolve the name normally and still reach Traefik.
-#
-# The entrypoint appends rather than podman mounting a replacement file, because
-# the generated one carries the pod's --add-host names and losing them sends the
-# resolver to DNS. It is scoped to this container rather than set pod-wide
-# because apps-akka and bbb-web call the same host and validate it against a JVM
-# trust store this module does not manage.
+# DOMAIN must be the public name: the same value becomes the join URL handed to
+# the browser, and Ruby validates the certificate answering for it. The entrypoint
+# appends that name to /etc/hosts pointing at 127.0.0.1, so the call reaches this
+# pod's nginx and the certificate mounted below into the CA store. It appends
+# rather than mounting a replacement because the generated file carries the pod's
+# --add-host names. Browsers are unaffected and still reach Traefik.
 #
 
 [Unit]

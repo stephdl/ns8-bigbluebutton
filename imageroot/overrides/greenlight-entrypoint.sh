@@ -6,23 +6,18 @@
 #
 # Wraps ./bin/start from bigbluebutton/greenlight.
 #
-# Greenlight calls the BigBlueButton API over the site's public HTTPS name --
-# it has to, because the same value becomes the join URL it hands to the
-# browser, and a loopback address there is useless. Ruby therefore validates
-# the certificate answering for that name.
-#
-# The container resolves that name to 127.0.0.1, so the answer comes from this
-# pod's own nginx, presenting a certificate configure-module issued for exactly
-# this name. Trust it here and both the name and the issuer check out, whether
-# or not Traefik has a Let's Encrypt certificate for the site.
+# Greenlight calls the API over the site's public name -- the same value becomes
+# the join URL handed to the browser, so a loopback address is useless -- and Ruby
+# validates whatever certificate answers. The container resolves that name to
+# 127.0.0.1 and is shown the internal certificate, so trusting it here works with
+# or without Let's Encrypt.
 #
 
 set -e
 
 # Appended, never mounted over: podman generates this file with the pod's
-# --add-host names, and replacing it drops them. The resolver then falls
-# through to DNS, where a search domain and a wildcard record can answer for an
-# internal name with a public address.
+# --add-host names, and replacing it sends the resolver to DNS, where a wildcard
+# record can answer for an internal name with a public address.
 if [ -n "$DOMAIN" ] && ! grep -q "[[:space:]]${DOMAIN}\$" /etc/hosts; then
     printf '127.0.0.1\t%s\n' "$DOMAIN" >> /etc/hosts
 fi

@@ -114,23 +114,15 @@ with os.fdopen(gl_fd, "w") as fp:
 #
 # The certificate the pod answers with for its own name.
 #
-# Greenlight calls the API over the site's public name -- it has to, because the
-# same value becomes the join URL handed to the browser. Ruby therefore
-# validates whatever certificate answers, and on a node without a publicly
-# issued one that fails on the name, not merely on the issuer: trusting a
-# certificate issued for a different host changes nothing. bbb-web fetches the
-# default presentation over that same name and has the same problem.
+# Greenlight and bbb-web both call the site's public name, so they validate
+# whatever certificate answers -- and on a node without a public one that fails on
+# the name, not just the issuer. Traefik cannot supply it: its upload-certificate
+# action rejects a self-signed certificate unless the whole instance switches to
+# selfsign verification, a node-wide policy not ours to change.
 #
-# Traefik cannot supply one. Its upload-certificate action rejects a
-# self-signed certificate unless the whole instance is switched to selfsign
-# verification, which is a node-wide policy this module has no business
-# changing.
-#
-# So the pod answers for itself: nginx serves this certificate on the pod's own
-# 443, the containers that need it resolve the public name to 127.0.0.1, and this
-# certificate sits in their trust store. Name and issuer both check out, with or
-# without Let's Encrypt. None of it touches the browser, which still reaches
-# Traefik on the real 443.
+# So the pod answers for itself: nginx serves this on the pod's own 443, the
+# containers resolve the public name to 127.0.0.1, and this sits in their trust
+# store. The browser is untouched and still reaches Traefik on the real 443.
 #
 internal_crt = os.path.join(dst_dir, "internal.crt")
 internal_key = os.path.join(dst_dir, "internal.key")

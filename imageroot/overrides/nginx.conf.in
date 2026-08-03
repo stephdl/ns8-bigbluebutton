@@ -2,20 +2,15 @@
 # /etc/nginx/nginx.conf.
 #
 # Replaces the file from alangecker/bbb-docker-nginx. The only change is the
-# 48083 server block, whose redirects pointed at the hardcoded compose address
-# 10.7.7.35 and now point at this deployment's own hostname.
+# 48083 server block, redirecting to this deployment's hostname instead of the
+# hardcoded compose address. That block serves BIGBLUEBUTTON_ENDPOINT's two
+# incompatible uses: it answers /bigbluebutton/api locally over HTTP for
+# Greenlight's own calls, and redirects /join to the public HTTPS URL for the
+# browser, which cannot reach 127.0.0.1 on the server.
 #
-# That block is what lets Greenlight work behind a certificate it does not
-# trust. Greenlight uses BIGBLUEBUTTON_ENDPOINT for two different things: its
-# own server-to-server API calls, and the join URL it hands to the browser. A
-# plain-loopback endpoint fixes the first and breaks the second, since the
-# browser cannot reach 127.0.0.1 on the server. Port 48083 serves both: it
-# answers /bigbluebutton/api locally over HTTP, and redirects /join out to the
-# public HTTPS URL.
-#
-# Values wrapped in double at-signs are substituted by configure-module, which
-# then asserts that none are left. Do not write that marker anywhere it is not
-# meant to be replaced, comments included: the assertion reads the whole file.
+# Values in double at-signs are substituted by configure-module, which asserts
+# none are left. Never write that marker where it is not meant to be replaced,
+# comments included: the assertion reads the whole file.
 
 user  nginx;
 worker_processes  auto;
