@@ -39,12 +39,30 @@ config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
 # Checked live rather than cached: the administrator changes this password in
 # Greenlight, which has no way to tell the module, and a warning that lingers
 # after it has been dealt with teaches people to ignore warnings.
+#
+# The probe waits, because during a configure-module the containers it needs are
+# absent for over a minute and it used to answer "false" for the whole window --
+# so opening this page while the stack restarted said the shipped password had
+# been dealt with, and only a reload told the truth.
+#
+# The budget is bounded rather than long enough to cover a full restart: this
+# action is what the settings page opens on, and a page that hangs for a minute
+# is its own defect. Past the budget the answer is unknown, and unknown warns.
+# A password that ships with the module is too serious to hide on a maybe; the
+# warning clears itself on the next load, once the check can run.
 try:
-    probe = subprocess.run(["check-default-admin"], capture_output=True,
-                           text=True, timeout=30)
-    config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
-except Exception:
-    config["default_admin_password_in_use"] = False
+    probe = subprocess.run(["check-default-admin", "--wait", "25"],
+                           capture_output=True, text=True, timeout=40)
+    if probe.returncode == 0:
+        config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
+    else:
+        config["default_admin_password_in_use"] = True
+        print(agent.SD_WARNING + "could not check the administrator password, "
+              "reporting it as unchanged: " + probe.stderr.strip(), file=sys.stderr)
+except Exception as ex:
+    config["default_admin_password_in_use"] = True
+    print(agent.SD_WARNING + f"the administrator password check failed: {ex}",
+          file=sys.stderr)
 
 # Read-only. False means Traefik serves a certificate issued for some other
 # name, which breaks Greenlight and denies the browser microphone and camera.
