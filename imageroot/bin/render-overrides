@@ -53,6 +53,15 @@ VERBATIM = (
     "bbb-apps-akka.conf",
     "webrtc-sfu.nginx",
     "nginx-default.conf",
+    # nginx-default.conf serves this at /default.pdf, and bbb-web fetches that
+    # URL as every room's first slide. Upstream leaves the bind mount pointing
+    # at /dev/null unless the operator supplies a file, which means no slide and
+    # therefore no whiteboard surface: tldraw only draws over a presentation.
+    # This is BigBlueButton's own deck, byte for byte, so a room here opens the
+    # same way it does on a native install.
+    "default.pdf",
+    # Pins the presentation URL to the local copy above. See the file itself.
+    "bbb-web.properties.tmpl",
 )
 
 # Same, but mounted as a container entrypoint, so the exec bit matters.
@@ -60,6 +69,8 @@ ENTRYPOINTS = (
     "freeswitch-entrypoint.sh",
     "greenlight-entrypoint.sh",
     "recordings-entrypoint.sh",
+    "nginx-entrypoint.sh",
+    "bbb-web-entrypoint.sh",
 )
 
 for name in VERBATIM + ENTRYPOINTS:
@@ -112,7 +123,8 @@ with os.fdopen(gl_fd, "w") as fp:
 # same value becomes the join URL handed to the browser. Ruby therefore
 # validates whatever certificate answers, and on a node without a publicly
 # issued one that fails on the name, not merely on the issuer: trusting a
-# certificate issued for a different host changes nothing.
+# certificate issued for a different host changes nothing. bbb-web fetches the
+# default presentation over that same name and has the same problem.
 #
 # Traefik cannot supply one. Its upload-certificate action rejects a
 # self-signed certificate unless the whole instance is switched to selfsign
@@ -120,8 +132,8 @@ with os.fdopen(gl_fd, "w") as fp:
 # changing.
 #
 # So the pod answers for itself: nginx serves this certificate on the pod's own
-# 443, the Greenlight container resolves the public name to 127.0.0.1, and this
-# certificate sits in its CA store. Name and issuer both check out, with or
+# 443, the containers that need it resolve the public name to 127.0.0.1, and this
+# certificate sits in their trust store. Name and issuer both check out, with or
 # without Let's Encrypt. None of it touches the browser, which still reaches
 # Traefik on the real 443.
 #
@@ -145,7 +157,7 @@ def covers_host(path, name):
 
 # Renaming the site invalidates the certificate, so reissue when the name no
 # longer matches. Otherwise keep it: replacing it on every save would churn the
-# CA store for nothing.
+# trust stores for nothing.
 if not covers_host(internal_crt, host):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, host)])
