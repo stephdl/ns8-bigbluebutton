@@ -7,7 +7,6 @@
   "status": {
     "title": "Egoera",
     "app_instance": "Aplikazioaren instantzia",
-    "services": "Zerbitzua | Zerbitzuak",
     "app_images": "Aplikazioaren irudia | Aplikazioaren irudiak",
     "app_volumes": "Aplikazioaren bolumena | Aplikazioaren bolumenak",
     "installation_node": "Instalazio-nodoa",
@@ -17,6 +16,8 @@
     "created": "Sortuta",
     "mount": "Muntatze-puntua",
     "no_services": "Zerbitzurik ez",
+    "failed_services": "Hutsegindako zerbitzuak",
+    "all_services_running": "Zerbitzu guztiak martxan daude",
     "no_images": "Irudirik ez",
     "no_volumes": "Bolumenik ez",
     "bigbluebutton_webapp": "BigBlueButton",

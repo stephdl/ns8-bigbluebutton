@@ -7,7 +7,6 @@
   "status": {
     "title": "Status",
     "app_instance": "App-Instanz",
-    "services": "Dienst | Dienste",
     "app_images": "App-Abbild | App-Abbilder",
     "app_volumes": "App-Volume | App-Volumes",
     "installation_node": "Installationsknoten",
@@ -17,6 +16,8 @@
     "created": "Erstellt",
     "mount": "Einhängepunkt",
     "no_services": "Keine Dienste",
+    "failed_services": "Fehlgeschlagene Dienste",
+    "all_services_running": "Alle Dienste laufen",
     "no_images": "Keine Abbilder",
     "no_volumes": "Keine Volumes",
     "bigbluebutton_webapp": "BigBlueButton",
