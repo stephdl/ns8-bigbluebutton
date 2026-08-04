@@ -62,7 +62,7 @@
     "announce_alone": "Announce being alone in the conference",
     "recording": "Recording",
     "enable_recording": "Record meetings",
-    "enable_recording_tooltip": "Captures audio, video, chat, shared notes and presentations. Tell participants before you enable it.",
+    "enable_recording_tooltip": "Captures audio, video, chat, shared notes and presentations. Tell participants before you enable it. Room owners still need the recording permission in Greenlight.",
     "remove_old_recording": "Delete old recordings automatically",
     "recording_max_age_days": "Delete recordings after (days)",
     "recording_max_age_days_invalid": "Enter a whole number of days, at least 1",

@@ -62,7 +62,7 @@
     "announce_alone": "Anunciar estar solo en la conferencia",
     "recording": "Grabación",
     "enable_recording": "Grabar las reuniones",
-    "enable_recording_tooltip": "Captura audio, vídeo, chat, notas compartidas y presentaciones. Avisa a los participantes antes de habilitarla.",
+    "enable_recording_tooltip": "Captura audio, vídeo, chat, notas compartidas y presentaciones. Avisa a los participantes antes de habilitarla. Los propietarios de salas siguen necesitando el permiso de grabación en Greenlight.",
     "remove_old_recording": "Eliminar automáticamente las grabaciones antiguas",
     "recording_max_age_days": "Eliminar las grabaciones después de (días)",
     "recording_max_age_days_invalid": "Introduce un número entero de días, al menos 1",
