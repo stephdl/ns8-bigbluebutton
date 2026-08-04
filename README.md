@@ -162,7 +162,7 @@ Optional:
 | `sounds_language` | `en-us-callie` | Language of the spoken announcements. |
 | `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
-| `enable_learning_dashboard` | `true` | |
+| `enable_learning_dashboard` | `true` | Moderators can open a dashboard reporting each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link, not by role: whoever holds the link can read it. |
 
 ## First sign-in
 

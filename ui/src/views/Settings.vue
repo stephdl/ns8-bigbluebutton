@@ -204,6 +204,26 @@
               />
             </template>
 
+            <!-- learning analytics -->
+            <h4 class="mg-bottom">{{ $t("settings.analytics") }}</h4>
+            <NsToggle
+              value="enableLearningDashboard"
+              :label="$t('settings.enable_learning_dashboard')"
+              v-model="isLearningDashboardEnabled"
+              :disabled="stillLoading"
+              class="mg-bottom"
+            >
+              <template #tooltip>
+                {{ $t("settings.enable_learning_dashboard_tooltip") }}
+              </template>
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
+            </NsToggle>
+
             <!-- advanced options -->
             <cv-accordion ref="accordion" class="maxwidth mg-bottom">
               <cv-accordion-item :open="toggleAccordion[0]">
@@ -426,6 +446,7 @@ export default {
       stunServer: "",
       turnExtServer: "",
       isRecordingEnabled: false,
+      isLearningDashboardEnabled: true,
       isRemoveOldRecordingEnabled: false,
       recordingMaxAgeDays: "14",
       soundsLanguage: "en-us-callie",
@@ -582,6 +603,7 @@ export default {
       this.stunServer = config.stun_server;
       this.turnExtServer = config.turn_ext_server;
       this.isRecordingEnabled = config.enable_recording;
+      this.isLearningDashboardEnabled = config.enable_learning_dashboard;
       this.isRemoveOldRecordingEnabled = config.remove_old_recording;
       this.recordingMaxAgeDays = String(config.recording_max_age_days);
       this.soundsLanguage = config.sounds_language;
@@ -675,6 +697,7 @@ export default {
             stun_server: this.stunServer,
             turn_ext_server: this.turnExtServer,
             enable_recording: this.isRecordingEnabled,
+            enable_learning_dashboard: this.isLearningDashboardEnabled,
             remove_old_recording: this.isRemoveOldRecordingEnabled,
             recording_max_age_days: Number(this.recordingMaxAgeDays),
             sounds_language: this.soundsLanguage,

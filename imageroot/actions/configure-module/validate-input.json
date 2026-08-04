@@ -79,7 +79,7 @@
         "enable_learning_dashboard": {
             "type": "boolean",
             "title": "Enable learning dashboard",
-            "description": "Expose the learning analytics dashboard"
+            "description": "Let moderators open the learning analytics dashboard, which reports each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link rather than by role, so disable it where that activity data must not leave the moderators."
         },
         "sounds_language": {
             "type": "string",
