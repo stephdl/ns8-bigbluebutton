@@ -9,41 +9,41 @@
         <h2>{{ $t("settings.title") }}</h2>
       </cv-column>
     </cv-row>
-    <cv-row v-if="error.getConfiguration">
-      <cv-column>
-        <NsInlineNotification
-          kind="error"
-          :title="$t('action.get-configuration')"
-          :description="error.getConfiguration"
-          :showCloseButton="false"
-        />
-      </cv-column>
-    </cv-row>
-    <cv-row v-if="error.getStatus">
-      <cv-column>
-        <NsInlineNotification
-          kind="error"
-          :title="$t('action.get-status')"
-          :description="error.getStatus"
-          :showCloseButton="false"
-        />
-      </cv-column>
-    </cv-row>
-    <cv-row v-if="defaultAdminPasswordInUse">
-      <cv-column>
-        <NsInlineNotification
-          kind="warning"
-          :title="$t('settings.default_admin_title')"
-          :description="$t('settings.default_admin_description')"
-          :showCloseButton="false"
-          :actionLabel="host ? $t('settings.open_bigbluebutton') : ''"
-          @action="goToBigBlueButton"
-        />
-      </cv-column>
-    </cv-row>
     <cv-row>
       <cv-column>
         <cv-tile light>
+          <cv-row v-if="error.getConfiguration">
+            <cv-column>
+              <NsInlineNotification
+                kind="error"
+                :title="$t('action.get-configuration')"
+                :description="error.getConfiguration"
+                :showCloseButton="false"
+              />
+            </cv-column>
+          </cv-row>
+          <cv-row v-if="error.getStatus">
+            <cv-column>
+              <NsInlineNotification
+                kind="error"
+                :title="$t('action.get-status')"
+                :description="error.getStatus"
+                :showCloseButton="false"
+              />
+            </cv-column>
+          </cv-row>
+          <cv-row v-if="defaultAdminPasswordInUse">
+            <cv-column>
+              <NsInlineNotification
+                kind="warning"
+                :title="$t('settings.default_admin_title')"
+                :description="$t('settings.default_admin_description')"
+                :showCloseButton="false"
+                :actionLabel="host ? $t('settings.open_bigbluebutton') : ''"
+                @action="goToBigBlueButton"
+              />
+            </cv-column>
+          </cv-row>
           <cv-form @submit.prevent="configureModule">
             <NsTextInput
               :label="$t('settings.bigbluebutton_fqdn')"
