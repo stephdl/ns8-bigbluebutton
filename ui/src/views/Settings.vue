@@ -139,6 +139,23 @@
                 {{ $t("settings.private_address_tooltip") }}
               </template>
             </NsTextInput>
+            <NsButton
+              kind="ghost"
+              :icon="Reset20"
+              :loading="loading.detectAddresses"
+              :disabled="stillLoading"
+              @click="detectAddresses"
+              class="mg-bottom"
+              >{{ $t("settings.detect_addresses") }}</NsButton
+            >
+            <NsInlineNotification
+              v-if="error.detectAddresses"
+              kind="error"
+              :title="$t('action.detect-addresses')"
+              :description="error.detectAddresses"
+              :showCloseButton="false"
+              class="mg-bottom"
+            />
             <!-- The module opens this node's firewall, but not a router in front. -->
             <NsInlineNotification
               v-if="mediasoupPortRange"
@@ -456,11 +473,13 @@ export default {
         getConfiguration: false,
         configureModule: false,
         getStatus: false,
+        detectAddresses: false,
       },
       error: {
         getConfiguration: "",
         configureModule: "",
         getStatus: "",
+        detectAddresses: "",
         host: "",
         lets_encrypt: "",
         public_address: "",
@@ -477,7 +496,8 @@ export default {
       return (
         this.loading.getConfiguration ||
         this.loading.configureModule ||
-        this.loading.getStatus
+        this.loading.getStatus ||
+        this.loading.detectAddresses
       );
     },
     soundsLanguageOptions() {
@@ -548,6 +568,60 @@ export default {
     getStatusCompleted(taskContext, taskResult) {
       this.status = taskResult.output;
       this.loading.getStatus = false;
+    },
+    async detectAddresses() {
+      this.loading.detectAddresses = true;
+      this.error.detectAddresses = "";
+      const taskAction = "detect-addresses";
+      const eventId = this.getUuid();
+
+      this.core.$root.$once(
+        `${taskAction}-aborted-${eventId}`,
+        this.detectAddressesAborted
+      );
+      this.core.$root.$once(
+        `${taskAction}-completed-${eventId}`,
+        this.detectAddressesCompleted
+      );
+
+      const res = await to(
+        this.createModuleTaskForApp(this.instanceName, {
+          action: taskAction,
+          extra: {
+            title: this.$t("action." + taskAction),
+            isNotificationHidden: true,
+            eventId,
+          },
+        })
+      );
+      const err = res[0];
+      if (err) {
+        console.error(`error creating task ${taskAction}`, err);
+        this.error.detectAddresses = this.getErrorMessage(err);
+        this.loading.detectAddresses = false;
+        return;
+      }
+    },
+    detectAddressesAborted(taskResult, taskContext) {
+      console.error(`${taskContext.action} aborted`, taskResult);
+      this.error.detectAddresses = this.$t("error.generic_error");
+      this.loading.detectAddresses = false;
+    },
+    detectAddressesCompleted(taskContext, taskResult) {
+      const detected = taskResult.output;
+      // Empty means the probe could not tell, so keep what is in the field.
+      if (detected.public_address) {
+        this.publicAddress = detected.public_address;
+      }
+      if (detected.private_address) {
+        this.privateAddress = detected.private_address;
+      }
+      if (!detected.public_address && !detected.private_address) {
+        this.error.detectAddresses = this.$t(
+          "settings.detect_addresses_failed"
+        );
+      }
+      this.loading.detectAddresses = false;
     },
     async getConfiguration() {
       this.loading.getConfiguration = true;
