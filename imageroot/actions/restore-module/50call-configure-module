@@ -9,19 +9,41 @@
 # Re-run configure-module to rebuild what is derived from the environment: the
 # override files, the Traefik route and the mediasoup announced address.
 #
-# lets_encrypt is left out on purpose: the restored node rarely has DNS pointing
-# at it yet, and a failed certificate request would fail the whole restore.
+# lets_encrypt is left out on purpose: the new node rarely has DNS pointing at it
+# yet, and a failed certificate request would fail the whole restore.
 #
 # Also the clone-module step, through a symlink.
 #
 
 import os
+import sys
 import agent
+
+
+def on_this_node(label, inherited, detected):
+    """Prefer what create-module probed here: a mismatch means another node, and
+    the inherited address would make mediasoup announce an unreachable one.
+
+    Normal on a clone, which lands elsewhere by definition.
+    """
+    if not detected or detected == inherited:
+        return inherited
+    print(agent.SD_WARNING + f"the {label} address {inherited} is not this node's "
+          f"{detected}: announcing the detected one instead, correct it in "
+          f"Settings if this node needs another", file=sys.stderr)
+    return detected
+
+
+inherited_private = os.environ.get("PRIVATE_IP", "")
 
 config = {
     "host": os.environ["TRAEFIK_HOST"],
-    "public_address": os.environ["PUBLIC_IP"],
-    "private_address": os.environ.get("PRIVATE_IP", ""),
+    "public_address": on_this_node("public", os.environ["PUBLIC_IP"],
+                                   os.environ.get("DETECTED_PUBLIC_IP", "")),
+    # Empty means "do not advertise a LAN address": never filled in from detection.
+    "private_address": on_this_node("LAN", inherited_private,
+                                    os.environ.get("DETECTED_PRIVATE_IP", ""))
+                       if inherited_private else "",
     "stun_server": os.environ.get("STUN_SERVER", ""),
     "turn_ext_server": os.environ.get("TURN_EXT_SERVER", ""),
     "enable_recording": os.environ.get("ENABLE_RECORDING", "false") == "true",
