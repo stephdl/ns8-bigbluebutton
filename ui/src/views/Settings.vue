@@ -119,21 +119,31 @@
 
             <!-- network -->
             <h4 class="mg-bottom">{{ $t("settings.network") }}</h4>
-            <NsTextInput
-              :label="$t('settings.public_address')"
-              placeholder="203.0.113.10"
-              v-model.trim="publicAddress"
-              class="mg-bottom"
-              :invalid-message="$t(error.public_address)"
-              :disabled="stillLoading"
-              tooltipAlignment="start"
-              tooltipDirection="right"
-              ref="public_address"
-            >
-              <template #tooltip>
-                {{ $t("settings.public_address_tooltip") }}
-              </template>
-            </NsTextInput>
+            <div class="address-row maxwidth mg-bottom">
+              <NsTextInput
+                :label="$t('settings.public_address')"
+                placeholder="203.0.113.10"
+                v-model.trim="publicAddress"
+                :invalid-message="$t(error.public_address)"
+                :disabled="stillLoading"
+                tooltipAlignment="start"
+                tooltipDirection="right"
+                ref="public_address"
+              >
+                <template #tooltip>
+                  {{ $t("settings.public_address_tooltip") }}
+                </template>
+              </NsTextInput>
+              <NsButton
+                kind="tertiary"
+                :icon="Reset20"
+                :loading="loading.detectAddresses"
+                :disabled="stillLoading"
+                @click="detectAddresses"
+                class="detect-button"
+                >{{ $t("settings.detect_addresses") }}</NsButton
+              >
+            </div>
             <NsTextInput
               :label="$t('settings.private_address')"
               placeholder="192.168.1.10"
@@ -149,15 +159,6 @@
                 {{ $t("settings.private_address_tooltip") }}
               </template>
             </NsTextInput>
-            <NsButton
-              kind="ghost"
-              :icon="Reset20"
-              :loading="loading.detectAddresses"
-              :disabled="stillLoading"
-              @click="detectAddresses"
-              class="mg-bottom"
-              >{{ $t("settings.detect_addresses") }}</NsButton
-            >
             <NsInlineNotification
               v-if="error.detectAddresses"
               kind="error"
@@ -909,5 +910,16 @@ export default {
 
 .maxwidth {
   max-width: 38rem;
+}
+
+// keep the detect button on the input baseline, not on the label
+.address-row {
+  display: flex;
+  align-items: flex-end;
+  gap: $spacing-05;
+}
+
+.detect-button {
+  flex-shrink: 0;
 }
 </style>
