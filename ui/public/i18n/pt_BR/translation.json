@@ -1,35 +1,114 @@
 {
-    "common": {
-        "required": "Obrigatório",
-        "work_in_progress": "Em progresso",
-        "processing": "Procesando..."
-    },
-    "status": {
-        "services": "Serviço | Serviços",
-        "app_instance": "Instância do aplicativo",
-        "title": "Estado"
-    },
-    "error": {
-        "403": "Operation not authorized",
-        "401": "Invalid authentication",
-        "generic_error": "Something went wrong",
-        "error": "Error",
-        "network_timeout": "Network timeout",
-        "404": "Resource not found",
-        "network_error": "Network error",
-        "validation_error": "Validation error"
-    },
-    "about": {
-        "title": "About"
-    },
-    "action": {
-        "list-backup-repositories": "List backup repositories",
-        "list-backups": "List backups"
-    },
-    "task": {
-        "cannot_create_task": "Cannot create task {action}"
-    },
-    "settings": {
-        "title": "Settings"
-    }
+  "common": {
+    "required": "Obrigatório",
+    "work_in_progress": "Em andamento",
+    "processing": "Processando..."
+  },
+  "status": {
+    "title": "Estado",
+    "app_instance": "Instância do aplicativo",
+    "services": "Serviço | Serviços",
+    "app_images": "Imagem do aplicativo | Imagens do aplicativo",
+    "app_volumes": "Volume do aplicativo | Volumes do aplicativo",
+    "installation_node": "Nó de instalação",
+    "node": "Nó",
+    "name": "Nome",
+    "size": "Tamanho",
+    "created": "Criado",
+    "mount": "Ponto de montagem",
+    "no_services": "Nenhum serviço",
+    "no_images": "Nenhuma imagem",
+    "no_volumes": "Nenhum volume",
+    "bigbluebutton_webapp": "BigBlueButton",
+    "not_configured": "Não configurado",
+    "open_webapp": "Abrir o BigBlueButton",
+    "configure": "Configurar"
+  },
+  "settings": {
+    "title": "Configurações",
+    "save": "Salvar",
+    "bigbluebutton_fqdn": "Nome de host do BigBlueButton (FQDN)",
+    "enabled": "Ativado",
+    "disabled": "Desativado",
+    "advanced": "Avançado",
+    "configuring": "Configurando",
+    "instance_configuration": "Configurar o BigBlueButton",
+    "domain_already_used_in_traefik": "Domínio já usado no traefik",
+    "host_pattern": "Deve ser um nome de domínio completo válido",
+    "host_format": "Deve ser um nome de domínio completo válido",
+    "network": "Rede",
+    "public_address": "Endereço IP público",
+    "public_address_tooltip": "Anunciado aos participantes, sem ser vinculado localmente, então um endereço NAT está correto. Detectado na instalação; altere-o se um redirecionamento de portas usar outro endereço.",
+    "private_address": "Endereço IP da rede local (opcional)",
+    "private_address_tooltip": "Serve apenas aos participantes que se conectam pela rede local: o servidor passa a anunciar os dois endereços, poupando-lhes o NAT hairpinning.",
+    "detect_addresses": "Detectar novamente",
+    "detect_addresses_failed": "Não foi possível detectar os endereços. Informe-os manualmente.",
+    "udp_ports_title": "Abra estas portas UDP",
+    "udp_ports_description": "O áudio e o vídeo passam por UDP na faixa {range}, não por HTTPS. A regra neste nó é automática, mas qualquer roteador à frente precisa redirecionar a faixa, senão os participantes não conseguem se conectar.",
+    "media": "Áudio e vídeo",
+    "stun_server": "Servidor STUN (opcional)",
+    "stun_server_tooltip": "Deixe vazio a não ser que você mantenha o seu. Um servidor STUN público recebe o endereço IP de cada participante.",
+    "turn_ext_server": "Servidor TURN externo (opcional)",
+    "turn_ext_server_tooltip": "Participantes atrás de um firewall que bloqueia UDP não conseguem entrar sem TURN. Este aplicativo não fornece nenhum.",
+    "turn_ext_secret": "Segredo compartilhado do servidor TURN externo",
+    "turn_ext_secret_tooltip": "O BigBlueButton assina cada credencial de cliente com o static-auth-secret do servidor TURN e não aceita outro modo de autenticação: sem o valor correspondente, o servidor recusa todas.",
+    "turn_ext_secret_stored": "Há um segredo salvo. Deixe vazio para mantê-lo.",
+    "turn_ext_secret_absent": "Nenhum segredo salvo ainda.",
+    "sounds_language": "Idioma dos avisos",
+    "announce_mute": "Anunciar quando o microfone é silenciado e reativado",
+    "announce_alone": "Anunciar estar sozinho na conferência",
+    "recording": "Gravação",
+    "enable_recording": "Gravar as reuniões",
+    "enable_recording_tooltip": "Captura áudio, vídeo, chat, notas compartilhadas e apresentações. Avise os participantes antes de ativar.",
+    "remove_old_recording": "Excluir automaticamente as gravações antigas",
+    "recording_max_age_days": "Excluir as gravações depois de (dias)",
+    "recording_max_age_days_invalid": "Informe um número inteiro de dias, no mínimo 1",
+    "recording_max_age_days_tooltip": "Contados a partir do fim da reunião. A tarefa de manutenção as exclui na próxima execução.",
+    "analytics": "Análise de aprendizagem",
+    "enable_learning_dashboard": "Ativar o painel de análise de aprendizagem",
+    "enable_learning_dashboard_tooltip": "Informa para cada participante o tempo de conexão, o tempo de fala, as mensagens de chat, os emojis e as respostas às enquetes. Os moderadores o abrem pela lista de participantes; o link continua válido depois, e quem o tiver pode ler o relatório.",
+    "welcome": "Mensagem de boas-vindas",
+    "welcome_message": "Mensagem",
+    "welcome_footer": "Rodapé",
+    "welcome_footer_tooltip": "Acrescentado abaixo da mensagem de boas-vindas. HTML simples é aceito.",
+    "bigbluebutton_fqdn_tooltip": "O nome que os participantes digitam. Ele precisa resolver para este servidor e apresentar um certificado em que o navegador confie: sem isso, os navegadores negam o acesso ao microfone e à câmera.",
+    "remove_old_recording_tooltip": "A exclusão é feita pela tarefa de manutenção, a cada 30 minutos.",
+    "sounds_language_tooltip": "Idioma dos avisos falados dentro de uma conferência. O pacote de sons é baixado na primeira inicialização.",
+    "welcome_message_tooltip": "Exibida no chat quando uma reunião começa. HTML simples é aceito.",
+    "certificate_mismatch_title": "O certificado não corresponde a este nome de host",
+    "certificate_mismatch_description": "As salas continuam abrindo, mas cada participante recebe um aviso do navegador para este endereço, e o microfone e a câmera ficam bloqueados até que ele o aceite. Solicite um certificado Let's Encrypt acima, ou envie um para este nome de host em Configurações > Certificados TLS.",
+    "default_admin_title": "A senha do administrador padrão continua em uso",
+    "default_admin_description": "admin@nethserver.org continua usando a senha Nethesis,1234, que é distribuída com o módulo e portanto é pública. Entre com ela, crie sua própria conta com o papel Administrator e depois exclua esta.",
+    "open_bigbluebutton": "Abrir o BigBlueButton"
+  },
+  "about": {
+    "title": "Sobre"
+  },
+  "task": {
+    "cannot_create_task": "Não é possível criar a tarefa {action}"
+  },
+  "action": {
+    "get-status": "Ler o estado",
+    "get-configuration": "Ler a configuração",
+    "configure-module": "Configurar o módulo",
+    "detect-addresses": "Detectar os endereços",
+    "get-module-info": "Ler as informações do módulo",
+    "get-name": "Ler o nome",
+    "list-backup-repositories": "Listar os repositórios de backup",
+    "list-backups": "Listar os backups",
+    "list-installed-modules": "Listar os módulos instalados"
+  },
+  "error": {
+    "error": "Erro",
+    "generic_error": "Algo deu errado",
+    "validation_error": "Erro de validação",
+    "network_error": "Erro de rede",
+    "network_timeout": "Tempo de rede esgotado",
+    "401": "Autenticação inválida",
+    "403": "Operação não autorizada",
+    "404": "Recurso não encontrado",
+    "cannot_retrieve_module_info": "Não é possível obter as informações do módulo",
+    "cannot_retrieve_installed_modules": "Não é possível obter os módulos instalados",
+    "cannot_retrieve_configuration": "Não é possível obter a configuração"
+  }
 }
