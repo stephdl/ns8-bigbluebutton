@@ -133,27 +133,41 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "lets_encrypt": true,
   "public_address": "203.0.113.10",
   "private_address": "192.168.1.10",
-  "enable_recording": false
+  "stun_server": "",
+  "turn_ext_server": "",
+  "enable_recording": false,
+  "remove_old_recording": false,
+  "recording_max_age_days": 14,
+  "enable_learning_dashboard": true,
+  "sounds_language": "en-us-callie",
+  "disable_sound_muted": false,
+  "disable_sound_alone": false,
+  "welcome_message": "",
+  "welcome_footer": ""
 }
 EOF
 ```
 
-Required:
+Every field above is required except `lets_encrypt`, which defaults to `false`
+when omitted. The action rewrites the whole configuration, so a missing field
+would silently reset a setting instead of leaving it alone — hence no defaults.
+Read the current values with `api-cli run get-configuration`, change what you
+need and send the result back.
 
-- `host` — fully qualified domain name for the web client
-- `public_address` — the address participants use to reach this node. It is
-  *announced* to WebRTC clients, not bound locally, so a public address is
-  correct even when the node sits behind NAT. Detected automatically when
-  omitted.
+`host` is the fully qualified domain name of the web client. `public_address` is
+what participants use to reach this node: it is *announced* to WebRTC clients, not
+bound locally, so a public address is correct even behind NAT. Both addresses are
+detected at install time and returned by `get-configuration`; the Settings page
+also offers a re-detection.
 
 HTTP is always redirected to HTTPS: BigBlueButton is unusable without it, so it
 is not offered as a choice.
 
-Optional:
+What each field does, and the value a fresh install carries:
 
-| Parameter | Default | Notes |
+| Parameter | Fresh install | Notes |
 |---|---|---|
-| `private_address` | empty | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
+| `private_address` | detected | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
 | `stun_server` | empty | Leave empty unless you run your own. A public STUN server receives the IP address of every participant. |
 | `turn_ext_server` | empty | Without TURN, participants behind UDP-blocking firewalls cannot join. |
 | `enable_recording` | `false` | Recordings capture audio, video, chat, shared notes and presentations. |
