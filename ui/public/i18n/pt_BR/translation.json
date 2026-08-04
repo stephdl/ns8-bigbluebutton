@@ -46,6 +46,7 @@
     "udp_ports_title": "Abra estas portas UDP",
     "udp_ports_description": "O áudio e o vídeo passam por UDP na faixa {range}, não por HTTPS. A regra neste nó é automática, mas qualquer roteador à frente precisa redirecionar a faixa, senão os participantes não conseguem se conectar.",
     "media": "Áudio e vídeo",
+    "nat_traversal": "Travessia de NAT",
     "stun_server": "Servidor STUN (opcional)",
     "stun_server_tooltip": "Deixe vazio a não ser que você mantenha o seu. Um servidor STUN público recebe o endereço IP de cada participante.",
     "turn_ext_server": "Servidor TURN externo (opcional)",

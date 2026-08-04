@@ -46,6 +46,7 @@
     "udp_ports_title": "Apri queste porte UDP",
     "udp_ports_description": "Audio e video passano su UDP nell'intervallo {range}, non su HTTPS. La regola su questo nodo è automatica, ma ogni router davanti deve inoltrare l'intervallo, altrimenti i partecipanti non riescono a collegarsi.",
     "media": "Audio e video",
+    "nat_traversal": "Attraversamento del NAT",
     "stun_server": "Server STUN (opzionale)",
     "stun_server_tooltip": "Lascia vuoto se non ne gestisci uno tuo. Un server STUN pubblico riceve l'indirizzo IP di ogni partecipante.",
     "turn_ext_server": "Server TURN esterno (opzionale)",

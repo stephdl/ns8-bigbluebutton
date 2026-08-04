@@ -323,6 +323,36 @@
                       $t("settings.enabled")
                     }}</template>
                   </NsToggle>
+                  <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
+                  <NsTextInput
+                    :label="$t('settings.welcome_message')"
+                    v-model.trim="welcomeMessage"
+                    class="mg-bottom"
+                    :disabled="stillLoading"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
+                    ref="welcome_message"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.welcome_message_tooltip") }}
+                    </template>
+                  </NsTextInput>
+                  <NsTextInput
+                    :label="$t('settings.welcome_footer')"
+                    v-model.trim="welcomeFooter"
+                    class="mg-bottom"
+                    :disabled="stillLoading"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
+                    ref="welcome_footer"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.welcome_footer_tooltip") }}
+                    </template>
+                  </NsTextInput>
+
+                  <!-- NAT traversal -->
+                  <h4 class="mg-bottom">{{ $t("settings.nat_traversal") }}</h4>
                   <NsTextInput
                     :label="$t('settings.stun_server')"
                     placeholder="stun:stun.example.org:3478"
@@ -371,34 +401,6 @@
                   >
                     <template #tooltip>
                       {{ $t("settings.turn_ext_secret_tooltip") }}
-                    </template>
-                  </NsTextInput>
-
-                  <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
-                  <NsTextInput
-                    :label="$t('settings.welcome_message')"
-                    v-model.trim="welcomeMessage"
-                    class="mg-bottom"
-                    :disabled="stillLoading"
-                    tooltipAlignment="start"
-                    tooltipDirection="right"
-                    ref="welcome_message"
-                  >
-                    <template #tooltip>
-                      {{ $t("settings.welcome_message_tooltip") }}
-                    </template>
-                  </NsTextInput>
-                  <NsTextInput
-                    :label="$t('settings.welcome_footer')"
-                    v-model.trim="welcomeFooter"
-                    class="mg-bottom"
-                    :disabled="stillLoading"
-                    tooltipAlignment="start"
-                    tooltipDirection="right"
-                    ref="welcome_footer"
-                  >
-                    <template #tooltip>
-                      {{ $t("settings.welcome_footer_tooltip") }}
                     </template>
                   </NsTextInput>
                 </template>

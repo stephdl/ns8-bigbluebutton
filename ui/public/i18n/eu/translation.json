@@ -46,6 +46,7 @@
     "udp_ports_title": "Ireki UDP ataka hauek",
     "udp_ports_description": "Audioa eta bideoa UDP bidez doaz {range} barrutian, ez HTTPS bidez. Nodo honetako araua automatikoa da, baina aurrean dagoen edozein bideratzaileak barrutia birbideratu behar du; bestela, partaideak ezin dira konektatu.",
     "media": "Audioa eta bideoa",
+    "nat_traversal": "NAT zeharkatzea",
     "stun_server": "STUN zerbitzaria (aukerakoa)",
     "stun_server_tooltip": "Utzi hutsik zeurea kudeatzen ez baduzu. STUN zerbitzari publiko batek partaide bakoitzaren IP helbidea jasotzen du.",
     "turn_ext_server": "Kanpoko TURN zerbitzaria (aukerakoa)",
