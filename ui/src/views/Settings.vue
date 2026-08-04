@@ -216,8 +216,14 @@
                 class="mg-bottom"
                 :invalid-message="$t(error.recording_max_age_days)"
                 :disabled="stillLoading"
+                tooltipAlignment="start"
+                tooltipDirection="right"
                 ref="recording_max_age_days"
-              />
+              >
+                <template #tooltip>
+                  {{ $t("settings.recording_max_age_days_tooltip") }}
+                </template>
+              </NsTextInput>
             </template>
 
             <!-- learning analytics -->
@@ -263,9 +269,9 @@
                     </template>
                   </NsComboBox>
                   <NsToggle
-                    value="disableSoundMuted"
-                    :label="$t('settings.disable_sound_muted')"
-                    v-model="isSoundMutedDisabled"
+                    value="announceMute"
+                    :label="$t('settings.announce_mute')"
+                    v-model="isMuteAnnounced"
                     :disabled="stillLoading"
                     class="mg-bottom"
                   >
@@ -277,9 +283,9 @@
                     }}</template>
                   </NsToggle>
                   <NsToggle
-                    value="disableSoundAlone"
-                    :label="$t('settings.disable_sound_alone')"
-                    v-model="isSoundAloneDisabled"
+                    value="announceAlone"
+                    :label="$t('settings.announce_alone')"
+                    v-model="isAloneAnnounced"
                     :disabled="stillLoading"
                     class="mg-bottom"
                   >
@@ -360,8 +366,14 @@
                     v-model.trim="welcomeFooter"
                     class="mg-bottom"
                     :disabled="stillLoading"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
                     ref="welcome_footer"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.welcome_footer_tooltip") }}
+                    </template>
+                  </NsTextInput>
                 </template>
               </cv-accordion-item>
             </cv-accordion>
@@ -487,8 +499,8 @@ export default {
       isRemoveOldRecordingEnabled: false,
       recordingMaxAgeDays: "14",
       soundsLanguage: "en-us-callie",
-      isSoundMutedDisabled: false,
-      isSoundAloneDisabled: false,
+      isMuteAnnounced: true,
+      isAloneAnnounced: true,
       welcomeMessage: "",
       welcomeFooter: "",
       loading: {
@@ -705,8 +717,10 @@ export default {
       this.isRemoveOldRecordingEnabled = config.remove_old_recording;
       this.recordingMaxAgeDays = String(config.recording_max_age_days);
       this.soundsLanguage = config.sounds_language;
-      this.isSoundMutedDisabled = config.disable_sound_muted;
-      this.isSoundAloneDisabled = config.disable_sound_alone;
+      // The action keeps upstream's DISABLE_SOUND_* sense; the toggles read the
+      // other way round, so a positive label needs no double negative.
+      this.isMuteAnnounced = !config.disable_sound_muted;
+      this.isAloneAnnounced = !config.disable_sound_alone;
       this.welcomeMessage = config.welcome_message;
       this.welcomeFooter = config.welcome_footer;
 
@@ -806,8 +820,8 @@ export default {
             remove_old_recording: this.isRemoveOldRecordingEnabled,
             recording_max_age_days: Number(this.recordingMaxAgeDays),
             sounds_language: this.soundsLanguage,
-            disable_sound_muted: this.isSoundMutedDisabled,
-            disable_sound_alone: this.isSoundAloneDisabled,
+            disable_sound_muted: !this.isMuteAnnounced,
+            disable_sound_alone: !this.isAloneAnnounced,
             welcome_message: this.welcomeMessage,
             welcome_footer: this.welcomeFooter,
           },
