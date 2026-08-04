@@ -119,7 +119,7 @@
 
             <!-- network -->
             <h4 class="mg-bottom">{{ $t("settings.network") }}</h4>
-            <div class="address-row maxwidth mg-bottom">
+            <div class="address-row mg-bottom">
               <NsTextInput
                 :label="$t('settings.public_address')"
                 placeholder="203.0.113.10"
@@ -136,6 +136,7 @@
               </NsTextInput>
               <NsButton
                 kind="tertiary"
+                size="field"
                 :icon="Reset20"
                 :loading="loading.detectAddresses"
                 :disabled="stillLoading"
@@ -952,14 +953,21 @@ export default {
   max-width: 38rem;
 }
 
-// keep the detect button on the input baseline, not on the label
 .address-row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: $spacing-05;
 }
 
+// The field keeps the width of every other one; the button sits beyond it.
+.address-row > *:first-child {
+  flex: 0 1 38rem;
+}
+
+// Clear the label, so the button lines up with the input and not with its caption:
+// .bx--label is 1rem of line plus 0.5rem of margin.
 .detect-button {
   flex-shrink: 0;
+  margin-top: 1.5rem;
 }
 </style>
