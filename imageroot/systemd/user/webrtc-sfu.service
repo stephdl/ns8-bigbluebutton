@@ -4,21 +4,14 @@
 #
 
 #
-# mediasoup SFU. HOST network namespace, not the pod: WebRTC media must bind the
-# node's real addresses, and slirp4netns forwarding would cost latency and CPU on
-# every RTP packet.
+# mediasoup SFU. HOST network namespace: WebRTC media must bind the node's real
+# addresses.
 #
-# Security consequences, both from upstream (docker-compose.tmpl.yml:255-259) and
-# both recorded in docs/packaging-analysis.md section 7: this container reaches
-# everything on the node's loopback, including the cluster Redis on 6379, and
-# seccomp=unconfined drops syscall filtering on the most attacker-reachable
-# component in the stack. It is unconfined for io_uring, which the default podman
-# seccomp profile blocks.
+# That plus seccomp=unconfined, needed for io_uring, is the widest trust boundary
+# in the stack -- see docs/packaging-analysis.md section 7.
 #
-# No memlock limit is set and none is needed: a rootless process cannot raise its
-# hard limit anyway, and mediasoup disables zero copy on ENOMEM rather than
-# failing. To turn zero copy off deterministically, use mediasoup's
-# disableLiburing option in the mounted config, not a limit here.
+# No memlock limit, unlike upstream: a rootless process cannot raise its hard
+# limit anyway. Use mediasoup's disableLiburing to turn zero copy off.
 #
 
 [Unit]

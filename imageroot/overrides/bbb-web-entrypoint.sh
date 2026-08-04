@@ -6,13 +6,11 @@
 #
 # Wraps /entrypoint.sh from bigbluebutton/bbb-web.
 #
-# bbb-web fetches every room's first slide over the site's public name, so Java
-# validates whatever certificate answers. The container resolves that name to
-# 127.0.0.1 and is shown the internal certificate, never Traefik's, so trusting
-# that one here works with or without Let's Encrypt.
+# bbb-web fetches every room's first slide over the public name, so Java validates
+# the internal certificate the pod serves there.
 #
-# update-ca-certificates is not enough: this image has no ca-certificates-java
-# and no /etc/ssl/certs/java/cacerts, so the JRE store is edited directly.
+# The JRE store is edited directly: this image has no ca-certificates-java, so
+# update-ca-certificates would not reach it.
 #
 
 set -e

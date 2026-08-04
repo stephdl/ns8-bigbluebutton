@@ -6,26 +6,18 @@
 #
 
 #
-# Replaces the `periodic` container from bigbluebutton/docker, which was a
-# `while :; sleep 30m` loop doing three jobs (mod/periodic/entrypoint.sh).
+# Replaces the `periodic` container from bigbluebutton/docker: podman exec from
+# the host does its work without the Docker socket the container existed to hold.
 #
-# The container existed mostly to hold a Docker socket mount: its only use of
-# the socket was `docker exec bbb-freeswitch fs_cli` and
-# `docker exec <recordings> bbb-record --delete`. `podman exec` from the host
-# does the same without the socket, so no container and no socket are needed.
-#
-# Each job is independent: one failing must not stop the others, so this script
-# deliberately does not `set -e`.
+# No `set -e` on purpose: one failing job must not stop the others.
 #
 
 exec 1>&2 # Redirect any output to the journal
 
-# Presentations older than this are removed. Matches the upstream default,
-# which hardcoded history=5 in mod/periodic/entrypoint.sh.
+# Upstream default, hardcoded as history=5 in mod/periodic/entrypoint.sh.
 PRESENTATION_MAX_AGE_DAYS=5
 
-# runagent already provides the module environment. Secrets live in a separate
-# file that is deliberately not part of it.
+# runagent provides the module environment; secrets are deliberately not in it.
 if [ -f "${AGENT_STATE_DIR}/passwords.env" ]; then
     # shellcheck source=/dev/null
     . "${AGENT_STATE_DIR}/passwords.env"
@@ -34,10 +26,8 @@ fi
 #
 # 1. Resynchronise the FreeSWITCH clock
 #
-# Upstream: mod/periodic/bbb-resync-freeswitch. Note that script connects to
-# 10.7.7.1 and passes no password, while scripts/fs_cli uses 10.7.7.10 and the
-# password; the latter is the one that works. FreeSWITCH shares the host
-# namespace here, so ESL is on loopback.
+# ESL is on loopback because FreeSWITCH shares the host namespace. The password
+# is required, unlike in upstream's mod/periodic/bbb-resync-freeswitch.
 #
 if podman container exists freeswitch; then
     podman exec freeswitch /opt/freeswitch/bin/fs_cli \
@@ -49,8 +39,7 @@ else
 fi
 
 #
-# The remaining jobs walk the recordings volume. Resolve it once: the loop runs
-# on the host, exactly as upstream ran it outside the recordings container.
+# The remaining jobs walk the recordings volume from the host. Resolve it once.
 #
 BBB_VOLUME=$(podman volume inspect bigbluebutton --format '{{.Mountpoint}}' 2>/dev/null)
 
@@ -60,10 +49,8 @@ if [ -z "${BBB_VOLUME}" ] || [ ! -d "${BBB_VOLUME}" ]; then
 fi
 
 #
-# 2. Make sure the instance has an administrator
-#
-# Covers an instance whose database was not ready when Greenlight last started.
-#
+# 2. Make sure the instance has an administrator, in case the database was not
+#    ready when Greenlight last started.
 seed-default-admin --wait 0 || echo "bigbluebutton-periodic: administrator check failed"
 
 #
@@ -76,10 +63,8 @@ find "${BBB_VOLUME}/" -maxdepth 1 -type d -name "*-[0-9]*" \
 #
 # 4. Delete recordings past their retention
 #
-# Both conditions must hold, as upstream required. bbb-record lives in the
-# recordings container and is what actually removes a recording's files and
-# metadata; deleting the directories directly would leave the database and the
-# published tree inconsistent.
+# Through bbb-record: removing the directories directly would leave the database
+# and the published tree inconsistent.
 #
 if [ "${ENABLE_RECORDING}" != "true" ] || [ "${REMOVE_OLD_RECORDING}" != "true" ]; then
     exit 0
@@ -109,7 +94,7 @@ for donefile in "${BBB_VOLUME}"/recording/status/published/*-presentation.done; 
     delete_if_expired "$(stat -c %Y "${donefile}")" "${meeting_id%-presentation.done}"
 done
 
-# Recordings still in the raw stage, which never reached the published tree
+# Raw stage, never published
 for eventsfile in "${BBB_VOLUME}"/recording/raw/*/events.xml; do
     meeting_id="${eventsfile%/events.xml}"
     delete_if_expired "$(stat -c %Y "${eventsfile}")" "${meeting_id##*/}"

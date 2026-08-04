@@ -6,8 +6,7 @@
 #
 # Triggered by bigbluebutton-periodic.timer. Not enabled on its own.
 #
-# runagent puts the script in the module's agent environment and changes to
-# AGENT_STATE_DIR, which is how the other module helpers are invoked.
+# runagent puts the script in the module environment, as for the other helpers.
 #
 
 [Unit]

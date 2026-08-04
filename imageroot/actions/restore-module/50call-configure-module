@@ -6,15 +6,13 @@
 #
 
 #
-# Re-run configure-module with the restored settings.
+# Re-run configure-module to rebuild what is derived from the environment: the
+# override files, the Traefik route and the mediasoup announced address.
 #
-# Every field configure-module accepts must be passed. Anything omitted falls
-# back to its default and silently reconfigures the module differently from the
-# backup: the override files, the Traefik route and the mediasoup announced
-# address are all derived here.
+# lets_encrypt is left out on purpose: the restored node rarely has DNS pointing
+# at it yet, and a failed certificate request would fail the whole restore.
 #
-# The variables come from os.environ because 06copyenv already wrote them to
-# state/environment and the agent reloads it between actions.
+# Also the clone-module step, through a symlink.
 #
 
 import os

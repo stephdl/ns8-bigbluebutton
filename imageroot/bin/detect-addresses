@@ -6,14 +6,10 @@
 #
 
 #
-# Work out the addresses mediasoup should bind and announce, and store them as
-# DETECTED_PRIVATE_IP and DETECTED_PUBLIC_IP for configure-module to use as
-# defaults.
+# Store the mediasoup addresses as DETECTED_PRIVATE_IP and DETECTED_PUBLIC_IP,
+# defaults configure-module lets the administrator override.
 #
-# The admin can always override both: this only removes the need to type them.
-#
-# Nothing here is fatal. A node that cannot be probed still installs; the fields
-# are simply left empty and configure-module refuses until they are filled in.
+# Nothing here is fatal: an unprobeable node installs with the fields empty.
 #
 
 import ipaddress
@@ -24,8 +20,7 @@ import urllib.request
 
 import agent
 
-# Echo services used only when the node sits behind NAT, in order. Both return
-# a bare address. ns8-ddclient uses the same two.
+# Contacted only behind NAT. Both return a bare address; ns8-ddclient uses them too.
 ECHO_SERVICES = (
     "https://api.ipify.org",
     "https://ipv4.icanhazip.com",
@@ -36,9 +31,7 @@ ECHO_TIMEOUT = 5
 def local_address():
     """Source address the kernel would use to reach the internet.
 
-    Reads the routing table rather than the interface list: a node with several
-    interfaces has several addresses, and the one that matters is the one on the
-    default path.
+    The routing table, not the interface list: what matters is the default path.
     """
     try:
         out = subprocess.run(
@@ -61,9 +54,7 @@ def is_public(addr):
 def public_address(local):
     """The address clients will reach.
 
-    When the node holds a globally routable address there is nothing to ask
-    anyone: it is its own public address. Only a node behind NAT needs an
-    outside opinion, and only then is an echo service contacted.
+    Only a node behind NAT needs an outside opinion.
     """
     if is_public(local):
         print(f"{local} is globally routable, no external lookup needed", file=sys.stderr)
@@ -71,8 +62,7 @@ def public_address(local):
 
     for url in ECHO_SERVICES:
         try:
-            # Named in the log on purpose: this is an outbound request that
-            # tells a third party this node exists.
+            # Logged by name: this tells a third party the node exists.
             print(f"node is behind NAT, asking {url} for the public address", file=sys.stderr)
             with urllib.request.urlopen(url, timeout=ECHO_TIMEOUT) as resp:
                 candidate = resp.read().decode().strip()
@@ -95,5 +85,4 @@ agent.set_env("DETECTED_PUBLIC_IP", public)
 
 print(f"detected local={local or '(none)'} public={public or '(none)'}", file=sys.stderr)
 
-# Structured output so the UI can offer a re-detect without re-reading state.
 json.dump({"private_address": local, "public_address": public}, fp=sys.stdout)

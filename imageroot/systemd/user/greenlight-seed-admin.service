@@ -4,16 +4,11 @@
 #
 
 #
-# Create the Greenlight bootstrap administrator.
+# Not an ExecStartPost of greenlight-app: that fires when podman run -d returns,
+# while Greenlight is still migrating and the users table does not exist yet.
 #
-# This cannot live in greenlight-app.service as an ExecStartPost: that fires the
-# moment podman run -d returns, while Greenlight is still doing
-# assets:precompile, db:create and db:migrate:with_data. The users table does not
-# exist yet at that point, so the seed found nothing to check and gave up.
-#
-# A separate oneshot can afford to wait. Pulled in by Wants= from
-# greenlight-app.service, so it needs no [Install] section and runs on every
-# Greenlight start; it returns immediately once an administrator exists.
+# Pulled in by Wants=, so no [Install] section. Runs on every Greenlight start and
+# returns immediately once an administrator exists.
 #
 
 [Unit]

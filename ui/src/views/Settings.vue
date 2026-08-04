@@ -139,8 +139,7 @@
                 {{ $t("settings.private_address_tooltip") }}
               </template>
             </NsTextInput>
-            <!-- The firewall rule on this node is created by the module, but a
-                 router in front of it is out of our reach: show the range. -->
+            <!-- The module opens this node's firewall, but not a router in front. -->
             <NsInlineNotification
               v-if="mediasoupPortRange"
               kind="info"
@@ -396,8 +395,7 @@ import {
   PageTitleService,
 } from "@nethserver/ns8-ui-lib";
 
-// Sound packages the FreeSWITCH entrypoint knows how to install. Keep in sync
-// with the enum in imageroot/actions/configure-module/validate-input.json.
+// Keep in sync with the enum in configure-module/validate-input.json.
 const SOUNDS_LANGUAGES = [
   "en-ca-june",
   "en-us-allison",
@@ -631,8 +629,7 @@ export default {
       if (!this.host) {
         fail("host", "common.required");
       }
-      // mediasoup cannot announce an address it was never given: without it
-      // clients end up with no reachable candidate at all.
+      // Without it mediasoup announces nothing and no client finds a candidate.
       if (!this.publicAddress) {
         fail("public_address", "common.required");
       }

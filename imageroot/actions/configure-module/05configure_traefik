@@ -21,21 +21,15 @@ set_route_data = {
     'instance': os.environ['MODULE_ID'],
     'url':  'http://127.0.0.1:' + os.environ["TCP_PORT"],
     'host': host,
-    # Not a setting: BigBlueButton is unusable over plain HTTP. WebRTC grants
-    # microphone and camera access only in a secure context, and bbb-web builds
-    # every URL it returns with an https scheme regardless of the route.
+    # Not a setting: WebRTC grants microphone and camera only in a secure context.
     'http2https': True,
     'lets_encrypt_check': True,
     'lets_encrypt_cleanup': True,
 }
 
-# A certificate is tied to a name, so renaming the site invalidates the one in
-# use: Greenlight stops reaching the API and browsers stop granting microphone
-# and camera. Ask for a new one when the name changes.
-#
-# Only when it changes, though. Let's Encrypt enforces issuance rate limits, and
-# re-requesting on every save would spend that budget on nothing. Omitting the
-# key leaves the existing certificate untouched.
+# Renaming the site invalidates the certificate in use, so ask for a new one --
+# but only on change: Let's Encrypt rate-limits issuance, and omitting the key
+# leaves the existing certificate untouched.
 if host != previous_host or lets_encrypt != previous_lets_encrypt:
     reason = "hostname changed" if host != previous_host else "Let's Encrypt setting changed"
     print(f"{reason}: requesting a certificate for {host}", file=sys.stderr)

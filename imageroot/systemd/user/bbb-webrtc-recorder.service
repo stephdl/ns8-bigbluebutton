@@ -4,17 +4,12 @@
 #
 
 #
-# HOST network namespace for the same reason as webrtc-sfu: it is a WebRTC
-# endpoint, and upstream notes the link to bbb-webrtc-sfu only works via the
-# external IP (docker-compose.tmpl.yml:469-471).
+# HOST network namespace for the same reason as webrtc-sfu: it is a WebRTC endpoint.
 #
-# The command below replaces the image's, which only chowns and drops privileges.
-# The added mkdir is what makes webcam recording work at all: podman creates a
-# missing mount point owned by root while the volume is still empty, so whichever
-# of this container and recordings-app starts last decided the owner. When
-# recordings-app won, recording produced sound over a blank picture and nothing
-# said why outside this container's log. Creating the directory here ends the race
-# instead of ordering around it -- the volume is never empty again.
+# The mkdir replaces the image's chown-and-drop command and is what makes webcam
+# recording work: podman creates a missing mount point owned by root, so whichever
+# of this container and recordings-app started last decided the owner, and losing
+# that race produced sound over a blank picture.
 #
 
 [Unit]

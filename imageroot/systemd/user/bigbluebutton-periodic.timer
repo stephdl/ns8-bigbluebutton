@@ -4,21 +4,17 @@
 #
 
 #
-# Upstream ran these jobs from a `while :; sleep 30m` loop in a dedicated
-# container (mod/periodic/entrypoint.sh). The interval is kept; the container
-# is not.
+# The interval upstream used in its `periodic` container, without the container.
 #
 
 [Unit]
 Description=BigBlueButton periodic maintenance timer
 
 [Timer]
-# Wait for the stack to settle after boot rather than firing into a
-# half-started pod.
+# Let the stack settle rather than firing into a half-started pod.
 OnBootSec=15min
 OnUnitActiveSec=30min
-# Recover a missed run after the node was down, instead of waiting a full
-# interval with presentations already past their retention.
+# Recover a run missed while the node was down.
 Persistent=true
 Unit=bigbluebutton-periodic.service
 

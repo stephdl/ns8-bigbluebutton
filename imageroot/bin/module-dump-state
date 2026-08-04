@@ -4,20 +4,15 @@
 # Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Runs with CWD=state/ just before Restic takes the backup.
-#
-# Only PostgreSQL is dumped. Redis is deliberately not: it holds live meeting
-# state and pub/sub channels, which are meaningless across a restore.
+# Runs with CWD=state/ just before Restic takes the backup. Redis is left out:
+# live meeting state is meaningless across a restore.
 #
 
 set -e
 exec 1>&2 # Redirect any output to the journal (stderr)
 
-# bbb_graphql is deliberately absent: bbb-graphql-server drops and recreates it
-# from its own schema on every start, so a restored copy dies seconds later.
-# hasura_app is different -- start.sh creates that one only when absent.
-#
-# Custom format so pg_restore can be used on the way back in.
+# bbb_graphql is absent on purpose: bbb-graphql-server recreates it on every
+# start. hasura_app is different -- start.sh creates that one only when absent.
 for db in hasura_app greenlight; do
     echo "Dumping ${db}"
     podman exec postgres-app pg_dump -U postgres --format=c "${db}" > "${db}.pg_dump"

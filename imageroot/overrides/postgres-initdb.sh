@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# From bigbluebutton/docker mod/postgres/initdb.sh. Creates the databases listed
-# in POSTGRES_MULTIPLE_DATABASES, which the stock postgres image cannot do on
-# its own. Greenlight is out of scope here, so only bbb_graphql and hasura_app
-# are requested.
+# From bigbluebutton/docker mod/postgres/initdb.sh: the stock image cannot create
+# more than one database on its own.
 
 set -e
 set -u

@@ -4,29 +4,19 @@
 #
 
 #
-# Greenlight, the BigBlueButton front end. It holds user accounts, so identity
-# lives in this module: participants are no longer pseudonymous by construction.
+# The BigBlueButton front end. It holds user accounts, so participants are no
+# longer pseudonymous by construction.
 #
-# Its database URL carries the PostgreSQL password, so it is rendered into
-# state/overrides/greenlight.env rather than passed on the command line where ps
-# would show it.
-#
-# DOMAIN must be the public name: the same value becomes the join URL handed to
-# the browser, and Ruby validates the certificate answering for it. The entrypoint
-# appends that name to /etc/hosts pointing at 127.0.0.1, so the call reaches this
-# pod's nginx and the certificate mounted below into the CA store. It appends
-# rather than mounting a replacement because the generated file carries the pod's
-# --add-host names. Browsers are unaffected and still reach Traefik.
+# DOMAIN must be the public name, which also becomes the browser join URL. The
+# entrypoint appends it to /etc/hosts pointing at this pod's nginx, and the
+# certificate mounted below is what Ruby then validates.
 #
 
 [Unit]
 Description=Podman greenlight-app.service
 BindsTo=bigbluebutton.service
 After=bigbluebutton.service postgres-app.service redis-app.service bbb-web-app.service nginx-app.service
-# Greenlight's bin/start migrates but never seeds, so a fresh instance has no
-# administrator and its admin panel is hidden from everyone. The bootstrap
-# account is created by a separate oneshot, which can wait for the migration to
-# finish; an ExecStartPost here would run while it is still going.
+# A separate oneshot, not an ExecStartPost: it has to wait for the migration.
 Wants=greenlight-seed-admin.service
 
 [Service]
@@ -37,12 +27,10 @@ WorkingDirectory=%S/state
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/greenlight-app.pid %t/greenlight-app.ctr-id
-# Refresh the SMTP relay settings from the cluster before every start, so a
-# smarthost change is picked up without reconfiguring the module.
+# Before every start, so a smarthost change lands without reconfiguring.
 ExecStartPre=runagent discover-smarthost
-# POSTGRES_MULTIPLE_DATABASES only runs on a fresh data directory, so an
-# instance created before Greenlight existed has no greenlight database.
-# Create it if missing; "already exists" is the normal outcome.
+# POSTGRES_MULTIPLE_DATABASES only runs on a fresh data directory, so an instance
+# older than Greenlight has no database. "already exists" is the normal outcome.
 ExecStartPre=-/usr/bin/podman exec postgres-app psql -U postgres -c "CREATE DATABASE greenlight"
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --cidfile %t/greenlight-app.ctr-id --cgroups=no-conmon \

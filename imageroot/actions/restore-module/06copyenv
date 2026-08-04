@@ -6,13 +6,10 @@
 #
 
 #
-# Restore the non-secret environment. Secrets are not here: they live in
-# state/passwords.env, which Restic restores directly.
+# The non-secret environment; Restic restores state/passwords.env directly.
 #
-# Port variables are deliberately absent. The platform allocates a fresh range
-# on the restored node from the labels in build-images.sh, and create-module's
-# 05setenvs splits it: carrying over the old node's port numbers would restore
-# an allocation this node never made.
+# No port variables: the restored node gets a fresh allocation, and carrying the
+# old numbers over would claim ports it never reserved.
 #
 
 import sys
