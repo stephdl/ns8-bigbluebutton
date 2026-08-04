@@ -24,7 +24,6 @@ original_environment = request["environment"]
 
 for evar in [
         "TRAEFIK_HOST",
-        "TRAEFIK_LETS_ENCRYPT",
         "PUBLIC_IP",
         "PRIVATE_IP",
         "BEHIND_NAT",

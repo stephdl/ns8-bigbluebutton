@@ -23,7 +23,6 @@ import agent
 
 config = {
     "host": os.environ["TRAEFIK_HOST"],
-    "lets_encrypt": os.environ.get("TRAEFIK_LETS_ENCRYPT", "false") == "true",
     "public_address": os.environ["PUBLIC_IP"],
     "private_address": os.environ.get("PRIVATE_IP", ""),
     "stun_server": os.environ.get("STUN_SERVER", ""),
