@@ -55,49 +55,63 @@ chown -R freeswitch:daemon /opt/freeswitch/var
 chown -R freeswitch:daemon /opt/freeswitch/etc
 chmod -R g-rwx,o-rwx /opt/freeswitch/etc
 
-# install freeswitch sounds if missing
+# Install the sound pack, unless the image already ships it.
+#
+# In a function so a failure here cannot take FreeSWITCH down with it: the script
+# runs under bash -e, and a pack that will not download is a worse announcement,
+# not a reason to leave a conference without an audio mixer.
+#
+# Every download says || return 1 for itself: bash suspends -e inside the
+# condition of an if, so a silent failure would otherwise be reported as success.
 SOUNDS_DIR=/opt/freeswitch/share/freeswitch/sounds
-if [ "$SOUNDS_LANGUAGE" == "en-us-callie" ]; then
-    # default, is already installed
-    echo ""
-elif [ "$SOUNDS_LANGUAGE" == "de-de-daedalus3" ]; then
-    if [ ! -d "$SOUNDS_DIR/de/de/daedalus3" ]; then
+
+install_sounds() {
+    case "$SOUNDS_LANGUAGE" in
+    en-us-callie)
+        return 0
+        ;;
+    de-de-daedalus3)
+        [ -d "$SOUNDS_DIR/de/de/daedalus3" ] && return 0
         echo "sounds package for de-de-daedalus3 not installed yet"
-        wget -O /tmp/freeswitch-german-soundfiles.zip https://github.com/Daedalus3/freeswitch-german-soundfiles/archive/master.zip
-        mkdir -p $SOUNDS_DIR/de/de/daedalus3
-        unzip /tmp/freeswitch-german-soundfiles.zip -d /tmp/
-        mv /tmp/freeswitch-german-soundfiles-master $SOUNDS_DIR/de/de/daedalus3/conference
-
-        # symlink other folders
-        for folder in "digits" "ivr" "misc"; do
-            ln -s $SOUNDS_DIR/en/us/callie/$folder $SOUNDS_DIR/de/de/daedalus3/$folder
+        # GitHub's tarball, not its zip: this image has no unzip.
+        mkdir -p "$SOUNDS_DIR/de/de/daedalus3/conference" || return 1
+        curl -fsSL "https://github.com/Daedalus3/freeswitch-german-soundfiles/archive/refs/heads/master.tar.gz" \
+            | tar -xz --strip-components=1 -C "$SOUNDS_DIR/de/de/daedalus3/conference" \
+            || return 1
+        # This pack carries the conference prompts only.
+        for folder in digits ivr misc; do
+            ln -sfn "$SOUNDS_DIR/en/us/callie/$folder" "$SOUNDS_DIR/de/de/daedalus3/$folder"
         done
-
-    fi
-else
-    if [ ! -f $SOUNDS_DIR/$SOUNDS_LANGUAGE.installed ]; then
+        ;;
+    *)
+        [ -f "$SOUNDS_DIR/$SOUNDS_LANGUAGE.installed" ] && return 0
         echo "sounds package for $SOUNDS_LANGUAGE not installed yet"
 
         # get filename of latest release for this sound package
-        FILENAME=$(curl -s https://files.freeswitch.org/releases/sounds/ | grep -i $SOUNDS_LANGUAGE 2> /dev/null | awk -F'\"' '{print $8}' | grep -E '\-48000-.*\.gz$' | sort -V | tail -n 1)
+        FILENAME=$(curl -s https://files.freeswitch.org/releases/sounds/ | grep -i $SOUNDS_LANGUAGE 2> /dev/null | awk -F'"' '{print $8}' | grep -E '\-48000-.*\.gz$' | sort -V | tail -n 1)
 
         if [ "$FILENAME" = "" ]; then
-            echo "Error: could not find sounds for language '$SOUNDS_LANGUAGE'"
-            echo "make sure to specify a value for SOUNDS_LANGUAGE which exists on https://files.freeswitch.org/releases/sounds/"
-            exit 1
+            echo "no sounds published for '$SOUNDS_LANGUAGE' on https://files.freeswitch.org/releases/sounds/" >&2
+            return 1
         fi
         for bitrate in 8000 16000 32000 48000; do
             URL=https://files.freeswitch.org/releases/sounds/$(echo $FILENAME | sed "s/48000/$bitrate/")
-            wget -O /tmp/sounds.tar.gz $URL
-            tar xvfz /tmp/sounds.tar.gz -C $SOUNDS_DIR
+            curl -fsSL "$URL" | tar -xz -C "$SOUNDS_DIR" || return 1
         done
 
-        touch $SOUNDS_DIR/$SOUNDS_LANGUAGE.installed
-    fi
+        touch "$SOUNDS_DIR/$SOUNDS_LANGUAGE.installed"
+        ;;
+    esac
+}
+
+if install_sounds; then
+    SOUNDS_PATH=$SOUNDS_DIR/$(echo "$SOUNDS_LANGUAGE" | sed 's|-|/|g')
+else
+    echo "keeping the English prompts the image ships" >&2
+    SOUNDS_PATH=$SOUNDS_DIR/en/us/callie
 fi
 
-
-export SOUNDS_PATH=$SOUNDS_DIR/$(echo "$SOUNDS_LANGUAGE" | sed 's|-|/|g')
+export SOUNDS_PATH
 
 dockerize \
     -template /etc/freeswitch/vars.xml.tmpl:/etc/freeswitch/vars.xml \
