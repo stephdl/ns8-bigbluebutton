@@ -21,7 +21,7 @@ upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md)
   any router in front of it needs the range forwarded.
 - **No TURN server is included.** Participants behind a firewall that blocks
   UDP cannot join unless you point the module at an external TURN server. See
-  *Differences from upstream* below.
+  *STUN and TURN* below.
 - **A certificate the browser trusts, matching the site hostname.** WebRTC only
   grants microphone and camera access in a secure context, so without one every
   participant meets a warning page and stays without a microphone or a camera
@@ -174,7 +174,7 @@ What each field does, and the value a fresh install carries:
 | Parameter | Fresh install | Notes |
 |---|---|---|
 | `private_address` | detected | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
-| `stun_server` | empty | Leave empty unless you run your own. A public STUN server receives the IP address of every participant. |
+| `stun_server` | empty | See *STUN and TURN* below. A public STUN server receives the IP address of every participant. |
 | `turn_ext_server` | empty | Without TURN, participants behind UDP-blocking firewalls cannot join. |
 | `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
 | `enable_recording` | `false` | Recordings capture audio, video, chat, shared notes and presentations. |
@@ -184,6 +184,48 @@ What each field does, and the value a fresh install carries:
 | `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
 | `enable_learning_dashboard` | `true` | Moderators can open a dashboard reporting each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link, not by role: whoever holds the link can read it. |
+
+## STUN and TURN
+
+This module ships no coturn, so it has no STUN and no TURN listener of its own.
+`stun_server`, `turn_ext_server` and `turn_ext_secret` are all empty by default,
+and the patched `turn-stun-servers.xml` omits each bean whose value is empty — the
+client is handed an empty list rather than a candidate pointing at a port nothing
+listens on.
+
+**Media works without either.** mediasoup announces the node's public address and
+the allocated UDP range is open, so the browser sends straight to the SFU, which
+learns the browser's address from the packets it receives.
+
+**What STUN buys.** Upstream describes it as being used "to allow direct UDP
+connections through certain types of firewalls which otherwise might not work":
+some NAT shapes need the client to discover its own reflexive address first. It
+does nothing for a client whose firewall blocks outbound UDP altogether. That case
+needs TURN, which relays the media, typically over TCP 443.
+
+**Privacy is why both are empty.** A STUN server learns the IP address of every
+participant that queries it, and upstream's `sample.env` points at a third-party
+public one. Run your own instead: coturn answers STUN and TURN on the same port,
+so a single server covers both.
+
+**TURN needs its secret.** BigBlueButton supports one authentication mode —
+`TurnServer.generatePasswordFor()` signs a short-lived credential with
+`HMAC-SHA1(expiry:userId, secret)`, and the TURN server recomputes it from its own
+`static-auth-secret`. Set `turn_ext_secret` to that value or every allocation is
+refused. There is no username-and-password mode.
+
+Value formats: `stun:turn.example.org:3478` and
+`turns:turn.example.org:443?transport=tcp`.
+
+Upstream references:
+
+- [TURN server configuration](https://docs.bigbluebutton.org/administration/turn-server/)
+  — coturn setup, the ports it needs, and the `turn-stun-servers.xml` beans this
+  module patches
+- [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/)
+  — check from a browser that your server returns candidates
+- `stunclient --mode full --localport 30000 turn.example.org 3478`, from the
+  `stuntman-client` package, to test a STUN endpoint from a shell
 
 ## First sign-in
 
@@ -222,7 +264,7 @@ and why:
   one instance per node for a protocol reason rather than a resource one.
   Upstream also emits the `turn0` bean unconditionally, with no `ENABLE_COTURN`
   guard, so without this fix every client would receive a TURN candidate for a
-  port nothing listens on. Use `turn_ext_server` instead.
+  port nothing listens on. Use `turn_ext_server` instead, and see *STUN and TURN*.
 - **STUN is empty by default.** `sample.env` ships a third-party public STUN
   server, which would receive the IP address of every participant.
 - **Greenlight is the front end**, served at the site root, and the module seeds
