@@ -20,7 +20,9 @@ redisHost=redis
 # Being a copy, a key added upstream is lost silently. Re-diff on every bump.
 beans.presentationService.defaultUploadedPresentation=${bigbluebutton.web.serverURL}/default.pdf
 
-learningDashboardEnabled={{ .Env.ENABLE_LEARNING_DASHBOARD }}
+# What actually switches features off in 3.0. learningDashboardEnabled is dead: only
+# this list is read, and the create API adds to it rather than replacing it.
+disabledFeatures={{ .Env.DISABLED_FEATURES }}
 
 # This timer dies with the JVM, so bin/bigbluebutton-periodic enforces retention
 # too. 0 disables it, which is also what an unconfigured instance gets.

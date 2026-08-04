@@ -14,6 +14,8 @@
             "turn_ext_secret_set": false,
             "enable_recording": false,
             "enable_learning_dashboard": true,
+            "enable_external_videos": true,
+            "enable_breakout_rooms": true,
             "learning_dashboard_max_age_days": 1,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
@@ -38,6 +40,8 @@
         "turn_ext_secret_set",
         "enable_recording",
         "enable_learning_dashboard",
+        "enable_external_videos",
+        "enable_breakout_rooms",
         "learning_dashboard_max_age_days",
         "sounds_language",
         "disable_sound_muted",
@@ -87,6 +91,14 @@
         "enable_recording": {
             "type": "boolean",
             "title": "Enable recording"
+        },
+        "enable_external_videos": {
+            "type": "boolean",
+            "title": "Allow sharing an external video"
+        },
+        "enable_breakout_rooms": {
+            "type": "boolean",
+            "title": "Allow breakout rooms"
         },
         "learning_dashboard_max_age_days": {
             "type": "integer",

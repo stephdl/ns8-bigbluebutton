@@ -50,6 +50,8 @@ config = {
     "remove_old_recording": os.environ.get("REMOVE_OLD_RECORDING", "false") == "true",
     "recording_max_age_days": int(os.environ.get("RECORDING_MAX_AGE_DAYS", "14")),
     "enable_learning_dashboard": os.environ.get("ENABLE_LEARNING_DASHBOARD", "true") == "true",
+    "enable_external_videos": os.environ.get("ENABLE_EXTERNAL_VIDEOS", "true") == "true",
+    "enable_breakout_rooms": os.environ.get("ENABLE_BREAKOUT_ROOMS", "true") == "true",
     "learning_dashboard_max_age_days": int(os.environ.get("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1")),
     "sounds_language": os.environ.get("SOUNDS_LANGUAGE", "en-us-callie"),
     "disable_sound_muted": os.environ.get("DISABLE_SOUND_MUTED", "false") == "true",
