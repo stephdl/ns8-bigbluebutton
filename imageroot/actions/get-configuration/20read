@@ -45,11 +45,18 @@ config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
 
 # Live, not cached: the password is changed in Greenlight, which cannot tell us.
 try:
-    probe = subprocess.run(["check-default-admin"], capture_output=True,
-                           text=True, timeout=30)
-    config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
-except Exception:
-    config["default_admin_password_in_use"] = False
+    probe = subprocess.run(["check-default-admin", "--wait", "25"],
+                           capture_output=True, text=True, timeout=40)
+    if probe.returncode == 0:
+        config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
+    else:
+        config["default_admin_password_in_use"] = True
+        print(agent.SD_WARNING + "could not check the administrator password, "
+              "reporting it as unchanged: " + probe.stderr.strip(), file=sys.stderr)
+except Exception as ex:
+    config["default_admin_password_in_use"] = True
+    print(agent.SD_WARNING + f"the administrator password check failed: {ex}",
+          file=sys.stderr)
 
 # Read-only. False when Traefik serves a certificate for another name.
 config["certificate_matches_host"] = os.getenv("CERTIFICATE_MATCHES_HOST", "true") == "true"

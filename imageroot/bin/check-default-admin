@@ -14,6 +14,7 @@
 
 import subprocess
 import sys
+import time
 
 # Mirrored by bin/seed-default-admin and settings.default_admin_description in
 # ui/public/i18n/en/translation.json. Change all three together.
@@ -22,15 +23,51 @@ DEFAULT_PASSWORD = "Nethesis,1234"
 
 
 def run(cmd, **kwargs):
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=60, **kwargs)
+    # Kept under the caller's own budget: a subprocess allowed to outlive the
+    # --wait deadline would make the deadline meaningless.
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=20, **kwargs)
 
 
-digest = run([
-    "podman", "exec", "postgres-app", "psql", "-U", "postgres", "-d", "greenlight",
-    "-tAc", f"SELECT password_digest FROM users WHERE email = '{DEFAULT_EMAIL}'",
-])
+def query_digest():
+    return run([
+        "podman", "exec", "postgres-app", "psql", "-U", "postgres", "-d", "greenlight",
+        "-tAc", f"SELECT password_digest FROM users WHERE email = '{DEFAULT_EMAIL}'",
+    ])
 
-if digest.returncode != 0 or not digest.stdout.strip():
+
+def wait_for_peers(seconds):
+    """Block until both containers can answer, or the budget runs out.
+
+    Both are needed: the digest comes from PostgreSQL and only Greenlight carries
+    the bcrypt gem to verify it against. During a restart the containers are gone
+    rather than slow -- podman exec fails outright -- and reporting that as "the
+    password was changed" is the one answer this check must never give.
+    """
+    deadline = time.monotonic() + seconds
+    while True:
+        probe = query_digest()
+        if probe.returncode == 0 and run(
+                ["podman", "container", "exists", "greenlight-app"]).returncode == 0:
+            return probe
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(2)
+
+
+wait = 0
+if len(sys.argv) == 3 and sys.argv[1] == "--wait":
+    wait = int(sys.argv[2])
+
+digest = wait_for_peers(wait)
+
+# Exit 2, printing nothing, so the caller can tell "could not check" from a
+# verified answer. Callers that treat this as false hide a shipped password.
+if digest is None:
+    print("PostgreSQL or Greenlight is not available, cannot check the administrator "
+          "password", file=sys.stderr)
+    sys.exit(2)
+
+if not digest.stdout.strip():
     print("false")  # no such account, nothing to warn about
     sys.exit(0)
 
@@ -42,4 +79,9 @@ verify = run([
     f'puts(BCrypt::Password.new(ENV["DIGEST"]) == {DEFAULT_PASSWORD!r})',
 ])
 
-print("true" if verify.returncode == 0 and verify.stdout.strip() == "true" else "false")
+if verify.returncode != 0:
+    print(f"could not verify the administrator password: {verify.stderr.strip()}",
+          file=sys.stderr)
+    sys.exit(2)
+
+print("true" if verify.stdout.strip() == "true" else "false")
