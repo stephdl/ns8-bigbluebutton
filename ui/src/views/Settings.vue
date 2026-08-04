@@ -170,67 +170,104 @@
               class="mg-bottom"
             />
 
-            <!-- recording -->
-            <h4 class="mg-bottom">{{ $t("settings.recording") }}</h4>
-            <NsToggle
-              value="enableRecording"
-              :label="$t('settings.enable_recording')"
-              v-model="isRecordingEnabled"
-              :disabled="stillLoading"
-              class="mg-bottom"
-            >
-              <template #tooltip>
-                {{ $t("settings.enable_recording_tooltip") }}
-              </template>
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
-            </NsToggle>
-            <template v-if="isRecordingEnabled">
-              <NsToggle
-                value="removeOldRecording"
-                :label="$t('settings.remove_old_recording')"
-                v-model="isRemoveOldRecordingEnabled"
-                :disabled="stillLoading"
-                class="mg-bottom"
-              >
-                <template #tooltip>
-                  {{ $t("settings.remove_old_recording_tooltip") }}
-                </template>
-                <template slot="text-left">{{
-                  $t("settings.disabled")
-                }}</template>
-                <template slot="text-right">{{
-                  $t("settings.enabled")
-                }}</template>
-              </NsToggle>
-              <NsTextInput
-                v-if="isRemoveOldRecordingEnabled"
-                type="number"
-                min="1"
-                :label="$t('settings.recording_max_age_days')"
-                v-model.trim="recordingMaxAgeDays"
-                class="mg-bottom"
-                :invalid-message="$t(error.recording_max_age_days)"
-                :disabled="stillLoading"
-                tooltipAlignment="start"
-                tooltipDirection="right"
-                ref="recording_max_age_days"
-              >
-                <template #tooltip>
-                  {{ $t("settings.recording_max_age_days_tooltip") }}
-                </template>
-              </NsTextInput>
-            </template>
-
             <!-- advanced options -->
             <cv-accordion ref="accordion" class="maxwidth mg-bottom">
               <cv-accordion-item :open="toggleAccordion[0]">
                 <template slot="title">{{ $t("settings.advanced") }}</template>
                 <template slot="content">
+                  <!-- recording -->
+                  <h4 class="mg-bottom">{{ $t("settings.recording") }}</h4>
+                  <NsToggle
+                    value="enableRecording"
+                    :label="$t('settings.enable_recording')"
+                    v-model="isRecordingEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_recording_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <template v-if="isRecordingEnabled">
+                    <NsToggle
+                      value="removeOldRecording"
+                      :label="$t('settings.remove_old_recording')"
+                      v-model="isRemoveOldRecordingEnabled"
+                      :disabled="stillLoading"
+                      class="mg-bottom"
+                    >
+                      <template #tooltip>
+                        {{ $t("settings.remove_old_recording_tooltip") }}
+                      </template>
+                      <template slot="text-left">{{
+                        $t("settings.disabled")
+                      }}</template>
+                      <template slot="text-right">{{
+                        $t("settings.enabled")
+                      }}</template>
+                    </NsToggle>
+                    <NsTextInput
+                      v-if="isRemoveOldRecordingEnabled"
+                      type="number"
+                      min="1"
+                      :label="$t('settings.recording_max_age_days')"
+                      v-model.trim="recordingMaxAgeDays"
+                      class="mg-bottom"
+                      :invalid-message="$t(error.recording_max_age_days)"
+                      :disabled="stillLoading"
+                      tooltipAlignment="start"
+                      tooltipDirection="right"
+                      ref="recording_max_age_days"
+                    >
+                      <template #tooltip>
+                        {{ $t("settings.recording_max_age_days_tooltip") }}
+                      </template>
+                    </NsTextInput>
+                  </template>
+
+                  <!-- learning analytics -->
+                  <h4 class="mg-bottom">{{ $t("settings.analytics") }}</h4>
+                  <NsToggle
+                    value="enableLearningDashboard"
+                    :label="$t('settings.enable_learning_dashboard')"
+                    v-model="isLearningDashboardEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_learning_dashboard_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <template v-if="isLearningDashboardEnabled">
+                    <NsSlider
+                      :label="$t('settings.learning_dashboard_max_age_days')"
+                      min="1"
+                      max="30"
+                      step="1"
+                      v-model="retentionSliderValue"
+                      :disabled="stillLoading"
+                      :unitLabel="$t('settings.days')"
+                      :showUnlimited="true"
+                      :isUnlimited="learningDashboardMaxAgeDays === 0"
+                      :limitedLabel="$t('settings.retention_limited')"
+                      :unlimitedLabel="$t('settings.retention_unlimited')"
+                      @unlimited="onRetentionUnlimited"
+                      class="mg-bottom"
+                    />
+                  </template>
+
                   <h4 class="mg-bottom">{{ $t("settings.media") }}</h4>
                   <NsComboBox
                     v-model="soundsLanguage"
@@ -326,43 +363,6 @@
                       {{ $t("settings.turn_ext_secret_tooltip") }}
                     </template>
                   </NsTextInput>
-
-                  <!-- learning analytics -->
-                  <h4 class="mg-bottom">{{ $t("settings.analytics") }}</h4>
-                  <NsToggle
-                    value="enableLearningDashboard"
-                    :label="$t('settings.enable_learning_dashboard')"
-                    v-model="isLearningDashboardEnabled"
-                    :disabled="stillLoading"
-                    class="mg-bottom"
-                  >
-                    <template #tooltip>
-                      {{ $t("settings.enable_learning_dashboard_tooltip") }}
-                    </template>
-                    <template slot="text-left">{{
-                      $t("settings.disabled")
-                    }}</template>
-                    <template slot="text-right">{{
-                      $t("settings.enabled")
-                    }}</template>
-                  </NsToggle>
-                  <template v-if="isLearningDashboardEnabled">
-                    <NsSlider
-                      :label="$t('settings.learning_dashboard_max_age_days')"
-                      min="1"
-                      max="30"
-                      step="1"
-                      v-model="retentionSliderValue"
-                      :disabled="stillLoading"
-                      :unitLabel="$t('settings.days')"
-                      :showUnlimited="true"
-                      :isUnlimited="learningDashboardMaxAgeDays === 0"
-                      :limitedLabel="$t('settings.retention_limited')"
-                      :unlimitedLabel="$t('settings.retention_unlimited')"
-                      @unlimited="onRetentionUnlimited"
-                      class="mg-bottom"
-                    />
-                  </template>
 
                   <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
                   <NsTextInput
