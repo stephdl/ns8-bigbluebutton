@@ -19,6 +19,16 @@
         />
       </cv-column>
     </cv-row>
+    <cv-row v-if="error.getStatus">
+      <cv-column>
+        <NsInlineNotification
+          kind="error"
+          :title="$t('action.get-status')"
+          :description="error.getStatus"
+          :showCloseButton="false"
+        />
+      </cv-column>
+    </cv-row>
     <cv-row v-if="defaultAdminPasswordInUse">
       <cv-column>
         <NsInlineNotification
@@ -400,16 +410,6 @@
                   kind="error"
                   :title="$t('action.configure-module')"
                   :description="error.configureModule"
-                  :showCloseButton="false"
-                />
-              </cv-column>
-            </cv-row>
-            <cv-row v-if="error.getStatus">
-              <cv-column>
-                <NsInlineNotification
-                  kind="error"
-                  :title="$t('action.get-status')"
-                  :description="error.getStatus"
                   :showCloseButton="false"
                 />
               </cv-column>
