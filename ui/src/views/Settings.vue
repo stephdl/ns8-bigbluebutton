@@ -19,6 +19,16 @@
         />
       </cv-column>
     </cv-row>
+    <cv-row v-if="error.getStatus">
+      <cv-column>
+        <NsInlineNotification
+          kind="error"
+          :title="$t('action.get-status')"
+          :description="error.getStatus"
+          :showCloseButton="false"
+        />
+      </cv-column>
+    </cv-row>
     <cv-row v-if="defaultAdminPasswordInUse">
       <cv-column>
         <NsInlineNotification
@@ -139,8 +149,24 @@
                 {{ $t("settings.private_address_tooltip") }}
               </template>
             </NsTextInput>
-            <!-- The firewall rule on this node is created by the module, but a
-                 router in front of it is out of our reach: show the range. -->
+            <NsButton
+              kind="ghost"
+              :icon="Reset20"
+              :loading="loading.detectAddresses"
+              :disabled="stillLoading"
+              @click="detectAddresses"
+              class="mg-bottom"
+              >{{ $t("settings.detect_addresses") }}</NsButton
+            >
+            <NsInlineNotification
+              v-if="error.detectAddresses"
+              kind="error"
+              :title="$t('action.detect-addresses')"
+              :description="error.detectAddresses"
+              :showCloseButton="false"
+              class="mg-bottom"
+            />
+            <!-- The module opens this node's firewall, but not a router in front. -->
             <NsInlineNotification
               v-if="mediasoupPortRange"
               kind="info"
@@ -154,61 +180,104 @@
               class="mg-bottom"
             />
 
-            <!-- recording -->
-            <h4 class="mg-bottom">{{ $t("settings.recording") }}</h4>
-            <NsToggle
-              value="enableRecording"
-              :label="$t('settings.enable_recording')"
-              v-model="isRecordingEnabled"
-              :disabled="stillLoading"
-              class="mg-bottom"
-            >
-              <template #tooltip>
-                {{ $t("settings.enable_recording_tooltip") }}
-              </template>
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
-            </NsToggle>
-            <template v-if="isRecordingEnabled">
-              <NsToggle
-                value="removeOldRecording"
-                :label="$t('settings.remove_old_recording')"
-                v-model="isRemoveOldRecordingEnabled"
-                :disabled="stillLoading"
-                class="mg-bottom"
-              >
-                <template #tooltip>
-                  {{ $t("settings.remove_old_recording_tooltip") }}
-                </template>
-                <template slot="text-left">{{
-                  $t("settings.disabled")
-                }}</template>
-                <template slot="text-right">{{
-                  $t("settings.enabled")
-                }}</template>
-              </NsToggle>
-              <NsTextInput
-                v-if="isRemoveOldRecordingEnabled"
-                type="number"
-                min="1"
-                :label="$t('settings.recording_max_age_days')"
-                v-model.trim="recordingMaxAgeDays"
-                class="mg-bottom"
-                :invalid-message="$t(error.recording_max_age_days)"
-                :disabled="stillLoading"
-                ref="recording_max_age_days"
-              />
-            </template>
-
             <!-- advanced options -->
             <cv-accordion ref="accordion" class="maxwidth mg-bottom">
               <cv-accordion-item :open="toggleAccordion[0]">
                 <template slot="title">{{ $t("settings.advanced") }}</template>
                 <template slot="content">
+                  <!-- recording -->
+                  <h4 class="mg-bottom">{{ $t("settings.recording") }}</h4>
+                  <NsToggle
+                    value="enableRecording"
+                    :label="$t('settings.enable_recording')"
+                    v-model="isRecordingEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_recording_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <template v-if="isRecordingEnabled">
+                    <NsToggle
+                      value="removeOldRecording"
+                      :label="$t('settings.remove_old_recording')"
+                      v-model="isRemoveOldRecordingEnabled"
+                      :disabled="stillLoading"
+                      class="mg-bottom"
+                    >
+                      <template #tooltip>
+                        {{ $t("settings.remove_old_recording_tooltip") }}
+                      </template>
+                      <template slot="text-left">{{
+                        $t("settings.disabled")
+                      }}</template>
+                      <template slot="text-right">{{
+                        $t("settings.enabled")
+                      }}</template>
+                    </NsToggle>
+                    <NsTextInput
+                      v-if="isRemoveOldRecordingEnabled"
+                      type="number"
+                      min="1"
+                      :label="$t('settings.recording_max_age_days')"
+                      v-model.trim="recordingMaxAgeDays"
+                      class="mg-bottom"
+                      :invalid-message="$t(error.recording_max_age_days)"
+                      :disabled="stillLoading"
+                      tooltipAlignment="start"
+                      tooltipDirection="right"
+                      ref="recording_max_age_days"
+                    >
+                      <template #tooltip>
+                        {{ $t("settings.recording_max_age_days_tooltip") }}
+                      </template>
+                    </NsTextInput>
+                  </template>
+
+                  <!-- learning analytics -->
+                  <h4 class="mg-bottom">{{ $t("settings.analytics") }}</h4>
+                  <NsToggle
+                    value="enableLearningDashboard"
+                    :label="$t('settings.enable_learning_dashboard')"
+                    v-model="isLearningDashboardEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_learning_dashboard_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <template v-if="isLearningDashboardEnabled">
+                    <NsSlider
+                      :label="$t('settings.learning_dashboard_max_age_days')"
+                      min="1"
+                      max="30"
+                      step="1"
+                      v-model="retentionSliderValue"
+                      :disabled="stillLoading"
+                      :unitLabel="$t('settings.days')"
+                      :showUnlimited="true"
+                      :isUnlimited="learningDashboardMaxAgeDays === 0"
+                      :limitedLabel="$t('settings.retention_limited')"
+                      :unlimitedLabel="$t('settings.retention_unlimited')"
+                      @unlimited="onRetentionUnlimited"
+                      class="mg-bottom"
+                    />
+                  </template>
+
                   <h4 class="mg-bottom">{{ $t("settings.media") }}</h4>
                   <NsComboBox
                     v-model="soundsLanguage"
@@ -227,9 +296,9 @@
                     </template>
                   </NsComboBox>
                   <NsToggle
-                    value="disableSoundMuted"
-                    :label="$t('settings.disable_sound_muted')"
-                    v-model="isSoundMutedDisabled"
+                    value="announceMute"
+                    :label="$t('settings.announce_mute')"
+                    v-model="isMuteAnnounced"
                     :disabled="stillLoading"
                     class="mg-bottom"
                   >
@@ -241,9 +310,9 @@
                     }}</template>
                   </NsToggle>
                   <NsToggle
-                    value="disableSoundAlone"
-                    :label="$t('settings.disable_sound_alone')"
-                    v-model="isSoundAloneDisabled"
+                    value="announceAlone"
+                    :label="$t('settings.announce_alone')"
+                    v-model="isAloneAnnounced"
                     :disabled="stillLoading"
                     class="mg-bottom"
                   >
@@ -284,6 +353,26 @@
                       {{ $t("settings.turn_ext_server_tooltip") }}
                     </template>
                   </NsTextInput>
+                  <NsTextInput
+                    type="password"
+                    :label="$t('settings.turn_ext_secret')"
+                    v-model.trim="turnExtSecret"
+                    class="mg-bottom"
+                    :invalid-message="$t(error.turn_ext_secret)"
+                    :helper-text="
+                      turnExtSecretSet
+                        ? $t('settings.turn_ext_secret_stored')
+                        : $t('settings.turn_ext_secret_absent')
+                    "
+                    :disabled="stillLoading"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
+                    ref="turn_ext_secret"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.turn_ext_secret_tooltip") }}
+                    </template>
+                  </NsTextInput>
 
                   <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
                   <NsTextInput
@@ -304,8 +393,14 @@
                     v-model.trim="welcomeFooter"
                     class="mg-bottom"
                     :disabled="stillLoading"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
                     ref="welcome_footer"
-                  />
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.welcome_footer_tooltip") }}
+                    </template>
+                  </NsTextInput>
                 </template>
               </cv-accordion-item>
             </cv-accordion>
@@ -315,16 +410,6 @@
                   kind="error"
                   :title="$t('action.configure-module')"
                   :description="error.configureModule"
-                  :showCloseButton="false"
-                />
-              </cv-column>
-            </cv-row>
-            <cv-row v-if="error.getStatus">
-              <cv-column>
-                <NsInlineNotification
-                  kind="error"
-                  :title="$t('action.get-status')"
-                  :description="error.getStatus"
                   :showCloseButton="false"
                 />
               </cv-column>
@@ -376,8 +461,7 @@ import {
   PageTitleService,
 } from "@nethserver/ns8-ui-lib";
 
-// Sound packages the FreeSWITCH entrypoint knows how to install. Keep in sync
-// with the enum in imageroot/actions/configure-module/validate-input.json.
+// Keep in sync with the enum in configure-module/validate-input.json.
 const SOUNDS_LANGUAGES = [
   "en-ca-june",
   "en-us-allison",
@@ -385,7 +469,7 @@ const SOUNDS_LANGUAGES = [
   "de-de-daedalus3",
   "es-ar-mario",
   "fr-ca-june",
-  "pt-br-karina",
+  "pt-BR-karina",
   "ru-RU-elena",
   "ru-RU-kirill",
   "ru-RU-vika",
@@ -425,29 +509,37 @@ export default {
       defaultAdminPasswordInUse: false,
       stunServer: "",
       turnExtServer: "",
+      turnExtSecret: "",
+      turnExtSecretSet: false,
       isRecordingEnabled: false,
+      isLearningDashboardEnabled: true,
+      learningDashboardMaxAgeDays: 1,
+      retentionSliderValue: "1",
       isRemoveOldRecordingEnabled: false,
       recordingMaxAgeDays: "14",
       soundsLanguage: "en-us-callie",
-      isSoundMutedDisabled: false,
-      isSoundAloneDisabled: false,
+      isMuteAnnounced: true,
+      isAloneAnnounced: true,
       welcomeMessage: "",
       welcomeFooter: "",
       loading: {
         getConfiguration: false,
         configureModule: false,
         getStatus: false,
+        detectAddresses: false,
       },
       error: {
         getConfiguration: "",
         configureModule: "",
         getStatus: "",
+        detectAddresses: "",
         host: "",
         lets_encrypt: "",
         public_address: "",
         private_address: "",
         stun_server: "",
         turn_ext_server: "",
+        turn_ext_secret: "",
         recording_max_age_days: "",
       },
     };
@@ -458,7 +550,8 @@ export default {
       return (
         this.loading.getConfiguration ||
         this.loading.configureModule ||
-        this.loading.getStatus
+        this.loading.getStatus ||
+        this.loading.detectAddresses
       );
     },
     soundsLanguageOptions() {
@@ -467,6 +560,14 @@ export default {
         label: code,
         value: code,
       }));
+    },
+  },
+  watch: {
+    // Dragging counts only while "limited" is selected.
+    retentionSliderValue(value) {
+      if (this.learningDashboardMaxAgeDays !== 0) {
+        this.learningDashboardMaxAgeDays = Number(value);
+      }
     },
   },
   created() {
@@ -530,6 +631,65 @@ export default {
       this.status = taskResult.output;
       this.loading.getStatus = false;
     },
+    onRetentionUnlimited(isUnlimited) {
+      this.learningDashboardMaxAgeDays = isUnlimited
+        ? 0
+        : Number(this.retentionSliderValue);
+    },
+    async detectAddresses() {
+      this.loading.detectAddresses = true;
+      this.error.detectAddresses = "";
+      const taskAction = "detect-addresses";
+      const eventId = this.getUuid();
+
+      this.core.$root.$once(
+        `${taskAction}-aborted-${eventId}`,
+        this.detectAddressesAborted
+      );
+      this.core.$root.$once(
+        `${taskAction}-completed-${eventId}`,
+        this.detectAddressesCompleted
+      );
+
+      const res = await to(
+        this.createModuleTaskForApp(this.instanceName, {
+          action: taskAction,
+          extra: {
+            title: this.$t("action." + taskAction),
+            isNotificationHidden: true,
+            eventId,
+          },
+        })
+      );
+      const err = res[0];
+      if (err) {
+        console.error(`error creating task ${taskAction}`, err);
+        this.error.detectAddresses = this.getErrorMessage(err);
+        this.loading.detectAddresses = false;
+        return;
+      }
+    },
+    detectAddressesAborted(taskResult, taskContext) {
+      console.error(`${taskContext.action} aborted`, taskResult);
+      this.error.detectAddresses = this.$t("error.generic_error");
+      this.loading.detectAddresses = false;
+    },
+    detectAddressesCompleted(taskContext, taskResult) {
+      const detected = taskResult.output;
+      // Empty means the probe could not tell, so keep what is in the field.
+      if (detected.public_address) {
+        this.publicAddress = detected.public_address;
+      }
+      if (detected.private_address) {
+        this.privateAddress = detected.private_address;
+      }
+      if (!detected.public_address && !detected.private_address) {
+        this.error.detectAddresses = this.$t(
+          "settings.detect_addresses_failed"
+        );
+      }
+      this.loading.detectAddresses = false;
+    },
     async getConfiguration() {
       this.loading.getConfiguration = true;
       this.error.getConfiguration = "";
@@ -581,12 +741,23 @@ export default {
       this.defaultAdminPasswordInUse = config.default_admin_password_in_use;
       this.stunServer = config.stun_server;
       this.turnExtServer = config.turn_ext_server;
+      this.turnExtSecretSet = config.turn_ext_secret_set;
+      // Never returned by get-configuration, so an empty field means unchanged.
+      this.turnExtSecret = "";
       this.isRecordingEnabled = config.enable_recording;
+      this.isLearningDashboardEnabled = config.enable_learning_dashboard;
+      this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
+      // 0 is the unlimited radio, so the slider keeps the last limited value.
+      this.retentionSliderValue = String(
+        config.learning_dashboard_max_age_days || 1
+      );
       this.isRemoveOldRecordingEnabled = config.remove_old_recording;
       this.recordingMaxAgeDays = String(config.recording_max_age_days);
       this.soundsLanguage = config.sounds_language;
-      this.isSoundMutedDisabled = config.disable_sound_muted;
-      this.isSoundAloneDisabled = config.disable_sound_alone;
+      // The action keeps upstream's DISABLE_SOUND_* sense; the toggles read the
+      // other way round, so a positive label needs no double negative.
+      this.isMuteAnnounced = !config.disable_sound_muted;
+      this.isAloneAnnounced = !config.disable_sound_alone;
       this.welcomeMessage = config.welcome_message;
       this.welcomeFooter = config.welcome_footer;
 
@@ -609,10 +780,14 @@ export default {
       if (!this.host) {
         fail("host", "common.required");
       }
-      // mediasoup cannot announce an address it was never given: without it
-      // clients end up with no reachable candidate at all.
+      // Without it mediasoup announces nothing and no client finds a candidate.
       if (!this.publicAddress) {
         fail("public_address", "common.required");
+      }
+      // BigBlueButton signs every TURN credential with the secret, so a server
+      // without one refuses them all.
+      if (this.turnExtServer && !this.turnExtSecret && !this.turnExtSecretSet) {
+        fail("turn_ext_secret", "common.required");
       }
       if (this.isRecordingEnabled && this.isRemoveOldRecordingEnabled) {
         const days = Number(this.recordingMaxAgeDays);
@@ -674,12 +849,17 @@ export default {
             private_address: this.privateAddress,
             stun_server: this.stunServer,
             turn_ext_server: this.turnExtServer,
+            ...(this.turnExtSecret
+              ? { turn_ext_secret: this.turnExtSecret }
+              : {}),
             enable_recording: this.isRecordingEnabled,
+            enable_learning_dashboard: this.isLearningDashboardEnabled,
+            learning_dashboard_max_age_days: this.learningDashboardMaxAgeDays,
             remove_old_recording: this.isRemoveOldRecordingEnabled,
             recording_max_age_days: Number(this.recordingMaxAgeDays),
             sounds_language: this.soundsLanguage,
-            disable_sound_muted: this.isSoundMutedDisabled,
-            disable_sound_alone: this.isSoundAloneDisabled,
+            disable_sound_muted: !this.isMuteAnnounced,
+            disable_sound_alone: !this.isAloneAnnounced,
             welcome_message: this.welcomeMessage,
             welcome_footer: this.welcomeFooter,
           },

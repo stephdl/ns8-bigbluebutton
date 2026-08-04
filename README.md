@@ -21,7 +21,7 @@ upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md)
   any router in front of it needs the range forwarded.
 - **No TURN server is included.** Participants behind a firewall that blocks
   UDP cannot join unless you point the module at an external TURN server. See
-  *Differences from upstream* below.
+  *STUN and TURN* below.
 - **A certificate the browser trusts, matching the site hostname.** WebRTC only
   grants microphone and camera access in a secure context, so without one every
   participant meets a warning page and stays without a microphone or a camera
@@ -133,36 +133,101 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "lets_encrypt": true,
   "public_address": "203.0.113.10",
   "private_address": "192.168.1.10",
-  "enable_recording": false
+  "stun_server": "",
+  "turn_ext_server": "",
+  "turn_ext_secret": "",
+  "enable_recording": false,
+  "remove_old_recording": false,
+  "recording_max_age_days": 14,
+  "enable_learning_dashboard": true,
+  "learning_dashboard_max_age_days": 1,
+  "sounds_language": "en-us-callie",
+  "disable_sound_muted": false,
+  "disable_sound_alone": false,
+  "welcome_message": "",
+  "welcome_footer": ""
 }
 EOF
 ```
 
-Required:
+Every field above is required, because the action rewrites the whole
+configuration: a missing one would silently reset a setting instead of leaving it
+alone. Read the current values with `api-cli run get-configuration`, change what
+you need and send the result back.
 
-- `host` — fully qualified domain name for the web client
-- `public_address` — the address participants use to reach this node. It is
-  *announced* to WebRTC clients, not bound locally, so a public address is
-  correct even when the node sits behind NAT. Detected automatically when
-  omitted.
+Two fields are exempt, both because they cannot round-trip. `lets_encrypt`
+defaults to `false` when omitted, which is what the restore and clone paths rely
+on to avoid requesting a certificate for a name that does not resolve yet.
+`turn_ext_secret` keeps its stored value when omitted, since `get-configuration`
+returns only `turn_ext_secret_set`; send an empty string to clear it.
+
+`host` is the fully qualified domain name of the web client. `public_address` is
+what participants use to reach this node: it is *announced* to WebRTC clients, not
+bound locally, so a public address is correct even behind NAT. Both addresses are
+detected at install time and returned by `get-configuration`; the Settings page
+also offers a re-detection.
 
 HTTP is always redirected to HTTPS: BigBlueButton is unusable without it, so it
 is not offered as a choice.
 
-Optional:
+What each field does, and the value a fresh install carries:
 
-| Parameter | Default | Notes |
+| Parameter | Fresh install | Notes |
 |---|---|---|
-| `private_address` | empty | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
-| `stun_server` | empty | Leave empty unless you run your own. A public STUN server receives the IP address of every participant. |
+| `private_address` | detected | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
+| `stun_server` | empty | See *STUN and TURN* below. A public STUN server receives the IP address of every participant. |
 | `turn_ext_server` | empty | Without TURN, participants behind UDP-blocking firewalls cannot join. |
+| `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
 | `enable_recording` | `false` | Recordings capture audio, video, chat, shared notes and presentations. |
 | `remove_old_recording` | `false` | Let the maintenance timer delete recordings past their retention. |
 | `recording_max_age_days` | `14` | Only meaningful with the above. |
 | `sounds_language` | `en-us-callie` | Language of the spoken announcements. |
 | `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
-| `enable_learning_dashboard` | `true` | |
+| `enable_learning_dashboard` | `true` | Moderators can open a dashboard reporting each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link, not by role: whoever holds the link can read it. |
+| `learning_dashboard_max_age_days` | `1` | How long a report stays readable after the meeting. `0` keeps it forever. Upstream deletes it 2 minutes after the meeting ends, from a timer inside `bbb-web` that a restart loses; the maintenance job enforces this value instead. |
+
+## STUN and TURN
+
+This module ships no coturn, so it has no STUN and no TURN listener of its own.
+`stun_server`, `turn_ext_server` and `turn_ext_secret` are all empty by default,
+and the patched `turn-stun-servers.xml` omits each bean whose value is empty — the
+client is handed an empty list rather than a candidate pointing at a port nothing
+listens on.
+
+**Media works without either.** mediasoup announces the node's public address and
+the allocated UDP range is open, so the browser sends straight to the SFU, which
+learns the browser's address from the packets it receives.
+
+**What STUN buys.** Upstream describes it as being used "to allow direct UDP
+connections through certain types of firewalls which otherwise might not work":
+some NAT shapes need the client to discover its own reflexive address first. It
+does nothing for a client whose firewall blocks outbound UDP altogether. That case
+needs TURN, which relays the media, typically over TCP 443.
+
+**Privacy is why both are empty.** A STUN server learns the IP address of every
+participant that queries it, and upstream's `sample.env` points at a third-party
+public one. Run your own instead: coturn answers STUN and TURN on the same port,
+so a single server covers both.
+
+**TURN needs its secret.** BigBlueButton supports one authentication mode —
+`TurnServer.generatePasswordFor()` signs a short-lived credential with
+`HMAC-SHA1(expiry:userId, secret)`, and the TURN server recomputes it from its own
+`static-auth-secret`. Set `turn_ext_secret` to that value or every allocation is
+refused. There is no username-and-password mode.
+
+Value formats: `stun:turn.example.org:3478` and
+`turns:turn.example.org:443?transport=tcp`.
+
+Upstream references:
+
+- [TURN server configuration](https://docs.bigbluebutton.org/administration/turn-server/)
+  — coturn setup, the ports it needs, and the `turn-stun-servers.xml` beans this
+  module patches
+- [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/)
+  — check from a browser that your server returns candidates
+- `stunclient --mode full --localport 30000 turn.example.org 3478`, from the
+  `stuntman-client` package, to test a STUN endpoint from a shell
 
 ## First sign-in
 
@@ -201,7 +266,7 @@ and why:
   one instance per node for a protocol reason rather than a resource one.
   Upstream also emits the `turn0` bean unconditionally, with no `ENABLE_COTURN`
   guard, so without this fix every client would receive a TURN candidate for a
-  port nothing listens on. Use `turn_ext_server` instead.
+  port nothing listens on. Use `turn_ext_server` instead, and see *STUN and TURN*.
 - **STUN is empty by default.** `sample.env` ships a third-party public STUN
   server, which would receive the IP address of every participant.
 - **Greenlight is the front end**, served at the site root, and the module seeds
@@ -214,6 +279,11 @@ and why:
   ns8-nethvoice-proxy on the same node.
 - **Recordings produce the web player only, not MP4.** The `video` playback
   format is not built into the upstream recordings image.
+- **The learning analytics dashboard is served its data.** The image's nginx
+  points `/learning-analytics-dashboard/` at the app alone, while `bbb-web` writes
+  each meeting's JSON to `/var/bigbluebutton/learning-dashboard`. Nothing served
+  it, so the dashboard opened empty as soon as the meeting ended and the session
+  token stopped working. This module adds the missing location.
 
 ## Maintenance timer
 
@@ -230,14 +300,15 @@ and why:
 
 ## Backup and restore
 
-Backed up: the recordings volume, the `greenlight` and `hasura_app` PostgreSQL
-databases, the raw recorder output, and the generated secrets.
+Backed up: the recordings volume, the `greenlight` PostgreSQL database, the raw
+recorder output, and the generated secrets.
 
-Not backed up: Redis, the per-meeting scratch volumes, and the `bbb_graphql`
-database. Redis holds live meeting state and the recording job queues, which are
-meaningless across a restore. `bbb_graphql` is skipped for a blunter reason:
-`bbb-graphql-server` drops and recreates it from its own schema on every start,
-so a copy would be restored and destroyed seconds later.
+Not backed up: Redis, the per-meeting scratch volumes, and the two GraphQL
+databases. Redis holds live meeting state and the recording job queues, which are
+meaningless across a restore. The GraphQL databases are skipped for a blunter
+reason: on every start `bbb-graphql-server` drops and recreates `bbb_graphql` from
+its own schema, and reapplies `hasura_app`'s metadata from the image, so a copy of
+either would be restored and overwritten seconds later.
 
 **A restore therefore loses every in-progress meeting, and any recording still
 queued for processing at backup time.** The raw media survives, but the job that

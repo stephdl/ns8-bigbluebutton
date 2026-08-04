@@ -6,19 +6,11 @@
 #
 
 #
-# Make sure the instance has an administrator, so somebody can get in.
-# Greenlight's bin/start migrates but never seeds, leaving the admin panel hidden
-# from everyone.
+# Greenlight's bin/start migrates but never seeds, so a fresh instance has no
+# administrator and its admin panel is hidden from everyone.
 #
-# Not through db:seed: Greenlight's seeds.rb calls User.create without the bang
-# and logs at debug, so a validation failure is silent and db:seed still exits 0.
-# rails runner gives a real exit code and the actual errors.
-#
-# The password below ships with this module and is not a secret --
-# bin/check-default-admin reports it as in use until it is changed.
-#
-# Only runs when there is no administrator at all, so it never sits next to a
-# real one and deleting it does not bring it back.
+# Not db:seed: seeds.rb calls User.create without the bang, so a validation
+# failure is silent and it still exits 0. rails runner gives a real exit code.
 #
 
 import json
@@ -28,17 +20,17 @@ import time
 
 import agent
 
-# Mirrored by bin/check-default-admin and by the settings.default_admin_description
-# string in ui/public/i18n/en/translation.json. Change all three together.
+# Mirrored by bin/check-default-admin and settings.default_admin_description in
+# ui/public/i18n/en/translation.json. Change all three together.
 DEFAULT_NAME = "Administrator"
 DEFAULT_EMAIL = "admin@nethserver.org"
 DEFAULT_PASSWORD = "Nethesis,1234"
 
-# admin@local would be rejected: Greenlight validates the address against
-# /\A[\w\-.+]+@[\w\-.]+\.[a-z]+\z/i, which wants a dot and an alpha TLD.
+# Greenlight validates the address against /\A[\w\-.+]+@[\w\-.]+\.[a-z]+\z/i,
+# so a dot and an alpha TLD are mandatory: admin@local would be rejected.
 
-# Ruby, not Python: runs inside the Greenlight container. The existence test is
-# repeated here to close the race between the count below and the insert.
+# Runs inside the Greenlight container. The existence test is repeated here to
+# close the race between the count below and the insert.
 CREATE_ADMIN = """
 role = Role.find_by(name: 'Administrator', provider: 'greenlight')
 abort 'the Administrator role is missing: data migrations have not run' unless role
@@ -79,8 +71,7 @@ if len(sys.argv) == 3 and sys.argv[1] == "--wait":
     wait = int(sys.argv[2])
 
 if not wait_for_schema(wait):
-    # Greenlight is still migrating, or is down. Not an error: the periodic job
-    # and the next start try again.
+    # Not an error: the periodic job and the next start try again.
     print("Greenlight database is not ready, skipping the administrator check",
           file=sys.stderr)
     sys.exit(0)
@@ -95,8 +86,8 @@ if admins.returncode != 0 or admins.stdout.strip() not in ("", "0"):
 
 print("no administrator found, creating the bootstrap account", file=sys.stderr)
 
-# Fed on stdin rather than passed with -e, so the password never shows up in ps.
-# json.dumps produces a valid Ruby string literal for this character set.
+# On stdin, not -e, so the password never shows up in ps. json.dumps produces a
+# valid Ruby string literal for this character set.
 create = subprocess.run(
     ["podman", "exec", "-i", "-w", "/usr/src/app", "greenlight-app",
      "bundle", "exec", "rails", "runner", "-"],

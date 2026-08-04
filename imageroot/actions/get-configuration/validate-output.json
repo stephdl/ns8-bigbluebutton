@@ -11,8 +11,10 @@
             "private_address": "192.168.1.10",
             "stun_server": "",
             "turn_ext_server": "",
+            "turn_ext_secret_set": false,
             "enable_recording": false,
             "enable_learning_dashboard": true,
+            "learning_dashboard_max_age_days": 1,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
             "disable_sound_alone": false,
@@ -29,7 +31,24 @@
     "required": [
         "host",
         "lets_encrypt",
-        "public_address"
+        "public_address",
+        "private_address",
+        "stun_server",
+        "turn_ext_server",
+        "turn_ext_secret_set",
+        "enable_recording",
+        "enable_learning_dashboard",
+        "learning_dashboard_max_age_days",
+        "sounds_language",
+        "disable_sound_muted",
+        "disable_sound_alone",
+        "welcome_message",
+        "welcome_footer",
+        "mediasoup_port_range",
+        "remove_old_recording",
+        "recording_max_age_days",
+        "certificate_matches_host",
+        "default_admin_password_in_use"
     ],
     "properties": {
         "host": {
@@ -60,9 +79,19 @@
             "type": "string",
             "title": "External TURN server"
         },
+        "turn_ext_secret_set": {
+            "type": "boolean",
+            "title": "A TURN shared secret is stored",
+            "description": "Read-only. The secret itself is never returned: it would land in the task output, which lives in Redis."
+        },
         "enable_recording": {
             "type": "boolean",
             "title": "Enable recording"
+        },
+        "learning_dashboard_max_age_days": {
+            "type": "integer",
+            "title": "Learning dashboard retention (days)",
+            "description": "0 means the reports are kept indefinitely."
         },
         "enable_learning_dashboard": {
             "type": "boolean",

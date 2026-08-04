@@ -4,22 +4,14 @@
 #
 
 #
-# FreeSWITCH audio mixer. HOST network namespace, where upstream uses the compose
-# bridge: it exchanges RTP with webrtc-sfu on every conference leg, and webrtc-sfu
-# cannot leave the host. In the pod, every audio packet would cross rootlessport
-# in userspace instead of 127.0.0.1.
+# HOST network namespace, not the pod: it trades RTP with webrtc-sfu on every
+# conference leg, and in the pod each packet would cross rootlessport in userspace.
 #
-# Ports: ESL 8021 and SIP-over-WebSocket 5066 keep their defaults, both below the
-# 20000-45000 allocator span so nothing else is handed them; fsesl-akka reaches
-# ESL from the pod through 10.0.2.2. The RTP range comes from the allocator
-# because FreeSWITCH's 16384-24576 default overlaps that span. The external-dialin
-# profile is deleted by the patched entrypoint -- 5060 would collide with
-# ns8-nethvoice-proxy.
+# ESL 8021 and SIP-over-WebSocket 5066 keep their defaults, below the allocator
+# span. The RTP range is allocated because FreeSWITCH's default overlaps it.
 #
-# Capabilities are trimmed against upstream: NET_ADMIN and NET_RAW served only an
-# iptables block the patched entrypoint drops, and NET_BROADCAST nothing at all.
-# The rest are best-effort anyway -- a capability inside a rootless user namespace
-# does not lift that namespace's rlimits.
+# See docs/packaging-analysis.md sections 2b and 5 for both, and for the trimmed
+# capabilities.
 #
 
 [Unit]

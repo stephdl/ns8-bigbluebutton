@@ -6,13 +6,10 @@
 #
 
 #
-# Restore the non-secret environment. Secrets are not here: they live in
-# state/passwords.env, which Restic restores directly.
+# The non-secret environment; Restic restores state/passwords.env directly.
 #
-# Port variables are deliberately absent. The platform allocates a fresh range
-# on the restored node from the labels in build-images.sh, and create-module's
-# 05setenvs splits it: carrying over the old node's port numbers would restore
-# an allocation this node never made.
+# No port variables: the restored node gets a fresh allocation, and carrying the
+# old numbers over would claim ports it never reserved.
 #
 
 import sys
@@ -24,7 +21,6 @@ original_environment = request["environment"]
 
 for evar in [
         "TRAEFIK_HOST",
-        "TRAEFIK_LETS_ENCRYPT",
         "PUBLIC_IP",
         "PRIVATE_IP",
         "BEHIND_NAT",
@@ -35,6 +31,7 @@ for evar in [
         "REMOVE_OLD_RECORDING",
         "RECORDING_MAX_AGE_DAYS",
         "ENABLE_LEARNING_DASHBOARD",
+        "LEARNING_DASHBOARD_MAX_AGE_DAYS",
         "SOUNDS_LANGUAGE",
         "DISABLE_SOUND_MUTED",
         "DISABLE_SOUND_ALONE",

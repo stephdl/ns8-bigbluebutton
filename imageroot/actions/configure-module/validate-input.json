@@ -9,15 +9,37 @@
             "lets_encrypt": true,
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
+            "stun_server": "",
+            "turn_ext_server": "",
             "enable_recording": false,
+            "enable_learning_dashboard": true,
+            "learning_dashboard_max_age_days": 1,
             "sounds_language": "en-us-callie",
+            "disable_sound_muted": false,
+            "disable_sound_alone": false,
+            "welcome_message": "",
+            "welcome_footer": "",
             "remove_old_recording": false,
             "recording_max_age_days": 14
         }
     ],
     "type": "object",
     "required": [
-        "host"
+        "host",
+        "public_address",
+        "private_address",
+        "stun_server",
+        "turn_ext_server",
+        "enable_recording",
+        "enable_learning_dashboard",
+        "learning_dashboard_max_age_days",
+        "sounds_language",
+        "disable_sound_muted",
+        "disable_sound_alone",
+        "welcome_message",
+        "welcome_footer",
+        "remove_old_recording",
+        "recording_max_age_days"
     ],
     "properties": {
         "host": {
@@ -49,17 +71,29 @@
         "turn_ext_server": {
             "type": "string",
             "title": "External TURN server",
-            "description": "Optional, like 'turns:turn.example.org:443?transport=tcp'. Without it, clients behind UDP-blocking firewalls cannot join."
+            "description": "Optional, like 'turns:turn.example.org:443?transport=tcp'. Without it, clients behind UDP-blocking firewalls cannot join. Needs turn_ext_secret to be usable."
+        },
+        "turn_ext_secret": {
+            "type": "string",
+            "title": "External TURN shared secret",
+            "description": "The TURN server's static-auth-secret, which BigBlueButton uses to sign each client's time-limited credentials. The only authentication mode it supports, so a TURN server without it is never reached. Omit the field to keep the stored value, send an empty string to clear it: it is never returned by get-configuration."
         },
         "enable_recording": {
             "type": "boolean",
             "title": "Enable recording",
             "description": "Record meetings. Recordings capture everything that happens in the conference: obtain participants' consent."
         },
+        "learning_dashboard_max_age_days": {
+            "type": "integer",
+            "title": "Learning dashboard retention (days)",
+            "minimum": 0,
+            "maximum": 30,
+            "description": "How long a meeting's report stays readable after it ends. 0 keeps it forever. Enforced by the maintenance job, which runs every 30 minutes, because bbb-web's own timer does not survive a restart."
+        },
         "enable_learning_dashboard": {
             "type": "boolean",
             "title": "Enable learning dashboard",
-            "description": "Expose the learning analytics dashboard"
+            "description": "Let moderators open the learning analytics dashboard, which reports each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link rather than by role, so disable it where that activity data must not leave the moderators."
         },
         "sounds_language": {
             "type": "string",
@@ -71,7 +105,7 @@
                 "de-de-daedalus3",
                 "es-ar-mario",
                 "fr-ca-june",
-                "pt-br-karina",
+                "pt-BR-karina",
                 "ru-RU-elena",
                 "ru-RU-kirill",
                 "ru-RU-vika",

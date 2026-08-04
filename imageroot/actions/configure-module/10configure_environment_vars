@@ -12,34 +12,23 @@ import agent
 
 data = json.load(sys.stdin)
 
-# --- Traefik ----------------------------------------------------------------
-
 agent.set_env("TRAEFIK_HOST", data["host"])
 agent.set_env("TRAEFIK_LETS_ENCRYPT", str(data.get("lets_encrypt", False)).lower())
 
-# --- Public address / NAT ---------------------------------------------------
+# mediasoup binds an address the node owns and announces the one clients reach,
+# which is why these are two fields and not one. The core cannot supply the
+# public one: get-facts anonymises default_ipv4 through pseudo_ip().
 #
-# mediasoup must bind an address the node actually owns and advertise the one
-# clients can reach. Upstream puts the same value in both fields
-# (docker-compose.tmpl.yml:249), which cannot work behind NAT: the box does not
-# own the public address and the bind fails.
-#
-# The core does not know the node's public address. get-facts exposes
-# default_ipv4 but passes it through agent.facts.pseudo_ip(), so it is
-# anonymised and unusable here. The admin supplies it, as in ns8-nethvoice-proxy.
-
-# create-module/06detect-addresses pre-filled these; an explicit value always
-# wins, since detection cannot know about a port-forward on a different address.
-public_address = data.get("public_address") or os.environ.get("DETECTED_PUBLIC_IP", "")
+# An explicit value wins over detection, which cannot know about a port-forward.
+public_address = data["public_address"] or os.environ.get("DETECTED_PUBLIC_IP", "")
 agent.assert_exp(bool(public_address),
                  "public_address is required and could not be detected")
 agent.set_env("PUBLIC_IP", public_address)
 
 listen_ips = [{"ip": "0.0.0.0", "announcedIp": public_address}]
 
-# A second entry advertising the LAN address lets internal clients connect
-# without relying on NAT reflection (hairpinning), which many routers lack.
-private_address = data.get("private_address", os.environ.get("DETECTED_PRIVATE_IP", ""))
+# A second entry spares internal clients NAT reflection, which many routers lack.
+private_address = data["private_address"]
 if private_address:
     listen_ips.append({"ip": private_address, "announcedIp": private_address})
     agent.set_env("PRIVATE_IP", private_address)
@@ -48,34 +37,27 @@ else:
     agent.set_env("PRIVATE_IP", "")
     agent.set_env("BEHIND_NAT", "false")
 
-# Compact separators on purpose: this lands in state/environment, which is read
-# both as a systemd EnvironmentFile and by shell helpers. Spaces in the value
-# are a trap for anything that treats the file as a script.
+# Compact separators: state/environment is also read by shell helpers, and a
+# space in the value trips anything that sources the file.
 agent.set_env("MS_WEBRTC_LISTEN_IPS", json.dumps(listen_ips, separators=(",", ":")))
 
-# --- STUN / TURN ------------------------------------------------------------
-#
-# Empty by default and that is deliberate. This module ships no coturn, so there
-# is no local STUN or TURN listener; handing clients a candidate for a dead port
-# is worse than handing them none. sample.env's 216.93.246.18 default would also
-# send every client's IP to a third party, which conflicts with the anonymity
-# requirement.
-#
-# Deployments that need TURN point these at an external server.
+# Empty by default: the module ships no coturn, and sample.env's public default
+# would send every client's IP to a third party.
+agent.set_env("STUN_SERVER", data["stun_server"])
+agent.set_env("TURN_EXT_SERVER", data["turn_ext_server"])
 
-agent.set_env("STUN_SERVER", data.get("stun_server", ""))
-agent.set_env("TURN_EXT_SERVER", data.get("turn_ext_server", ""))
-
-# --- BigBlueButton behaviour ------------------------------------------------
-
-agent.set_env("ENABLE_RECORDING", str(data.get("enable_recording", False)).lower())
-agent.set_env("REMOVE_OLD_RECORDING", str(data.get("remove_old_recording", False)).lower())
-agent.set_env("RECORDING_MAX_AGE_DAYS", str(data.get("recording_max_age_days", 14)))
-agent.set_env("ENABLE_LEARNING_DASHBOARD", str(data.get("enable_learning_dashboard", True)).lower())
-agent.set_env("SOUNDS_LANGUAGE", data.get("sounds_language", "en-us-callie"))
-agent.set_env("DISABLE_SOUND_MUTED", str(data.get("disable_sound_muted", False)).lower())
-agent.set_env("DISABLE_SOUND_ALONE", str(data.get("disable_sound_alone", False)).lower())
-agent.set_env("WELCOME_MESSAGE", data.get("welcome_message", ""))
-agent.set_env("WELCOME_FOOTER", data.get("welcome_footer", ""))
+agent.set_env("ENABLE_RECORDING", str(data["enable_recording"]).lower())
+agent.set_env("REMOVE_OLD_RECORDING", str(data["remove_old_recording"]).lower())
+agent.set_env("RECORDING_MAX_AGE_DAYS", str(data["recording_max_age_days"]))
+agent.set_env("ENABLE_LEARNING_DASHBOARD", str(data["enable_learning_dashboard"]).lower())
+agent.set_env("LEARNING_DASHBOARD_MAX_AGE_DAYS", str(data["learning_dashboard_max_age_days"]))
+# bbb-web wants minutes and dockerize cannot multiply.
+agent.set_env("LEARNING_DASHBOARD_CLEANUP_MINUTES",
+              str(data["learning_dashboard_max_age_days"] * 1440))
+agent.set_env("SOUNDS_LANGUAGE", data["sounds_language"])
+agent.set_env("DISABLE_SOUND_MUTED", str(data["disable_sound_muted"]).lower())
+agent.set_env("DISABLE_SOUND_ALONE", str(data["disable_sound_alone"]).lower())
+agent.set_env("WELCOME_MESSAGE", data["welcome_message"])
+agent.set_env("WELCOME_FOOTER", data["welcome_footer"])
 
 print("Environment configured", file=sys.stderr)

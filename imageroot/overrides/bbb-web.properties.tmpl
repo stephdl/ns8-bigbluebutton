@@ -13,13 +13,21 @@ securitySalt={{ .Env.SHARED_SECRET }}
 
 redisHost=redis
 
-# Verbatim copy of the image's template, one line changed: upstream swings this
-# property to raw.githubusercontent.com whenever IGNORE_TLS_CERT_ERRORS is set,
-# fetching the deck over the internet on every meeting create. Pinned local.
+# Verbatim copy, one line changed: upstream swings this property to
+# raw.githubusercontent.com under IGNORE_TLS_CERT_ERRORS, fetching the deck over
+# the internet on every meeting create.
 #
-# Being a copy, a key added upstream is lost here silently. Re-diff on every bump.
+# Being a copy, a key added upstream is lost silently. Re-diff on every bump.
 beans.presentationService.defaultUploadedPresentation=${bigbluebutton.web.serverURL}/default.pdf
 
 learningDashboardEnabled={{ .Env.ENABLE_LEARNING_DASHBOARD }}
+
+# This timer dies with the JVM, so bin/bigbluebutton-periodic enforces retention
+# too. 0 disables it, which is also what an unconfigured instance gets.
+{{ if .Env.LEARNING_DASHBOARD_CLEANUP_MINUTES }}
+learningDashboardCleanupDelayInMinutes={{ .Env.LEARNING_DASHBOARD_CLEANUP_MINUTES }}
+{{ else }}
+learningDashboardCleanupDelayInMinutes=0
+{{ end }}
 
 defaultNumDigitsForTelVoice=9

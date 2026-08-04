@@ -4,23 +4,11 @@
 #
 
 #
-# Pod master unit. Creates the pod that holds the 13 control-plane containers.
+# Pod master unit. freeswitch, webrtc-sfu and bbb-webrtc-recorder are NOT in it:
+# they run in the host network namespace. See docs/packaging-analysis.md.
 #
-# Three containers are NOT in this pod: freeswitch, webrtc-sfu and
-# bbb-webrtc-recorder all run in the host network namespace.
-#
-# FreeSWITCH is out here on purpose. It exchanges RTP with the SFU for every
-# conference audio leg; with FreeSWITCH inside the pod that traffic had to be
-# published to the node loopback, which means every audio packet crossing
-# rootlessport in userspace. Both endpoints in the host namespace talk over
-# 127.0.0.1 directly instead.
-#
-# The pod therefore publishes exactly two ports: nginx for Traefik, and Redis
-# for the three host-network containers.
-#
-# Every peer inside the pod resolves to 127.0.0.1: BigBlueButton is natively a
-# single-host product and the 10.7.7.x split in bigbluebutton/docker exists only
-# to fit compose. The --add-host entries restore the upstream addressing.
+# The --add-host entries point every peer at 127.0.0.1, which is BigBlueButton's
+# native addressing -- the 10.7.7.x split upstream exists only to fit compose.
 #
 
 [Unit]
@@ -44,11 +32,9 @@ EnvironmentFile=%S/state/environment
 Restart=always
 TimeoutStopSec=70
 ExecStartPre=/bin/rm -f %t/bigbluebutton.pid %t/bigbluebutton.pod-id
-# Render state/overrides/ before anything mounts from it. This is what covers the
-# update path, where nothing else renders, and it reaches every container because
-# they are all After= this unit -- so do not drop that ordering. podman answers a
-# missing bind mount source by creating a directory, and an entrypoint mounted
-# that way crash-loops.
+# Render state/overrides/ before anything mounts from it: podman answers a missing
+# bind mount source by creating a directory, and an entrypoint mounted that way
+# crash-loops. Every container is After= this unit, so do not drop that ordering.
 ExecStartPre=runagent render-overrides
 ExecStartPre=/usr/bin/podman pod create \
     --infra-conmon-pidfile %t/bigbluebutton.pid \

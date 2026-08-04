@@ -6,11 +6,8 @@
 #
 
 #
-# Render state/overrides/, then report on the certificate Traefik serves.
-#
-# The rendering is bin/render-overrides, shared with the pod unit's ExecStartPre.
-# Only the certificate check lives here: it needs Traefik listening and it writes
-# to state/environment, so it belongs to configuring rather than to rendering.
+# The rendering itself is bin/render-overrides, shared with the pod unit. Only the
+# certificate check lives here: it needs Traefik listening.
 #
 
 import os
@@ -29,10 +26,8 @@ subprocess.run([os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin", "render-ove
 env = agent.read_envfile(os.path.join(os.environ["AGENT_STATE_DIR"], "environment"))
 host = env["TRAEFIK_HOST"]
 
-# Only the browser's problem -- the containers validate the internal certificate
-# instead -- but still worth reporting: without a certificate for this name
-# browsers refuse microphone and camera access, and nothing says so until a room
-# is started.
+# The containers validate the internal certificate instead, so this is only the
+# browser's problem -- but nothing reports it until a room fails to start.
 try:
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ctx.check_hostname = False

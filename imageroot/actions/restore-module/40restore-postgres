@@ -4,10 +4,8 @@
 # Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Replay the two PostgreSQL dumps into a fresh data directory, using an
-# ephemeral container. The postgres image entrypoint runs everything in
-# /docker-entrypoint-initdb.d on an empty data dir, so the databases are
-# created by our initdb script and then loaded here.
+# Replay the dumps through an ephemeral container: the postgres entrypoint runs
+# /docker-entrypoint-initdb.d only on an empty data directory.
 #
 
 set -e -o pipefail
@@ -19,42 +17,34 @@ if [ ! -f greenlight.pg_dump ]; then
     exit 0
 fi
 
-# The password the restored secrets file carries: the data directory is being
-# created from scratch here, so it must match what the module will use later.
+# The cluster is created here, so its password must be the restored one.
 set -a
 . ./passwords.env
 set +a
 
 mkdir -vp restore/initdb
 
-# Recreate the databases before loading into them. This one belongs in
-# /docker-entrypoint-initdb.d; the restore below does not.
+# Creating the databases belongs in initdb.d; loading them does not.
 cp -v "${AGENT_INSTALL_DIR}/overrides/postgres-initdb.sh" restore/initdb/10-create-databases.sh
 chmod 755 restore/initdb/10-create-databases.sh
 
-# It runs through psql rather than pg_restore for one substitution: pg_dump emits
-# `set_config('search_path', '', false)` and
-# schema-qualifies its own output, but not function bodies it carries across --
-# an unqualified call inside a generated column then resolves against nothing and
-# the table is never created. Restoring into public instead is enough.
+# Through psql for one substitution: pg_dump does not schema-qualify the function
+# bodies it carries, so with an empty search_path a generated column resolves
+# against nothing and its table is never created.
 #
 # ON_ERROR_STOP because pg_restore's exit code alone let a database come back
-# quietly incomplete. psql's stdout is dropped: the dump's own set_config and
-# setval calls would fill the journal with result rows.
+# quietly incomplete.
 cat - >restore/20-restore.sh <<'EOS'
 #!/bin/bash
 set -e -o pipefail
-for db in hasura_app greenlight; do
-    echo "Restoring ${db}"
-    pg_restore --no-owner --no-privileges --file=- "/dumps/${db}.pg_dump" \
-        | sed "s/set_config('search_path', '', false)/set_config('search_path', 'public', false)/" \
-        | psql -v ON_ERROR_STOP=1 -U postgres -q -d "${db}" >/dev/null
-done
+echo "Restoring greenlight"
+pg_restore --no-owner --no-privileges --file=- /dumps/greenlight.pg_dump \
+    | sed "s/set_config('search_path', '', false)/set_config('search_path', 'public', false)/" \
+    | psql -v ON_ERROR_STOP=1 -U postgres -q -d greenlight >/dev/null
 EOS
 chmod 755 restore/20-restore.sh
 
-# bbb_graphql is still created, though no longer dumped: a restored data
-# directory has to look like a fresh one.
+# All three are created, only greenlight is loaded: the same set as a fresh install.
 podman run \
     --rm --detach \
     --network=none \
@@ -69,9 +59,8 @@ podman run \
     --env TZ=UTC \
     "${POSTGRES_IMAGE}" >/dev/null
 
-# TCP is the signal that initialisation is over: the entrypoint's temporary
-# server listens on the Unix socket only, and 5432 starts answering when it execs
-# the real postgres, after the last init script.
+# TCP is the signal that initialisation is over: the entrypoint's temporary server
+# listens on the Unix socket only.
 deadline=$(( SECONDS + 180 ))
 until podman exec restore_db pg_isready -h 127.0.0.1 -q 2>/dev/null; do
     if ! podman container exists restore_db; then
@@ -88,13 +77,10 @@ until podman exec restore_db pg_isready -h 127.0.0.1 -q 2>/dev/null; do
     sleep 2
 done
 
-# Errors surface here rather than in a container's exit code.
 podman exec restore_db /restore.sh
 
-# Shut it down cleanly: this is the same cluster the module's own postgres-app
-# will open next, and a fast shutdown leaves it needing crash recovery.
+# Cleanly: postgres-app opens this same cluster next, and a fast shutdown leaves
+# it needing crash recovery.
 podman stop --time 60 restore_db >/dev/null
 
-# If the restore is successful, clean up. bbb_graphql.pg_dump is named because a
-# backup taken by an earlier version still carries one.
-rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump
+rm -rfv restore/ greenlight.pg_dump

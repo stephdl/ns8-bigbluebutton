@@ -6,35 +6,21 @@
 #
 
 #
-# Split the two contiguous port ranges the platform allocated for us into the
-# named variables the systemd units expect.
-#
-# The platform allocates from the labels in build-images.sh and injects
-# TCP_PORTS_RANGE / UDP_PORTS_RANGE here, see ns8-core
-# core/imageroot/var/lib/nethserver/node/actions/add-module/50update:66-83
+# Split TCP_PORTS_RANGE and UDP_PORTS_RANGE, injected by the platform from the
+# labels in build-images.sh, into the variables the systemd units expect.
 #
 
 import os
 import sys
 import agent
 
-# --- TCP: the 2 ports the pod publishes to the node loopback ----------------
-
 tcp_start, tcp_end = (int(p) for p in os.environ["TCP_PORTS_RANGE"].split("-"))
 agent.assert_exp(tcp_end - tcp_start + 1 >= 2, "at least 2 TCP ports are required")
 
-# nginx 48087 is the only listener that does not require the PROXY protocol, so
-# it is the one Traefik can talk to. Redis is published because the three
-# host-network containers need it and the node's own Redis already owns
-# 127.0.0.1:6379.
-#
-# FreeSWITCH's ESL and SIP-over-WebSocket ports are not allocated: FreeSWITCH
-# runs in the host namespace and keeps 8021 and 5066, both below 20000 and
-# therefore outside the allocator span.
+# The two ports the pod publishes to the node loopback: nginx for Traefik, and
+# Redis for the host-network containers, the node owning 127.0.0.1:6379 already.
 agent.set_env("NGINX_PORT", str(tcp_start))
 agent.set_env("REDIS_PORT", str(tcp_start + 1))
-
-# --- UDP: one range, split in two -------------------------------------------
 
 MEDIASOUP_PORTS = 8192
 FS_RTP_PORTS = 1024
@@ -45,15 +31,12 @@ agent.assert_exp(
     f"at least {MEDIASOUP_PORTS + FS_RTP_PORTS} UDP ports are required",
 )
 
-# mediasoup: public, must be reachable from the internet
+# Public half: must be reachable from the internet.
 agent.set_env("MEDIASOUP_MIN_PORT", str(udp_start))
 agent.set_env("MEDIASOUP_MAX_PORT", str(udp_start + MEDIASOUP_PORTS - 1))
 
-# FreeSWITCH RTP: carries the SFU<->FreeSWITCH audio leg, which never leaves
-# the node. Bound directly on the host, not published, since both endpoints are
-# in the host namespace. Allocated all the same, because FreeSWITCH's
-# 16384-24576 default overlaps the allocator span and would collide with
-# whatever else the node hands out.
+# Node-local half, bound on the host. Allocated all the same, because
+# FreeSWITCH's 16384-24576 default overlaps the allocator span.
 agent.set_env("FS_RTP_MIN_PORT", str(udp_start + MEDIASOUP_PORTS))
 agent.set_env("FS_RTP_MAX_PORT", str(udp_start + MEDIASOUP_PORTS + FS_RTP_PORTS - 1))
 

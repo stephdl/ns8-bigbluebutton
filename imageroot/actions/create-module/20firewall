@@ -6,25 +6,16 @@
 #
 
 #
-# Open the mediasoup RTC range.
-#
-# Allocation and exposure are independent: the label in build-images.sh reserves
-# the ports against the node registry, this call opens them in the firewall.
-#
-# Only the mediasoup half of the allocated UDP range is public. The FreeSWITCH
-# RTP half is published to the node loopback for the SFU and must stay closed.
-#
-# No TCP port is declared: Traefik owns 443 and reverse-proxies to nginx on
-# loopback. Nothing in BigBlueButton wants a public TCP port once coturn and
-# SIP dial-in are excluded.
+# The build-images.sh label only reserves the ports against the node registry;
+# opening them in the firewall is this call. Only the mediasoup half is public,
+# and no TCP port at all: Traefik owns 443.
 #
 
 import os
 import agent
 
-# agent.set_env() in 05setenvs writes state/environment but does not touch
-# os.environ, and each action step is a separate process: read the file back
-# rather than assuming the variables were propagated.
+# agent.set_env() does not touch os.environ, and each step is its own process:
+# read state/environment back.
 env = agent.read_envfile(os.path.join(os.environ["AGENT_STATE_DIR"], "environment"))
 
 agent.assert_exp(agent.add_public_service(os.environ["MODULE_ID"], [

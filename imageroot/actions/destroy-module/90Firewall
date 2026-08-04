@@ -6,12 +6,11 @@
 #
 
 #
-# Close the mediasoup UDP range create-module/20firewall opened. Without this the
-# firewalld service outlives the instance, and every install-and-remove cycle
-# leaves another 8192 ports open in the public zone for a module that is gone.
+# Without this the firewalld service outlives the instance, and every
+# install-and-remove cycle leaves another 8192 ports open for a module that is gone.
 #
-# The result is deliberately not asserted, unlike on the way in: a destroy that
-# refuses to finish leaves an instance nobody can remove.
+# Not asserted, unlike on the way in: a destroy that refuses to finish leaves an
+# instance nobody can remove.
 #
 
 import os
