@@ -85,6 +85,24 @@
     "default_admin_description": "admin@nethserver.org verwendet weiterhin das Passwort Nethesis,1234, das mit dem Modul ausgeliefert wird und damit öffentlich ist. Melden Sie sich damit an, erstellen Sie ein eigenes Konto mit der Rolle Administrator und löschen Sie dieses dann.",
     "open_bigbluebutton": "BigBlueButton öffnen"
   },
+  "analytics": {
+    "title": "Lernanalyse",
+    "policy": "Berichte vergangener Konferenzen",
+    "retention_days": "Werden {days} Tage nach dem Ende der Konferenz aufbewahrt und dann vom Wartungsauftrag gelöscht.",
+    "retention_unlimited": "Werden dauerhaft aufbewahrt.",
+    "policy_disabled": "Das Dashboard für Lernanalyse ist deaktiviert",
+    "policy_disabled_description": "Es wird kein neuer Bericht geschrieben. Die unten stehenden werden gelöscht, sobald ihre Aufbewahrung endet.",
+    "go_to_settings": "In den Einstellungen ändern",
+    "meeting": "Konferenz",
+    "started": "Beginn",
+    "ended": "Ende",
+    "participants": "Teilnehmer",
+    "not_ended": "Nicht erfasst",
+    "open_report": "Bericht öffnen",
+    "no_reports": "Kein Bericht vorhanden",
+    "no_reports_description": "Ein Bericht erscheint, sobald eine Konferenz stattgefunden hat, und bleibt so lange, wie die Aufbewahrung erlaubt.",
+    "no_reports_disabled_description": "Aktivieren Sie das Dashboard in den Einstellungen, damit die nächsten Konferenzen erfasst werden."
+  },
   "about": {
     "title": "Über"
   },
@@ -96,6 +114,7 @@
     "get-configuration": "Konfiguration lesen",
     "configure-module": "Modul konfigurieren",
     "detect-addresses": "Adressen erkennen",
+    "list-learning-dashboards": "Lernanalyse-Berichte auflisten",
     "get-module-info": "Modulinformationen lesen",
     "get-name": "Namen lesen",
     "list-backup-repositories": "Backup-Repositorys auflisten",

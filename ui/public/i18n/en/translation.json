@@ -85,6 +85,24 @@
     "default_admin_description": "admin@nethserver.org still uses the password Nethesis,1234, which ships with the module and is therefore public. Sign in with it, create your own account with the Administrator role, then delete this one.",
     "open_bigbluebutton": "Open BigBlueButton"
   },
+  "analytics": {
+    "title": "Learning analytics",
+    "policy": "Reports of past meetings",
+    "retention_days": "Kept for {days} days after the meeting ends, then deleted by the maintenance job.",
+    "retention_unlimited": "Kept indefinitely.",
+    "policy_disabled": "The learning dashboard is disabled",
+    "policy_disabled_description": "No new report is written. The ones below, if any, are deleted when their retention runs out.",
+    "go_to_settings": "Change in Settings",
+    "meeting": "Meeting",
+    "started": "Started",
+    "ended": "Ended",
+    "participants": "Participants",
+    "not_ended": "Not recorded",
+    "open_report": "Open report",
+    "no_reports": "No report available",
+    "no_reports_description": "A report appears once a meeting has been held, and stays for as long as the retention allows.",
+    "no_reports_disabled_description": "Enable the learning dashboard in Settings for the next meetings to be reported."
+  },
   "about": {
     "title": "About"
   },
@@ -96,6 +114,7 @@
     "get-configuration": "Get configuration",
     "configure-module": "Configure module",
     "detect-addresses": "Detect addresses",
+    "list-learning-dashboards": "List learning analytics reports",
     "get-module-info": "Get module info",
     "get-name": "Get name",
     "list-backup-repositories": "List backup repositories",

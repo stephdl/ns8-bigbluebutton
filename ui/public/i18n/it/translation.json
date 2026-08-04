@@ -85,6 +85,24 @@
     "default_admin_description": "admin@nethserver.org usa ancora la password Nethesis,1234, che è distribuita con il modulo ed è quindi pubblica. Accedi con essa, crea un tuo account con il ruolo Administrator, poi elimina questo.",
     "open_bigbluebutton": "Apri BigBlueButton"
   },
+  "analytics": {
+    "title": "Analisi didattica",
+    "policy": "Rapporti delle riunioni passate",
+    "retention_days": "Conservati {days} giorni dopo la fine della riunione, poi eliminati dall'attività di manutenzione.",
+    "retention_unlimited": "Conservati a tempo indeterminato.",
+    "policy_disabled": "La dashboard di analisi didattica è disabilitata",
+    "policy_disabled_description": "Non viene scritto alcun nuovo rapporto. Quelli sotto, se presenti, sono eliminati allo scadere della conservazione.",
+    "go_to_settings": "Modifica nelle impostazioni",
+    "meeting": "Riunione",
+    "started": "Iniziata",
+    "ended": "Terminata",
+    "participants": "Partecipanti",
+    "not_ended": "Non registrata",
+    "open_report": "Apri il rapporto",
+    "no_reports": "Nessun rapporto disponibile",
+    "no_reports_description": "Un rapporto compare quando una riunione si è svolta, e resta per il tempo consentito dalla conservazione.",
+    "no_reports_disabled_description": "Abilita la dashboard nelle impostazioni perché le prossime riunioni siano registrate."
+  },
   "about": {
     "title": "Informazioni"
   },
@@ -96,6 +114,7 @@
     "get-configuration": "Leggi la configurazione",
     "configure-module": "Configura il modulo",
     "detect-addresses": "Rileva gli indirizzi",
+    "list-learning-dashboards": "Elenca i rapporti di analisi didattica",
     "get-module-info": "Leggi le informazioni del modulo",
     "get-name": "Leggi il nome",
     "list-backup-repositories": "Elenca i repository di backup",
