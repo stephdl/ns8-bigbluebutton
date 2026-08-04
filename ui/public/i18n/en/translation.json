@@ -99,6 +99,7 @@
     "participants": "Participants",
     "not_ended": "Not recorded",
     "open_report": "Open report",
+    "search": "Search a meeting",
     "no_reports": "No report available",
     "no_reports_description": "A report appears once a meeting has been held, and stays for as long as the retention allows.",
     "no_reports_disabled_description": "Enable the learning dashboard in Settings for the next meetings to be reported."

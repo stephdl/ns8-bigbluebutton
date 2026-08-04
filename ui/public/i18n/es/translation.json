@@ -99,6 +99,7 @@
     "participants": "Participantes",
     "not_ended": "Sin registrar",
     "open_report": "Abrir el informe",
+    "search": "Buscar una reunión",
     "no_reports": "Ningún informe disponible",
     "no_reports_description": "Un informe aparece cuando se ha celebrado una reunión y permanece el tiempo que permita la conservación.",
     "no_reports_disabled_description": "Habilita el panel en los ajustes para que las próximas reuniones queden registradas."

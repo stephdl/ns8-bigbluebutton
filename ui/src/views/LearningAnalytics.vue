@@ -19,7 +19,7 @@
         />
       </cv-column>
     </cv-row>
-    <!-- The list only makes sense against the policy that governs it. -->
+    <!-- What the list shows depends on this policy. -->
     <cv-row v-if="!loading.listLearningDashboards">
       <cv-column>
         <NsInlineNotification
@@ -56,43 +56,49 @@
                 }}
               </template>
             </NsEmptyState>
-            <cv-structured-list v-else>
-              <template slot="headings">
-                <cv-structured-list-heading>{{
-                  $t("analytics.meeting")
-                }}</cv-structured-list-heading>
-                <cv-structured-list-heading>{{
-                  $t("analytics.started")
-                }}</cv-structured-list-heading>
-                <cv-structured-list-heading>{{
-                  $t("analytics.ended")
-                }}</cv-structured-list-heading>
-                <cv-structured-list-heading>{{
-                  $t("analytics.participants")
-                }}</cv-structured-list-heading>
-                <cv-structured-list-heading></cv-structured-list-heading>
-              </template>
-              <template slot="items">
-                <cv-structured-list-item
-                  v-for="report in reports"
+            <NsDataTable
+              v-else
+              :allRows="reports"
+              :columns="columns"
+              :rawColumns="rawColumns"
+              :isSearchable="true"
+              :searchPlaceholder="$t('analytics.search')"
+              :noSearchResultsLabel="core.$t('common.no_search_results')"
+              :noSearchResultsDescription="
+                core.$t('common.no_search_results_description')
+              "
+              :filterRowsCallback="filterReports"
+              :itemsPerPageLabel="core.$t('pagination.items_per_page')"
+              :rangeOfTotalItemsLabel="
+                core.$t('pagination.range_of_total_items')
+              "
+              :ofTotalPagesLabel="core.$t('pagination.of_total_pages')"
+              :backwardText="core.$t('pagination.previous_page')"
+              :forwardText="core.$t('pagination.next_page')"
+              :pageNumberLabel="core.$t('pagination.page_number')"
+              @updatePage="tablePage = $event"
+            >
+              <template slot="data">
+                <cv-data-table-row
+                  v-for="report in tablePage"
                   :key="report.meeting_id"
                 >
-                  <cv-structured-list-data class="break-word">{{
+                  <cv-data-table-cell class="break-word">{{
                     report.name
-                  }}</cv-structured-list-data>
-                  <cv-structured-list-data>{{
+                  }}</cv-data-table-cell>
+                  <cv-data-table-cell>{{
                     formatTimestamp(report.created_on)
-                  }}</cv-structured-list-data>
-                  <cv-structured-list-data>{{
+                  }}</cv-data-table-cell>
+                  <cv-data-table-cell>{{
                     report.ended_on
                       ? formatTimestamp(report.ended_on)
                       : $t("analytics.not_ended")
-                  }}</cv-structured-list-data>
-                  <cv-structured-list-data>{{
+                  }}</cv-data-table-cell>
+                  <cv-data-table-cell>{{
                     report.participants
-                  }}</cv-structured-list-data>
-                  <cv-structured-list-data>
-                    <!-- The link carries the access token, so it is never shown. -->
+                  }}</cv-data-table-cell>
+                  <cv-data-table-cell>
+                    <!-- Only the button carries the token. -->
                     <NsButton
                       kind="ghost"
                       size="small"
@@ -100,10 +106,10 @@
                       @click="openReport(report)"
                       >{{ $t("analytics.open_report") }}</NsButton
                     >
-                  </cv-structured-list-data>
-                </cv-structured-list-item>
+                  </cv-data-table-cell>
+                </cv-data-table-row>
               </template>
-            </cv-structured-list>
+            </NsDataTable>
           </div>
           <cv-skeleton-text
             v-else
@@ -119,7 +125,7 @@
 <script>
 import to from "await-to-js";
 import { mapState } from "vuex";
-// IconService does not expose this one.
+// Not in IconService.
 import LaunchIcon from "@carbon/icons-vue/es/launch/20";
 import {
   QueryParamService,
@@ -150,6 +156,7 @@ export default {
       enabled: true,
       maxAgeDays: 1,
       reports: [],
+      tablePage: [],
       loading: {
         listLearningDashboards: true,
       },
@@ -162,6 +169,18 @@ export default {
     ...mapState(["instanceName", "core", "appName"]),
     Launch20() {
       return LaunchIcon;
+    },
+    columns() {
+      return [
+        this.$t("analytics.meeting"),
+        this.$t("analytics.started"),
+        this.$t("analytics.ended"),
+        this.$t("analytics.participants"),
+        "",
+      ];
+    },
+    rawColumns() {
+      return ["name", "created_on", "ended_on", "participants", ""];
     },
   },
   created() {
@@ -178,6 +197,23 @@ export default {
     next();
   },
   methods: {
+    // Only on what is displayed: the default would match the URL, token included.
+    filterReports(search) {
+      if (!search) {
+        return this.reports;
+      }
+      const needle = search.toLowerCase();
+      return this.reports.filter((report) =>
+        [
+          report.name,
+          this.formatTimestamp(report.created_on),
+          report.ended_on ? this.formatTimestamp(report.ended_on) : "",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(needle)
+      );
+    },
     formatTimestamp(milliseconds) {
       return new Date(milliseconds).toLocaleString();
     },

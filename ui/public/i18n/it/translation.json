@@ -99,6 +99,7 @@
     "participants": "Partecipanti",
     "not_ended": "Non registrata",
     "open_report": "Apri il rapporto",
+    "search": "Cerca una riunione",
     "no_reports": "Nessun rapporto disponibile",
     "no_reports_description": "Un rapporto compare quando una riunione si è svolta, e resta per il tempo consentito dalla conservazione.",
     "no_reports_disabled_description": "Abilita la dashboard nelle impostazioni perché le prossime riunioni siano registrate."

@@ -99,6 +99,7 @@
     "participants": "Participantes",
     "not_ended": "Não registrada",
     "open_report": "Abrir o relatório",
+    "search": "Procurar uma reunião",
     "no_reports": "Nenhum relatório disponível",
     "no_reports_description": "Um relatório aparece depois de uma reunião e permanece pelo tempo que a retenção permitir.",
     "no_reports_disabled_description": "Ative o painel nas configurações para que as próximas reuniões sejam registradas."

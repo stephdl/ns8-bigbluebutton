@@ -99,6 +99,7 @@
     "participants": "Participants",
     "not_ended": "Non enregistrée",
     "open_report": "Ouvrir le rapport",
+    "search": "Rechercher une réunion",
     "no_reports": "Aucun rapport disponible",
     "no_reports_description": "Un rapport apparaît dès qu'une réunion a eu lieu, et reste le temps que la conservation autorise.",
     "no_reports_disabled_description": "Activez le tableau de bord dans les paramètres pour que les prochaines réunions soient suivies."

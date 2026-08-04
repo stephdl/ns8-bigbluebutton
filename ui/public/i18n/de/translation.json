@@ -99,6 +99,7 @@
     "participants": "Teilnehmer",
     "not_ended": "Nicht erfasst",
     "open_report": "Bericht öffnen",
+    "search": "Konferenz suchen",
     "no_reports": "Kein Bericht vorhanden",
     "no_reports_description": "Ein Bericht erscheint, sobald eine Konferenz stattgefunden hat, und bleibt so lange, wie die Aufbewahrung erlaubt.",
     "no_reports_disabled_description": "Aktivieren Sie das Dashboard in den Einstellungen, damit die nächsten Konferenzen erfasst werden."

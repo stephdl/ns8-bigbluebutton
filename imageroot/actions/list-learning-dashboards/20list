@@ -6,14 +6,10 @@
 #
 
 #
-# List the learning analytics reports still on disk, with a link to each.
+# The reports still on disk, with a link to each. The access token lives nowhere but
+# in the directory name, and the link the client offers does not carry it.
 #
-# Once a meeting ends, its report is reachable only through the access token, which
-# exists nowhere but as the directory holding the JSON. The link the client offers
-# carries no token and works only in the browser that attended the meeting.
-#
-# Read from the host: the files are world-readable under a subuid, so no container
-# is involved.
+# Read from the host: the files are world-readable under a subuid.
 #
 
 import os
