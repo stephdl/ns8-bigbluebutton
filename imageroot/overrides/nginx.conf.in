@@ -1,21 +1,8 @@
-# Rendered by configure-module into state/overrides/nginx.conf and mounted at
-# /etc/nginx/nginx.conf.
+# Replaces /etc/nginx/nginx.conf from alangecker/bbb-docker-nginx. Only the two
+# server blocks below differ, both replacing hardcoded compose addresses.
 #
-# Replaces the file from alangecker/bbb-docker-nginx. The only change is the
-# 48083 server block, whose redirects pointed at the hardcoded compose address
-# 10.7.7.35 and now point at this deployment's own hostname.
-#
-# That block is what lets Greenlight work behind a certificate it does not
-# trust. Greenlight uses BIGBLUEBUTTON_ENDPOINT for two different things: its
-# own server-to-server API calls, and the join URL it hands to the browser. A
-# plain-loopback endpoint fixes the first and breaks the second, since the
-# browser cannot reach 127.0.0.1 on the server. Port 48083 serves both: it
-# answers /bigbluebutton/api locally over HTTP, and redirects /join out to the
-# public HTTPS URL.
-#
-# Values wrapped in double at-signs are substituted by configure-module, which
-# then asserts that none are left. Do not write that marker anywhere it is not
-# meant to be replaced, comments included: the assertion reads the whole file.
+# Double at-signs are substituted by configure-module, which then asserts none are
+# left -- so never write that marker anywhere, comments included.
 
 user  nginx;
 worker_processes  auto;
@@ -51,9 +38,8 @@ http {
 
 
     server {
-        # Used by Greenlight, which shares this pod. It reaches the API here
-        # over plain HTTP so it never has to validate Traefik's certificate,
-        # and anything meant for a browser is redirected to the public name.
+        # Greenlight reaches the API here over plain HTTP, validating no
+        # certificate; anything meant for a browser goes to the public name.
         listen 48083 http2;
 
         location /bigbluebutton/api/join {
@@ -68,28 +54,13 @@ http {
     }
 
     server {
-        # The pod answering for its own public name.
+        # The pod answering for its own public name, for the containers that
+        # must use it: the name ends up in URLs handed to somebody else, and they
+        # validate whatever certificate answers.
         #
-        # Several containers have to reach the site on that name rather than on
-        # a loopback address, because the name is what ends up in URLs handed
-        # to somebody else: Greenlight's API endpoint becomes the join URL for
-        # the browser, and the recording-ready callback address is baked into
-        # each recording's metadata. Both then validate the certificate
-        # answering for that name, and a certificate Traefik issued for another
-        # name fails however well it is trusted.
-        #
-        # Those containers resolve this name to 127.0.0.1, so the call lands
-        # here instead, against a certificate configure-module issued for
-        # exactly this name and placed in their CA stores.
-        #
-        # This proxies the whole site to 48087, the same place Traefik sends
-        # it, so it is a faithful local stand-in rather than a special case:
-        # Greenlight calling /bigbluebutton/api and the recordings container
-        # calling /recording_ready both work, and neither needs a rule here.
-        #
-        # Nothing outside the pod reaches this: the pod publishes only 48087
-        # and Redis, both to the node loopback. Browsers are unaffected and
-        # still go to Traefik on the real 443.
+        # A faithful stand-in rather than a special case -- the whole site goes to
+        # 48087, where Traefik sends it too -- so no per-caller rule is needed.
+        # Nothing outside the pod reaches this listener.
         listen 443 ssl http2;
         server_name @@TRAEFIK_HOST@@;
 
@@ -101,9 +72,8 @@ http {
             proxy_set_header Host              $host;
             proxy_set_header X-Real-IP         $remote_addr;
             proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-            # Traefik terminates TLS for real callers, so Greenlight expects to
-            # be told the scheme was https. Without it, it answers redirects to
-            # http and the caller loses the request.
+            # Without it Greenlight answers redirects on http and the caller
+            # loses the request.
             proxy_set_header X-Forwarded-Proto https;
         }
     }

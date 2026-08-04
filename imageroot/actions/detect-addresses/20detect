@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Re-probe for the Settings page, after the node moved or its lease changed. Only
+# DETECTED_* are written; what mediasoup announces changes when the administrator
+# saves. A failure is reported here, unlike in create-module: the caller asked.
+#
+
+set -e
+
+exec detect-addresses

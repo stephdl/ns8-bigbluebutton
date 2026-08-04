@@ -6,20 +6,11 @@
 #
 # Wraps /entrypoint.sh from bigbluebutton/bbb-web.
 #
-# bbb-web fetches every room's first slide from the site's own public HTTPS name,
-# so Java validates whatever certificate answers for it. The container resolves
-# that name to 127.0.0.1, where this pod's nginx presents the certificate
-# configure-module issued for exactly this name - trusted here, so the fetch
-# validates whether or not Traefik holds a Let's Encrypt certificate.
+# bbb-web fetches every room's first slide over the public name, so Java validates
+# the internal certificate the pod serves there.
 #
-# Upstream's alternative is IGNORE_TLS_CERT_ERRORS, which despite its name
-# disables nothing in bbb-web: it only swings the presentation URL to
-# raw.githubusercontent.com, trading the slide for an internet round trip on
-# every meeting create. Trusting one certificate is both narrower and offline.
-#
-# Unlike Greenlight, update-ca-certificates is not enough here: this image has no
-# ca-certificates-java and no /etc/ssl/certs/java/cacerts, so the JRE store has
-# to be edited directly.
+# The JRE store is edited directly: this image has no ca-certificates-java, so
+# update-ca-certificates would not reach it.
 #
 
 set -e

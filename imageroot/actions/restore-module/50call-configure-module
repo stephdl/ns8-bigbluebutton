@@ -6,32 +6,53 @@
 #
 
 #
-# Re-run configure-module with the restored settings.
+# Re-run configure-module to rebuild what is derived from the environment: the
+# override files, the Traefik route and the mediasoup announced address.
 #
-# Every field configure-module accepts must be passed. Anything omitted falls
-# back to its default and silently reconfigures the module differently from the
-# backup: the override files, the Traefik route and the mediasoup announced
-# address are all derived here.
+# lets_encrypt is left out on purpose: the new node rarely has DNS pointing at it
+# yet, and a failed certificate request would fail the whole restore.
 #
-# The variables come from os.environ because 06copyenv already wrote them to
-# state/environment and the agent reloads it between actions.
+# Also the clone-module step, through a symlink.
 #
 
 import os
 import sys
 import agent
 
+
+def on_this_node(label, inherited, detected):
+    """Prefer what create-module probed here: a mismatch means another node, and
+    the inherited address would make mediasoup announce an unreachable one.
+
+    Normal on a clone, which lands elsewhere by definition.
+    """
+    if not detected or detected == inherited:
+        return inherited
+    print(agent.SD_WARNING + f"the {label} address {inherited} is not this node's "
+          f"{detected}: announcing the detected one instead, correct it in "
+          f"Settings if this node needs another", file=sys.stderr)
+    return detected
+
+
+inherited_private = os.environ.get("PRIVATE_IP", "")
+
 config = {
     "host": os.environ["TRAEFIK_HOST"],
-    "lets_encrypt": os.environ.get("TRAEFIK_LETS_ENCRYPT", "false") == "true",
-    "public_address": os.environ["PUBLIC_IP"],
-    "private_address": os.environ.get("PRIVATE_IP", ""),
+    "public_address": on_this_node("public", os.environ["PUBLIC_IP"],
+                                   os.environ.get("DETECTED_PUBLIC_IP", "")),
+    # Empty means "do not advertise a LAN address": never filled in from detection.
+    "private_address": on_this_node("LAN", inherited_private,
+                                    os.environ.get("DETECTED_PRIVATE_IP", ""))
+                       if inherited_private else "",
     "stun_server": os.environ.get("STUN_SERVER", ""),
     "turn_ext_server": os.environ.get("TURN_EXT_SERVER", ""),
     "enable_recording": os.environ.get("ENABLE_RECORDING", "false") == "true",
     "remove_old_recording": os.environ.get("REMOVE_OLD_RECORDING", "false") == "true",
     "recording_max_age_days": int(os.environ.get("RECORDING_MAX_AGE_DAYS", "14")),
     "enable_learning_dashboard": os.environ.get("ENABLE_LEARNING_DASHBOARD", "true") == "true",
+    "enable_external_videos": os.environ.get("ENABLE_EXTERNAL_VIDEOS", "true") == "true",
+    "enable_breakout_rooms": os.environ.get("ENABLE_BREAKOUT_ROOMS", "true") == "true",
+    "learning_dashboard_max_age_days": int(os.environ.get("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1")),
     "sounds_language": os.environ.get("SOUNDS_LANGUAGE", "en-us-callie"),
     "disable_sound_muted": os.environ.get("DISABLE_SOUND_MUTED", "false") == "true",
     "disable_sound_alone": os.environ.get("DISABLE_SOUND_ALONE", "false") == "true",

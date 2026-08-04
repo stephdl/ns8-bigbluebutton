@@ -4,10 +4,8 @@
 #
 
 #
-# BigBlueButton's own Redis. Distinct from the node's Redis, which holds cluster
-# state and already owns 127.0.0.1:6379 on the host. This one keeps 6379 inside
-# the pod and is published to the host on ${REDIS_PORT} for the two
-# host-network media containers.
+# Not the node's Redis, which already owns 127.0.0.1:6379. This one keeps 6379
+# inside the pod and is published on ${REDIS_PORT} for the host-network containers.
 #
 
 [Unit]

@@ -6,8 +6,7 @@
 #
 
 #
-# Read configuration. Mirrors configure-module's input: every field it accepts
-# is returned here, so the UI round-trips without losing settings.
+# Mirrors configure-module's input, so the UI round-trips without losing settings.
 #
 
 import os
@@ -26,30 +25,25 @@ config["private_address"] = os.getenv("PRIVATE_IP", "") or os.getenv("DETECTED_P
 config["stun_server"] = os.getenv("STUN_SERVER", "")
 config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
 
+# The secret itself stays out: a task output is stored in Redis.
+secrets_path = os.path.join(os.environ["AGENT_STATE_DIR"], "passwords.env")
+stored = agent.read_envfile(secrets_path) if os.path.exists(secrets_path) else {}
+config["turn_ext_secret_set"] = bool(stored.get("TURN_EXT_SECRET", ""))
+
 config["enable_recording"] = os.getenv("ENABLE_RECORDING") == "true"
 config["remove_old_recording"] = os.getenv("REMOVE_OLD_RECORDING") == "true"
 config["recording_max_age_days"] = int(os.getenv("RECORDING_MAX_AGE_DAYS", "14"))
 config["enable_learning_dashboard"] = os.getenv("ENABLE_LEARNING_DASHBOARD", "true") == "true"
+config["enable_external_videos"] = os.getenv("ENABLE_EXTERNAL_VIDEOS", "true") == "true"
+config["enable_breakout_rooms"] = os.getenv("ENABLE_BREAKOUT_ROOMS", "true") == "true"
+config["learning_dashboard_max_age_days"] = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1"))
 config["sounds_language"] = os.getenv("SOUNDS_LANGUAGE", "en-us-callie")
 config["disable_sound_muted"] = os.getenv("DISABLE_SOUND_MUTED") == "true"
 config["disable_sound_alone"] = os.getenv("DISABLE_SOUND_ALONE") == "true"
 config["welcome_message"] = os.getenv("WELCOME_MESSAGE", "")
 config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
 
-# Checked live rather than cached: the administrator changes this password in
-# Greenlight, which has no way to tell the module, and a warning that lingers
-# after it has been dealt with teaches people to ignore warnings.
-#
-# The probe waits, because during a configure-module the containers it needs are
-# absent for over a minute and it used to answer "false" for the whole window --
-# so opening this page while the stack restarted said the shipped password had
-# been dealt with, and only a reload told the truth.
-#
-# The budget is bounded rather than long enough to cover a full restart: this
-# action is what the settings page opens on, and a page that hangs for a minute
-# is its own defect. Past the budget the answer is unknown, and unknown warns.
-# A password that ships with the module is too serious to hide on a maybe; the
-# warning clears itself on the next load, once the check can run.
+# Live, not cached: the password is changed in Greenlight, which cannot tell us.
 try:
     probe = subprocess.run(["check-default-admin", "--wait", "25"],
                            capture_output=True, text=True, timeout=40)
@@ -64,12 +58,10 @@ except Exception as ex:
     print(agent.SD_WARNING + f"the administrator password check failed: {ex}",
           file=sys.stderr)
 
-# Read-only. False means Traefik serves a certificate issued for some other
-# name, which breaks Greenlight and denies the browser microphone and camera.
+# Read-only. False when Traefik serves a certificate for another name.
 config["certificate_matches_host"] = os.getenv("CERTIFICATE_MATCHES_HOST", "true") == "true"
 
-# Read-only, for the UI to show what the allocator handed out. This is the
-# range that must be reachable from the internet.
+# Read-only. The range that must be reachable from the internet.
 config["mediasoup_port_range"] = "{}-{}".format(
     os.getenv("MEDIASOUP_MIN_PORT", ""), os.getenv("MEDIASOUP_MAX_PORT", "")
 )

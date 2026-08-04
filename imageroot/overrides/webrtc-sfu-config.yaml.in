@@ -1,36 +1,27 @@
-# Rendered by configure-module into state/overrides/webrtc-sfu-config.yaml and
-# mounted at /etc/bigbluebutton/bbb-webrtc-sfu/production.yml, the second entry
-# of NODE_CONFIG_DIR in the image, which overrides /app/config/production.yml.
+# Mounted as production.yml, which overrides the image's own copy.
 #
-# Replaces mod/webrtc-sfu/config.yaml from bigbluebutton/docker. Every address
-# upstream sets is a compose bridge IP literal, and this container runs in the
-# host network namespace, so it reaches the pod through the ports the pod
-# publishes to the node loopback rather than through container names.
+# Replaces mod/webrtc-sfu/config.yaml from bigbluebutton/docker: every address
+# upstream sets is a compose bridge literal, and this container is on the host.
 #
-# Values wrapped in double at-signs are substituted by configure-module, which
-# then asserts that none are left. Do not write that marker anywhere it is not
-# meant to be replaced, comments included: the assertion reads the whole file.
+# Double at-signs are substituted by configure-module, which then asserts none are
+# left -- so never write that marker anywhere, comments included.
 
 kurento: []
 
-# Pod Redis, published to the node loopback. NOT 6379: the node's own Redis
-# already owns that port on the host.
+# Pod Redis. NOT 6379: the node's own Redis already owns that on the host.
 redisHost: 127.0.0.1
 redisPort: @@REDIS_PORT@@
 
 recordingAdapter: bbb-webrtc-recorder
 
-# Where the SFU listens for client WebSocket connections. nginx inside the pod
-# proxies /bbb-webrtc-sfu here via 10.0.2.2.
+# Client WebSocket connections, proxied here by the pod's nginx via 10.0.2.2.
 clientHost: 127.0.0.1
 
 mcs-host: 127.0.0.1
 mcs-address: 127.0.0.1
 
 freeswitch:
-  # FreeSWITCH shares this network namespace, so it is reachable on loopback at
-  # its stock ports: no publishing, no port translation, and the RTP that flows
-  # between the two never crosses a userspace proxy.
+  # Same network namespace, so stock ports on loopback and no userspace proxy.
   ip: 127.0.0.1
   sip_ip: 127.0.0.1
   port: 5066
@@ -50,9 +41,7 @@ mediasoup:
     strategy: least-loaded
 
   worker:
-    # The RTC range allocated to this module by the NS8 port allocator, not
-    # mediasoup's 24577-32768 default. Shared by every worker: bbb-webrtc-sfu
-    # passes one settings object to every mediasoup.createWorker() call.
+    # The allocated range, not mediasoup's default. Shared by every worker.
     rtcMinPort: @@MEDIASOUP_MIN_PORT@@
     rtcMaxPort: @@MEDIASOUP_MAX_PORT@@
 

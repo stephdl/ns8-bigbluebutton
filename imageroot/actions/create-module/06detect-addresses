@@ -4,9 +4,8 @@
 # Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Pre-fill the addresses mediasoup needs, so the admin does not have to look
-# them up. Never fatal: a node that cannot be probed still installs, and
-# configure-module refuses until the fields are filled in by hand.
+# Never fatal: an unprobeable node installs, and configure-module refuses until
+# the addresses are filled in by hand.
 #
 
 exec 1>&2 # Redirect any output to the journal

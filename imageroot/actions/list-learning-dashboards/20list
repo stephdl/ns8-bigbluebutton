@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# The reports still on disk, with a link to each. The access token lives nowhere but
+# in the directory name, and the link the client offers does not carry it.
+#
+# Read from the host: the files are world-readable under a subuid.
+#
+
+import os
+import sys
+import json
+import glob
+import subprocess
+
+import agent
+
+host = os.getenv("TRAEFIK_HOST", "")
+enabled = os.getenv("ENABLE_LEARNING_DASHBOARD", "true") == "true"
+max_age_days = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1"))
+
+volume = subprocess.run(
+    ["podman", "volume", "inspect", "bigbluebutton", "--format", "{{.Mountpoint}}"],
+    capture_output=True, text=True,
+).stdout.strip()
+
+reports = []
+for path in glob.glob(os.path.join(volume, "learning-dashboard", "*", "*",
+                                  "learning_dashboard_data.json")) if volume else []:
+    token = os.path.basename(os.path.dirname(path))
+    meeting_id = os.path.basename(os.path.dirname(os.path.dirname(path)))
+    try:
+        with open(path) as fp:
+            data = json.load(fp)
+    except Exception as ex:
+        print(agent.SD_WARNING + f"skipping {path}: {ex}", file=sys.stderr)
+        continue
+
+    reports.append({
+        "meeting_id": meeting_id,
+        "name": data.get("name", ""),
+        "created_on": data.get("createdOn", 0),
+        "ended_on": data.get("endedOn", 0),
+        "participants": len(data.get("users", {})),
+        "polls": len(data.get("polls", {})),
+        "url": f"https://{host}/learning-analytics-dashboard/"
+               f"?meeting={meeting_id}&report={token}",
+    })
+
+reports.sort(key=lambda report: report["created_on"], reverse=True)
+
+json.dump({
+    "enabled": enabled,
+    "max_age_days": max_age_days,
+    "reports": reports,
+}, fp=sys.stdout)

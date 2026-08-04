@@ -6,12 +6,8 @@
 #
 
 #
-# Render state/overrides/, then report on the certificate Traefik serves.
-#
-# The rendering itself is bin/render-overrides, shared with
-# update-module.d/10overrides. Only the certificate check lives here: it needs
-# Traefik already listening, and it writes to state/environment, so it belongs to
-# configuring the instance rather than to producing its files.
+# The rendering itself is bin/render-overrides, shared with the pod unit. Only the
+# certificate check lives here: it needs Traefik listening.
 #
 
 import os
@@ -30,16 +26,8 @@ subprocess.run([os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin", "render-ove
 env = agent.read_envfile(os.path.join(os.environ["AGENT_STATE_DIR"], "environment"))
 host = env["TRAEFIK_HOST"]
 
-#
-# What Traefik serves is only the browser's problem: the containers validate the
-# internal certificate render-overrides issues, so a room works either way. It is
-# still worth reporting, because without a certificate for this name browsers
-# refuse microphone and camera access, and the failure is invisible until a room
-# is started.
-#
-# Deliberately not used to decide anything about bbb-web. It resolves the site
-# name to 127.0.0.1, so it is shown the internal certificate and never this one.
-#
+# The containers validate the internal certificate instead, so this is only the
+# browser's problem -- but nothing reports it until a room fails to start.
 try:
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ctx.check_hostname = False

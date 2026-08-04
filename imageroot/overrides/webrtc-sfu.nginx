@@ -1,13 +1,7 @@
 # Replaces /etc/nginx/bbb/webrtc-sfu.nginx from alangecker/bbb-docker-nginx.
 #
-# Only the upstream address changes. Upstream proxies to 10.7.7.1:3008, the
-# compose bridge gateway, because webrtc-sfu runs in the host network namespace.
-# Here nginx is inside a slirp4netns pod, where the node's loopback is reachable
-# at 10.0.2.2 thanks to allow_host_loopback=true on the pod. Same idea as
-# ns8-nextcloud's --add-host=accountprovider:10.0.2.2.
-#
-# Everything else is verbatim upstream, including the auth_request hop through
-# bbb-web, which is what supplies the pseudonymous User-Name to the SFU.
+# Only the upstream address changes: webrtc-sfu is on the host, reachable from
+# this slirp4netns pod at 10.0.2.2 thanks to allow_host_loopback=true.
 
 location /bbb-webrtc-sfu {
     auth_request /bigbluebutton/connection/checkAuthorization;

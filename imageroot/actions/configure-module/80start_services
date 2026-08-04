@@ -10,28 +10,15 @@ set -e
 exec 1>&2
 
 #
-# Every unit is named explicitly, on purpose.
-#
-# systemd does NOT cascade a restart from the pod unit to the containers that
-# joined it: `systemctl --user restart bigbluebutton.service` on its own brings
-# the pod back up and leaves all sixteen containers down. Listing them here is
-# what makes the Before=/After= ordering actually run.
-#
-# Order matters: pod, then datastores, then the services that depend on them,
-# then the two host-network media containers.
-#
-# restart, not try-restart: try-restart is a no-op on a unit that is not already
-# running, so on the first configure it enables all sixteen units and starts
-# none of them. update-module.d/20restart is the case where try-restart is
-# correct, because there the units are running.
+# Named one by one because systemd does not cascade a restart from the pod unit to
+# the containers that joined it. And restart, not try-restart, which would start
+# nothing on the first configure.
 #
 UNITS=(
-    # pod, then its datastores
     bigbluebutton.service
     postgres-app.service
     redis-app.service
-    # host namespace: freeswitch comes before its clients, fsesl-akka in the
-    # pod and webrtc-sfu on the host
+    # Before its clients, fsesl-akka in the pod and webrtc-sfu on the host.
     freeswitch.service
     etherpad-app.service
     bbb-pads-app.service
@@ -47,18 +34,14 @@ UNITS=(
     webrtc-sfu.service
 )
 
-# Recording is opt-in, as upstream gates both of these on ENABLE_RECORDING
-# (docker-compose.tmpl.yml:427-474). Recordings capture everything that happens
-# in a conference, so they stay off until explicitly enabled.
+# Opt-in: recordings capture everything said in a conference.
 RECORDING_UNITS=(
     recordings-app.service
     bbb-webrtc-recorder.service
 )
 
-# Read the one value we need without sourcing the file. state/environment is a
-# systemd EnvironmentFile, not a shell script: MS_WEBRTC_LISTEN_IPS holds JSON
-# with spaces in it, and sourcing that makes bash try to run "0.0.0.0," as a
-# command.
+# Read, not sourced: MS_WEBRTC_LISTEN_IPS holds JSON with spaces, which bash
+# would try to execute.
 ENABLE_RECORDING=$(sed -n 's/^ENABLE_RECORDING=//p' "${AGENT_STATE_DIR}/environment" | head -1)
 
 if [ "${ENABLE_RECORDING}" = "true" ]; then
@@ -70,6 +53,5 @@ fi
 systemctl --user enable "${UNITS[@]}"
 systemctl --user restart "${UNITS[@]}"
 
-# Maintenance timer: FreeSWITCH clock resync, stale presentation cleanup and,
-# when enabled, recording retention. Replaces the upstream `periodic` container.
+# Replaces the upstream `periodic` container. See bin/bigbluebutton-periodic.
 systemctl --user enable --now bigbluebutton-periodic.timer

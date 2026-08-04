@@ -6,20 +6,18 @@
 #
 
 #
-# Report whether the bootstrap administrator still has the password this module
-# ships.
+# Print "true" while the bootstrap administrator still has the shipped password.
 #
-# Prints "true" or "false". The digest is bcrypt, so this cannot be a string
-# comparison: it has to be verified against the stored salt, which is why the
-# check runs inside the container where the bcrypt gem lives.
+# The digest is bcrypt, so it must be verified against its salt: hence the hop
+# into the container, where the gem lives.
 #
 
 import subprocess
 import sys
 import time
 
-# Mirrored by bin/seed-default-admin and by the settings.default_admin_description
-# string in ui/public/i18n/en/translation.json. Change all three together.
+# Mirrored by bin/seed-default-admin and settings.default_admin_description in
+# ui/public/i18n/en/translation.json. Change all three together.
 DEFAULT_EMAIL = "admin@nethserver.org"
 DEFAULT_PASSWORD = "Nethesis,1234"
 

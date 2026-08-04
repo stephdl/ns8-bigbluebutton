@@ -1,23 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Replaces /etc/bigbluebutton/turn-stun-servers.xml.tmpl from
-    alangecker/bbb-docker-web. Still a dockerize template: bbb-web's entrypoint
-    renders it at container start, so {{ .Env.X }} placeholders are resolved
-    there, not by this module.
+    alangecker/bbb-docker-web. Still a dockerize template, rendered by bbb-web's
+    entrypoint, so {{ .Env.X }} is resolved there.
 
-    Two changes from upstream:
-
-    1. The turn0 bean is gone. Upstream emits it unconditionally, with no
-       ENABLE_COTURN guard, pointing at turn:${DOMAIN}:3478. This module ships
-       no coturn, so every client would be handed a TURN candidate for a port
-       nothing listens on.
-
-    2. stun1 is now guarded. Upstream interpolates STUN_SERVER into the bean
-       constructor unconditionally; with no coturn there is no local STUN
-       listener either, and an empty value would produce an invalid bean.
-
-    Deployments needing TURN set TURN_EXT_SERVER / TURN_EXT_SECRET, which
-    upstream already guards correctly and which is kept below unchanged.
+    Two changes, both because this module ships no coturn: upstream's unguarded
+    turn0 bean is gone, and stun1 is guarded so an empty value cannot produce an
+    invalid bean.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

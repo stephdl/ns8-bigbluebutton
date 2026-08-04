@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Detect the node addresses",
+    "$id": "http://nethserver.org/json-schema/task/output/bigbluebutton/detect-addresses",
+    "description": "Probe the addresses mediasoup can bind and announce",
+    "examples": [
+        {
+            "public_address": "203.0.113.10",
+            "private_address": "192.168.1.10"
+        }
+    ],
+    "type": "object",
+    "required": [
+        "public_address",
+        "private_address"
+    ],
+    "properties": {
+        "public_address": {
+            "type": "string",
+            "title": "Public IP address",
+            "description": "The node's own address when it is globally routable, otherwise what an echo service reports. Empty when the probe failed."
+        },
+        "private_address": {
+            "type": "string",
+            "title": "LAN IP address",
+            "description": "Source address the kernel would use to reach the internet. Empty when the routing table could not be read."
+        }
+    }
+}

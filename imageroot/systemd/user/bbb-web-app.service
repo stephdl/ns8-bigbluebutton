@@ -22,7 +22,8 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-web-app.pid \
     --env-file=%S/state/passwords.env \
     --env=DOMAIN=${TRAEFIK_HOST} \
     --env=ENABLE_RECORDING=${ENABLE_RECORDING} \
-    --env=ENABLE_LEARNING_DASHBOARD=${ENABLE_LEARNING_DASHBOARD} \
+    --env=DISABLED_FEATURES=${DISABLED_FEATURES} \
+    --env=LEARNING_DASHBOARD_CLEANUP_MINUTES=${LEARNING_DASHBOARD_CLEANUP_MINUTES} \
     --env=WELCOME_MESSAGE=${WELCOME_MESSAGE} \
     --env=WELCOME_FOOTER=${WELCOME_FOOTER} \
     --env=STUN_SERVER=${STUN_SERVER} \

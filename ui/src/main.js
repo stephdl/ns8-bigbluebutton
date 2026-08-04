@@ -42,10 +42,14 @@ import { loadLanguage } from "./i18n";
 loadI18n();
 
 async function loadI18n() {
-  const navigatorLang = navigator.language.substring(0, 2);
+  const navigatorLang = navigator.language;
   const messages = await loadLanguage(navigatorLang);
   Vue.use(VueI18n);
-  const i18n = new VueI18n();
+  // English is loaded as well and set as the fallback, so a key that is not
+  // translated yet reads in English instead of printing its own path.
+  const english = await loadLanguage("en");
+  const i18n = new VueI18n({ fallbackLocale: "en" });
+  i18n.setLocaleMessage("en", english.default);
   i18n.setLocaleMessage(navigatorLang, messages.default);
   i18n.locale = navigatorLang;
 

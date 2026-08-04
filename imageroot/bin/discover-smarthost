@@ -7,14 +7,10 @@
 
 #
 # Translate the cluster smarthost settings into the SMTP variables Greenlight
-# expects, and write them to state/smarthost.env.
+# expects, without which it cannot complete a signup.
 #
-# Greenlight sends account-verification and password-reset mail; without this it
-# cannot complete a signup. Run as ExecStartPre of greenlight-app and again from
-# the smarthost-changed event handler, so a change to the cluster setting is
-# picked up without reconfiguring the module.
-#
-# The file carries the relay password, so it is written 0600.
+# Two callers: greenlight-app's ExecStartPre and the smarthost-changed event, so
+# a cluster change lands without reconfiguring the module.
 #
 
 import os
@@ -22,7 +18,7 @@ import sys
 
 import agent
 
-# The local replica, so the module still starts when the leader is unreachable.
+# The replica, so the module still starts when the leader is unreachable.
 rdb = agent.redis_connect(use_replica=True)
 smtp = agent.get_smarthost_settings(rdb)
 
@@ -32,15 +28,12 @@ if not smtp["enabled"]:
     print("smarthost is not configured; Greenlight will not be able to send mail",
           file=sys.stderr)
 
-# Greenlight is Rails: SMTP_AUTH and SMTP_STARTTLS_AUTO are ActionMailer
-# settings, not the cluster's own vocabulary, so map rather than copy.
-# "none" is what Rails wants when the relay takes no credentials; passing an
-# empty username with auth=plain makes it fail instead.
+# ActionMailer vocabulary, not the cluster's, so map rather than copy: Rails
+# wants "none" for a relay without credentials, and fails on an empty username.
 auth = "plain" if smtp["username"] else "none"
 starttls = "true" if smtp["encrypt_smtp"] == "starttls" else "false"
 
-# HELO domain and envelope sender. The module has no mail identity of its own,
-# so borrow the site hostname rather than inventing one.
+# HELO domain and envelope sender: the module has no mail identity of its own.
 domain = os.environ.get("TRAEFIK_HOST", "")
 
 lines = [
@@ -55,8 +48,7 @@ lines = [
     "SMTP_SENDER_NAME=BigBlueButton",
 ]
 
-# Write 0600 then move into place: never briefly world-readable, and never a
-# half-written file for the container to read.
+# Carries the relay password: 0600 from the start, then moved into place.
 tmp = envfile + ".tmp"
 fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
 with os.fdopen(fd, "w") as efp:

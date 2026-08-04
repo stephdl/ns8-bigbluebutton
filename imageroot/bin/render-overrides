@@ -6,22 +6,8 @@
 #
 
 #
-# Materialise the config overrides into state/overrides/, where the systemd
-# units bind-mount them into the containers.
-#
-# These are the files whose peer addresses are baked into the images as IP
-# literals, so the pod's --add-host entries cannot redirect them. Everything
-# that refers to peers by hostname is handled by --add-host instead and needs no
-# override. See docs/packaging-analysis.md section 4.
-#
-# They are NOT backed up: they are regenerated on every configure, so restoring a
-# stale copy over a newer template would be a regression.
-#
-# Lives here rather than inside configure-module because it has two callers that
-# are peers, not layers: the configure-module step and update-module.d/10overrides,
-# which has to re-render when an upgrade starts mounting a file the instance has
-# never rendered. Requires TRAEFIK_HOST and the allocated ports in
-# state/environment, so callers must skip it before the first configure.
+# Two callers, peers not layers: configure-module/30render_overrides and
+# bigbluebutton.service's ExecStartPre. See docs/packaging-analysis.md section 4.
 #
 
 import datetime
@@ -42,29 +28,21 @@ src_dir = os.path.join(install_dir, "overrides")
 dst_dir = os.path.join(state_dir, "overrides")
 os.makedirs(dst_dir, exist_ok=True)
 
-# Ports were computed by create-module/05setenvs and live in state/environment.
-# agent.set_env() does not touch os.environ, so read the file back.
+# agent.set_env() does not touch os.environ, so read state/environment back.
 env = agent.read_envfile(os.path.join(state_dir, "environment"))
 
-# Copied verbatim. Either they are dockerize templates resolved inside the
-# container, or they carry no runtime value at all.
+# No substitution needed: dockerize resolves these inside the container.
 VERBATIM = (
     "turn-stun-servers.xml",
     "bbb-apps-akka.conf",
     "webrtc-sfu.nginx",
+    "learning-dashboard.nginx",
     "nginx-default.conf",
-    # nginx-default.conf serves this at /default.pdf, and bbb-web fetches that
-    # URL as every room's first slide. Upstream leaves the bind mount pointing
-    # at /dev/null unless the operator supplies a file, which means no slide and
-    # therefore no whiteboard surface: tldraw only draws over a presentation.
-    # This is BigBlueButton's own deck, byte for byte, so a room here opens the
-    # same way it does on a native install.
+    # Every room's first slide, and tldraw only draws over a presentation.
     "default.pdf",
-    # Pins the presentation URL to the local copy above. See the file itself.
     "bbb-web.properties.tmpl",
 )
 
-# Same, but mounted as a container entrypoint, so the exec bit matters.
 ENTRYPOINTS = (
     "freeswitch-entrypoint.sh",
     "greenlight-entrypoint.sh",
@@ -79,8 +57,7 @@ for name in VERBATIM + ENTRYPOINTS:
 for name in ENTRYPOINTS:
     os.chmod(os.path.join(dst_dir, name), 0o755)
 
-# Substituted here: bbb-webrtc-sfu reads a plain YAML file with no templating
-# of its own, and it needs the allocated port numbers.
+# Substituted here: neither file has templating of its own.
 placeholders = {
     "@@REDIS_PORT@@": env["REDIS_PORT"],
     "@@TRAEFIK_HOST@@": env["TRAEFIK_HOST"],
@@ -97,45 +74,25 @@ for name in ("webrtc-sfu-config.yaml", "nginx.conf"):
     with open(os.path.join(dst_dir, name), "w") as fp:
         fp.write(content)
 
-# Greenlight's environment. Rendered rather than passed on the podman command
-# line because DATABASE_URL embeds the PostgreSQL password, which ps would show.
+# A file rather than podman --env: DATABASE_URL embeds a password ps would show.
 pw = agent.read_envfile(os.path.join(state_dir, "passwords.env"))
 gl_path = os.path.join(dst_dir, "greenlight.env")
 gl_fd = os.open(gl_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
 with os.fdopen(gl_fd, "w") as fp:
     print(f"DATABASE_URL=postgres://postgres:{pw['POSTGRES_PASSWORD']}@127.0.0.1:5432/greenlight", file=fp)
     print("REDIS_URL=redis://127.0.0.1:6379", file=fp)
-    # The public name, and it has to be: Greenlight uses this value both for
-    # its own API calls and to build the join URL it redirects the browser to.
-    # Anything node-local satisfies the first and breaks the second.
-    #
-    # That makes Ruby validate Traefik's certificate, which is why the one it
-    # serves is exported below and trusted by the container.
+    # Must be the public name: Greenlight also builds the browser join URL from
+    # it. That makes Ruby validate the certificate issued below.
     print(f"BIGBLUEBUTTON_ENDPOINT=https://{env['TRAEFIK_HOST']}/bigbluebutton/api", file=fp)
     print(f"BIGBLUEBUTTON_SECRET={pw['SHARED_SECRET']}", file=fp)
     print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
     print("RELATIVE_URL_ROOT=/", file=fp)
 
 #
-# The certificate the pod answers with for its own name.
-#
-# Greenlight calls the API over the site's public name -- it has to, because the
-# same value becomes the join URL handed to the browser. Ruby therefore
-# validates whatever certificate answers, and on a node without a publicly
-# issued one that fails on the name, not merely on the issuer: trusting a
-# certificate issued for a different host changes nothing. bbb-web fetches the
-# default presentation over that same name and has the same problem.
-#
-# Traefik cannot supply one. Its upload-certificate action rejects a
-# self-signed certificate unless the whole instance is switched to selfsign
-# verification, which is a node-wide policy this module has no business
-# changing.
-#
-# So the pod answers for itself: nginx serves this certificate on the pod's own
-# 443, the containers that need it resolve the public name to 127.0.0.1, and this
-# certificate sits in their trust store. Name and issuer both check out, with or
-# without Let's Encrypt. None of it touches the browser, which still reaches
-# Traefik on the real 443.
+# The containers call the site's public name and validate what answers, so nginx
+# serves this on the pod's own 443 and the containers trust it. Traefik cannot
+# supply it: upload-certificate rejects a self-signed one unless the whole
+# instance switches to selfsign verification, which is not ours to change.
 #
 internal_crt = os.path.join(dst_dir, "internal.crt")
 internal_key = os.path.join(dst_dir, "internal.key")
@@ -155,9 +112,7 @@ def covers_host(path, name):
         return False
 
 
-# Renaming the site invalidates the certificate, so reissue when the name no
-# longer matches. Otherwise keep it: replacing it on every save would churn the
-# trust stores for nothing.
+# Reissue only on rename: replacing it on every save would churn trust stores.
 if not covers_host(internal_crt, host):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, host)])
@@ -168,8 +123,7 @@ if not covers_host(internal_crt, host):
         .issuer_name(name)
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
-        # Backdated an hour so a clock skew between pod and node cannot make a
-        # freshly issued certificate look not-yet-valid.
+        # Backdated: a clock skew must not make it look not-yet-valid.
         .not_valid_before(now - datetime.timedelta(hours=1))
         .not_valid_after(now + datetime.timedelta(days=3650))
         .add_extension(x509.SubjectAlternativeName([x509.DNSName(host)]), critical=False)
@@ -187,15 +141,10 @@ if not covers_host(internal_crt, host):
         fp.write(cert.public_bytes(serialization.Encoding.PEM))
     print(f"issued an internal certificate for {host}", file=sys.stderr)
 
-# The site name is not redirected here. The containers that need it append the
-# entry to their own /etc/hosts at startup, because that file is generated by
-# podman and carries the pod's --add-host names. Mounting a replacement over it
-# drops them, and the resolver then falls through to DNS, where a search domain
-# and a wildcard record can answer for an internal name: on one node "redis"
-# resolved to a public address and the recording queue timed out talking to it.
+# The site name is not redirected here: mounting over /etc/hosts would drop the
+# pod's --add-host names, so the containers that need it append the entry instead.
 
-# Read by the postgres image's entrypoint to create the two BigBlueButton
-# databases on first start.
+# Read by the postgres entrypoint on first start.
 initdb_dir = os.path.join(state_dir, "initdb.d")
 os.makedirs(initdb_dir, exist_ok=True)
 shutil.copyfile(

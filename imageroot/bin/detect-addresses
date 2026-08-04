@@ -6,14 +6,10 @@
 #
 
 #
-# Work out the addresses mediasoup should bind and announce, and store them as
-# DETECTED_PRIVATE_IP and DETECTED_PUBLIC_IP for configure-module to use as
-# defaults.
+# Store the mediasoup addresses as DETECTED_PRIVATE_IP and DETECTED_PUBLIC_IP,
+# defaults configure-module lets the administrator override.
 #
-# The admin can always override both: this only removes the need to type them.
-#
-# Nothing here is fatal. A node that cannot be probed still installs; the fields
-# are simply left empty and configure-module refuses until they are filled in.
+# Nothing here is fatal: an unprobeable node installs with the fields empty.
 #
 
 import ipaddress
@@ -24,31 +20,37 @@ import urllib.request
 
 import agent
 
-# Echo services used only when the node sits behind NAT, in order. Both return
-# a bare address. ns8-ddclient uses the same two.
-ECHO_SERVICES = (
-    "https://api.ipify.org",
-    "https://ipv4.icanhazip.com",
-)
+# Contacted only behind NAT. All return a bare address; ns8-ddclient uses them too.
+ECHO_SERVICES = {
+    4: ("https://api.ipify.org", "https://ipv4.icanhazip.com"),
+    6: ("https://api6.ipify.org", "https://ipv6.icanhazip.com"),
+}
 ECHO_TIMEOUT = 5
 
 
-def local_address():
+PROBES = {4: ("-4", "1.1.1.1"), 6: ("-6", "2606:4700:4700::1111")}
+
+
+def local_address(family):
     """Source address the kernel would use to reach the internet.
 
-    Reads the routing table rather than the interface list: a node with several
-    interfaces has several addresses, and the one that matters is the one on the
-    default path.
+    The routing table, not the interface list: what matters is the default path.
     """
+    flag, target = PROBES[family]
     try:
         out = subprocess.run(
-            ["ip", "-4", "route", "get", "1.1.1.1"],
+            ["ip", flag, "route", "get", target],
             capture_output=True, text=True, timeout=5, check=True,
         ).stdout.split()
-        return out[out.index("src") + 1]
+        candidate = out[out.index("src") + 1]
     except Exception as ex:
-        print(agent.SD_WARNING + f"cannot read the local address: {ex}", file=sys.stderr)
+        print(f"no IPv{family} path to the internet: {ex}", file=sys.stderr)
         return ""
+
+    # A link-local source cannot be announced to anyone.
+    if ipaddress.ip_address(candidate).is_link_local:
+        return ""
+    return candidate
 
 
 def is_public(addr):
@@ -58,21 +60,18 @@ def is_public(addr):
         return False
 
 
-def public_address(local):
+def public_address(local, family):
     """The address clients will reach.
 
-    When the node holds a globally routable address there is nothing to ask
-    anyone: it is its own public address. Only a node behind NAT needs an
-    outside opinion, and only then is an echo service contacted.
+    Only a node behind NAT needs an outside opinion.
     """
     if is_public(local):
         print(f"{local} is globally routable, no external lookup needed", file=sys.stderr)
         return local
 
-    for url in ECHO_SERVICES:
+    for url in ECHO_SERVICES[family]:
         try:
-            # Named in the log on purpose: this is an outbound request that
-            # tells a third party this node exists.
+            # Logged by name: this tells a third party the node exists.
             print(f"node is behind NAT, asking {url} for the public address", file=sys.stderr)
             with urllib.request.urlopen(url, timeout=ECHO_TIMEOUT) as resp:
                 candidate = resp.read().decode().strip()
@@ -87,13 +86,22 @@ def public_address(local):
     return ""
 
 
-local = local_address()
-public = public_address(local) if local else ""
+# IPv4 first, since that is what nearly every deployment announces. IPv6 is a
+# fallback for a node that has no IPv4 path at all: the module announces one address,
+# so proposing both would only force a choice on the administrator.
+local = local_address(4)
+public = public_address(local, 4) if local else ""
+
+if not public:
+    local6 = local_address(6)
+    public6 = public_address(local6, 6) if local6 else ""
+    if public6:
+        print("no IPv4 address found, falling back to IPv6", file=sys.stderr)
+        local, public = local6, public6
 
 agent.set_env("DETECTED_PRIVATE_IP", local)
 agent.set_env("DETECTED_PUBLIC_IP", public)
 
 print(f"detected local={local or '(none)'} public={public or '(none)'}", file=sys.stderr)
 
-# Structured output so the UI can offer a re-detect without re-reading state.
 json.dump({"private_address": local, "public_address": public}, fp=sys.stdout)

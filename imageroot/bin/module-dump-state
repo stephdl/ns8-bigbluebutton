@@ -4,24 +4,15 @@
 # Copyright (C) 2026 Nethesis S.r.l.
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# Runs with CWD=state/ just before Restic takes the backup.
-#
-# Only PostgreSQL is dumped. Redis is deliberately not: it holds live meeting
-# state and pub/sub channels, which are meaningless across a restore.
+# Runs with CWD=state/ just before Restic takes the backup. Redis is left out:
+# live meeting state is meaningless across a restore.
 #
 
 set -e
 exec 1>&2 # Redirect any output to the journal (stderr)
 
-# bbb_graphql is deliberately absent. bbb-graphql-server drops and recreates it
-# from its own bbb_schema.sql on every single start (/app/start.sh:14-21, no
-# condition), so anything captured here is destroyed seconds after a restore
-# brings it back -- measured: a restored meeting_clientSettings row was gone once
-# the stack came up. It holds live meeting state, which apps-akka rebuilds per
-# meeting anyway. hasura_app is different: start.sh creates it only when absent.
-#
-# Custom format so pg_restore can be used on the way back in.
-for db in hasura_app greenlight; do
-    echo "Dumping ${db}"
-    podman exec postgres-app pg_dump -U postgres --format=c "${db}" > "${db}.pg_dump"
-done
+# greenlight is the only database holding instance data. bbb-graphql-server drops
+# and recreates bbb_graphql on every start, and reapplies hasura_app's metadata
+# from the image, so both are derived and a dump of either would only go stale.
+echo "Dumping greenlight"
+podman exec postgres-app pg_dump -U postgres --format=c greenlight > greenlight.pg_dump
