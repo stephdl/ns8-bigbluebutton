@@ -405,7 +405,7 @@ const SOUNDS_LANGUAGES = [
   "de-de-daedalus3",
   "es-ar-mario",
   "fr-ca-june",
-  "pt-br-karina",
+  "pt-BR-karina",
   "ru-RU-elena",
   "ru-RU-kirill",
   "ru-RU-vika",
