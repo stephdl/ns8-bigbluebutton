@@ -46,6 +46,7 @@
     "udp_ports_title": "Diese UDP-Ports öffnen",
     "udp_ports_description": "Audio und Video laufen über UDP im Bereich {range}, nicht über HTTPS. Die Regel auf diesem Knoten wird automatisch erstellt, aber jeder vorgeschaltete Router muss den Bereich weiterleiten, sonst können sich Teilnehmer nicht verbinden.",
     "media": "Audio und Video",
+    "nat_traversal": "NAT-Durchquerung",
     "stun_server": "STUN-Server (optional)",
     "stun_server_tooltip": "Leer lassen, sofern Sie keinen eigenen betreiben. Ein öffentlicher STUN-Server erhält die IP-Adresse jedes Teilnehmers.",
     "turn_ext_server": "Externer TURN-Server (optional)",

@@ -46,6 +46,7 @@
     "udp_ports_title": "Open these UDP ports",
     "udp_ports_description": "Audio and video travel over UDP on {range}, not over HTTPS. The rule on this node is automatic, but any router in front of it must forward the range or participants cannot connect.",
     "media": "Audio and video",
+    "nat_traversal": "NAT traversal",
     "stun_server": "STUN server (optional)",
     "stun_server_tooltip": "Leave empty unless you run your own. A public STUN server receives the IP address of every participant.",
     "turn_ext_server": "External TURN server (optional)",
