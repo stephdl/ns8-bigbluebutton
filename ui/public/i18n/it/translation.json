@@ -41,6 +41,7 @@
     "public_address_tooltip": "Annunciato ai partecipanti, non associato localmente: un indirizzo NAT è quindi corretto. Rilevato all'installazione; cambialo se un port forward usa un altro indirizzo.",
     "private_address": "Indirizzo IP della LAN (opzionale)",
     "private_address_tooltip": "Serve solo ai partecipanti che si collegano dalla rete locale: il server annuncia entrambi gli indirizzi, evitando loro il NAT hairpinning.",
+    "address_invalid": "Inserisci un indirizzo IPv4 o IPv6",
     "detect_addresses": "Rileva di nuovo",
     "detect_addresses_failed": "Non è stato possibile rilevare gli indirizzi. Inseriscili a mano.",
     "udp_ports_title": "Apri queste porte UDP",

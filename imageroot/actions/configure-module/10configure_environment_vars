@@ -25,7 +25,10 @@ agent.assert_exp(bool(public_address),
                  "public_address is required and could not be detected")
 agent.set_env("PUBLIC_IP", public_address)
 
-listen_ips = [{"ip": "0.0.0.0", "announcedIp": public_address}]
+# The wildcard must match the family, or mediasoup announces an address it is not
+# listening on. Detection only ever proposes IPv4; an IPv6 address is hand-entered.
+listen_ips = [{"ip": "::" if ":" in public_address else "0.0.0.0",
+               "announcedIp": public_address}]
 
 # A second entry spares internal clients NAT reflection, which many routers lack.
 private_address = data["private_address"]

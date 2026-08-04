@@ -41,6 +41,7 @@
     "public_address_tooltip": "Anunciado aos participantes, sem ser vinculado localmente, então um endereço NAT está correto. Detectado na instalação; altere-o se um redirecionamento de portas usar outro endereço.",
     "private_address": "Endereço IP da rede local (opcional)",
     "private_address_tooltip": "Serve apenas aos participantes que se conectam pela rede local: o servidor passa a anunciar os dois endereços, poupando-lhes o NAT hairpinning.",
+    "address_invalid": "Informe um endereço IPv4 ou IPv6",
     "detect_addresses": "Detectar novamente",
     "detect_addresses_failed": "Não foi possível detectar os endereços. Informe-os manualmente.",
     "udp_ports_title": "Abra estas portas UDP",

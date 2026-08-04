@@ -41,6 +41,7 @@
     "public_address_tooltip": "Announced to participants, not bound locally, so a NAT address is correct. Detected at install; change it if a port forward uses another address.",
     "private_address": "LAN IP address (optional)",
     "private_address_tooltip": "Only for participants connecting from the local network: the server then announces both addresses, sparing them NAT hairpinning.",
+    "address_invalid": "Enter an IPv4 or IPv6 address",
     "detect_addresses": "Detect again",
     "detect_addresses_failed": "The addresses could not be probed. Fill them in by hand.",
     "udp_ports_title": "Open these UDP ports",

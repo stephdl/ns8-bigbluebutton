@@ -41,6 +41,7 @@
     "public_address_tooltip": "Wird den Teilnehmern angekündigt, aber nicht lokal gebunden, daher ist eine NAT-Adresse korrekt. Bei der Installation erkannt; ändern Sie sie, wenn eine Portweiterleitung eine andere Adresse verwendet.",
     "private_address": "IP-Adresse im LAN (optional)",
     "private_address_tooltip": "Nur für Teilnehmer aus dem lokalen Netz nötig: der Server kündigt dann beide Adressen an und erspart ihnen NAT-Hairpinning.",
+    "address_invalid": "Geben Sie eine IPv4- oder IPv6-Adresse ein",
     "detect_addresses": "Erneut erkennen",
     "detect_addresses_failed": "Die Adressen konnten nicht ermittelt werden. Tragen Sie sie von Hand ein.",
     "udp_ports_title": "Diese UDP-Ports öffnen",

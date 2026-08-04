@@ -500,6 +500,9 @@ import {
 } from "@nethserver/ns8-ui-lib";
 
 // Keep in sync with the enum in configure-module/validate-input.json.
+const IPV4 =
+  /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+
 const SOUNDS_LANGUAGES = [
   "en-ca-june",
   "en-us-allison",
@@ -806,6 +809,19 @@ export default {
       this.loading.getConfiguration = false;
       this.focusElement("host");
     },
+    // Brackets make the URL parser an IPv6 parser; a zone index is rejected, which
+    // is what mediasoup wants.
+    isIpAddress(value) {
+      if (IPV4.test(value)) {
+        return true;
+      }
+      try {
+        new URL(`http://[${value}]/`);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    },
     validateConfigureModule() {
       this.clearErrors(this);
       this.validationErrorDetails = [];
@@ -825,6 +841,12 @@ export default {
       // Without it mediasoup announces nothing and no client finds a candidate.
       if (!this.publicAddress) {
         fail("public_address", "common.required");
+      } else if (!this.isIpAddress(this.publicAddress)) {
+        fail("public_address", "settings.address_invalid");
+      }
+
+      if (this.privateAddress && !this.isIpAddress(this.privateAddress)) {
+        fail("private_address", "settings.address_invalid");
       }
       // BigBlueButton signs every TURN credential with the secret, so a server
       // without one refuses them all.

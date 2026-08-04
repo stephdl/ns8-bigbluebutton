@@ -41,6 +41,7 @@
     "public_address_tooltip": "Partaideei iragartzen zaie, baina ez da bertan lotzen; beraz, NAT helbide bat zuzena da. Instalazioan hautematen da; aldatu ezazu ataka-birbideratzeak beste helbide bat erabiltzen badu.",
     "private_address": "Sare lokaleko IP helbidea (aukerakoa)",
     "private_address_tooltip": "Sare lokaletik konektatzen diren partaideentzat baino ez: zerbitzariak bi helbideak iragartzen ditu orduan, eta NAT hairpinning-a saihesten die.",
+    "address_invalid": "Sartu IPv4 edo IPv6 helbide bat",
     "detect_addresses": "Hauteman berriro",
     "detect_addresses_failed": "Ezin izan dira helbideak hauteman. Sartu eskuz.",
     "udp_ports_title": "Ireki UDP ataka hauek",
