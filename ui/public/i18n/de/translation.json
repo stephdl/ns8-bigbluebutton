@@ -62,7 +62,7 @@
     "announce_alone": "Ansagen, wenn man allein in der Konferenz ist",
     "recording": "Aufzeichnung",
     "enable_recording": "Konferenzen aufzeichnen",
-    "enable_recording_tooltip": "Erfasst Audio, Video, Chat, gemeinsame Notizen und Präsentationen. Informieren Sie die Teilnehmer, bevor Sie das aktivieren.",
+    "enable_recording_tooltip": "Erfasst Audio, Video, Chat, gemeinsame Notizen und Präsentationen. Informieren Sie die Teilnehmer, bevor Sie das aktivieren. Raumbesitzer brauchen zusätzlich die Aufzeichnungsberechtigung in Greenlight.",
     "remove_old_recording": "Alte Aufzeichnungen automatisch löschen",
     "recording_max_age_days": "Aufzeichnungen löschen nach (Tagen)",
     "recording_max_age_days_invalid": "Geben Sie eine ganze Zahl von Tagen ein, mindestens 1",

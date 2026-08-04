@@ -62,7 +62,7 @@
     "announce_alone": "Iragarri konferentzian bakarrik egotea",
     "recording": "Grabaketa",
     "enable_recording": "Grabatu bilerak",
-    "enable_recording_tooltip": "Audioa, bideoa, txata, ohar partekatuak eta aurkezpenak jasotzen ditu. Jakinarazi partaideei gaitu aurretik.",
+    "enable_recording_tooltip": "Audioa, bideoa, txata, ohar partekatuak eta aurkezpenak jasotzen ditu. Jakinarazi partaideei gaitu aurretik. Gelen jabeek Greenlight-eko grabatzeko baimena ere behar dute.",
     "remove_old_recording": "Ezabatu grabaketa zaharrak automatikoki",
     "recording_max_age_days": "Ezabatu grabaketak hau igarota (egunak)",
     "recording_max_age_days_invalid": "Sartu egun kopuru oso bat, gutxienez 1",
