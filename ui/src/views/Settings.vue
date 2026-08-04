@@ -242,8 +242,8 @@
                     </NsTextInput>
                   </template>
 
-                  <!-- learning analytics -->
-                  <h4 class="mg-bottom">{{ $t("settings.analytics") }}</h4>
+                  <!-- what a meeting is allowed to do -->
+                  <h4 class="mg-bottom">{{ $t("settings.features") }}</h4>
                   <NsToggle
                     value="enableLearningDashboard"
                     :label="$t('settings.enable_learning_dashboard')"
@@ -278,6 +278,40 @@
                       class="mg-bottom"
                     />
                   </template>
+                  <NsToggle
+                    value="enableExternalVideos"
+                    :label="$t('settings.enable_external_videos')"
+                    v-model="areExternalVideosEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_external_videos_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <NsToggle
+                    value="enableBreakoutRooms"
+                    :label="$t('settings.enable_breakout_rooms')"
+                    v-model="areBreakoutRoomsEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_breakout_rooms_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
 
                   <h4 class="mg-bottom">{{ $t("settings.media") }}</h4>
                   <NsComboBox
@@ -516,6 +550,8 @@ export default {
       turnExtSecretSet: false,
       isRecordingEnabled: false,
       isLearningDashboardEnabled: true,
+      areExternalVideosEnabled: true,
+      areBreakoutRoomsEnabled: true,
       learningDashboardMaxAgeDays: 1,
       retentionSliderValue: "1",
       isRemoveOldRecordingEnabled: false,
@@ -749,6 +785,8 @@ export default {
       this.turnExtSecret = "";
       this.isRecordingEnabled = config.enable_recording;
       this.isLearningDashboardEnabled = config.enable_learning_dashboard;
+      this.areExternalVideosEnabled = config.enable_external_videos;
+      this.areBreakoutRoomsEnabled = config.enable_breakout_rooms;
       this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
       // 0 is the unlimited radio, so the slider keeps the last limited value.
       this.retentionSliderValue = String(
@@ -857,6 +895,8 @@ export default {
               : {}),
             enable_recording: this.isRecordingEnabled,
             enable_learning_dashboard: this.isLearningDashboardEnabled,
+            enable_external_videos: this.areExternalVideosEnabled,
+            enable_breakout_rooms: this.areBreakoutRoomsEnabled,
             learning_dashboard_max_age_days: this.learningDashboardMaxAgeDays,
             remove_old_recording: this.isRemoveOldRecordingEnabled,
             recording_max_age_days: Number(this.recordingMaxAgeDays),

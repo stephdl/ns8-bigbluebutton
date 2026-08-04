@@ -140,6 +140,8 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "remove_old_recording": false,
   "recording_max_age_days": 14,
   "enable_learning_dashboard": true,
+  "enable_external_videos": true,
+  "enable_breakout_rooms": true,
   "learning_dashboard_max_age_days": 1,
   "sounds_language": "en-us-callie",
   "disable_sound_muted": false,
@@ -185,6 +187,8 @@ What each field does, and the value a fresh install carries:
 | `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
 | `enable_learning_dashboard` | `true` | Moderators can open a dashboard reporting each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link, not by role: whoever holds the link can read it. |
+| `enable_external_videos` | `true` | A moderator can play a YouTube or media URL in sync for everyone. The server relays nothing, but every participant's browser fetches it from the third party. |
+| `enable_breakout_rooms` | `true` | Each breakout room is a full meeting of its own, so a split multiplies what the node carries. |
 | `learning_dashboard_max_age_days` | `1` | How long a report stays readable after the meeting. `0` keeps it forever. Upstream deletes it 2 minutes after the meeting ends, from a timer inside `bbb-web` that a restart loses; the maintenance job enforces this value instead. |
 
 ## STUN and TURN

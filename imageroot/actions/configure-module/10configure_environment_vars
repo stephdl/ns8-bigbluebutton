@@ -50,6 +50,16 @@ agent.set_env("ENABLE_RECORDING", str(data["enable_recording"]).lower())
 agent.set_env("REMOVE_OLD_RECORDING", str(data["remove_old_recording"]).lower())
 agent.set_env("RECORDING_MAX_AGE_DAYS", str(data["recording_max_age_days"]))
 agent.set_env("ENABLE_LEARNING_DASHBOARD", str(data["enable_learning_dashboard"]).lower())
+agent.set_env("ENABLE_EXTERNAL_VIDEOS", str(data["enable_external_videos"]).lower())
+agent.set_env("ENABLE_BREAKOUT_ROOMS", str(data["enable_breakout_rooms"]).lower())
+
+# bbb-web disables a feature by naming it, so send the complement of the toggles.
+# A list, not one key per feature: the next one costs a line here.
+agent.set_env("DISABLED_FEATURES", ",".join(feature for feature, wanted in (
+    ("learningDashboard", data["enable_learning_dashboard"]),
+    ("externalVideos", data["enable_external_videos"]),
+    ("breakoutRooms", data["enable_breakout_rooms"]),
+) if not wanted))
 agent.set_env("LEARNING_DASHBOARD_MAX_AGE_DAYS", str(data["learning_dashboard_max_age_days"]))
 # bbb-web wants minutes and dockerize cannot multiply.
 agent.set_env("LEARNING_DASHBOARD_CLEANUP_MINUTES",
