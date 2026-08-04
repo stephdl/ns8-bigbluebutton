@@ -135,6 +135,7 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "private_address": "192.168.1.10",
   "stun_server": "",
   "turn_ext_server": "",
+  "turn_ext_secret": "",
   "enable_recording": false,
   "remove_old_recording": false,
   "recording_max_age_days": 14,
@@ -148,11 +149,16 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
 EOF
 ```
 
-Every field above is required except `lets_encrypt`, which defaults to `false`
-when omitted. The action rewrites the whole configuration, so a missing field
-would silently reset a setting instead of leaving it alone — hence no defaults.
-Read the current values with `api-cli run get-configuration`, change what you
-need and send the result back.
+Every field above is required, because the action rewrites the whole
+configuration: a missing one would silently reset a setting instead of leaving it
+alone. Read the current values with `api-cli run get-configuration`, change what
+you need and send the result back.
+
+Two fields are exempt, both because they cannot round-trip. `lets_encrypt`
+defaults to `false` when omitted, which is what the restore and clone paths rely
+on to avoid requesting a certificate for a name that does not resolve yet.
+`turn_ext_secret` keeps its stored value when omitted, since `get-configuration`
+returns only `turn_ext_secret_set`; send an empty string to clear it.
 
 `host` is the fully qualified domain name of the web client. `public_address` is
 what participants use to reach this node: it is *announced* to WebRTC clients, not
@@ -170,6 +176,7 @@ What each field does, and the value a fresh install carries:
 | `private_address` | detected | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
 | `stun_server` | empty | Leave empty unless you run your own. A public STUN server receives the IP address of every participant. |
 | `turn_ext_server` | empty | Without TURN, participants behind UDP-blocking firewalls cannot join. |
+| `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
 | `enable_recording` | `false` | Recordings capture audio, video, chat, shared notes and presentations. |
 | `remove_old_recording` | `false` | Let the maintenance timer delete recordings past their retention. |
 | `recording_max_age_days` | `14` | Only meaningful with the above. |

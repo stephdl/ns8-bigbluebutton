@@ -69,7 +69,12 @@
         "turn_ext_server": {
             "type": "string",
             "title": "External TURN server",
-            "description": "Optional, like 'turns:turn.example.org:443?transport=tcp'. Without it, clients behind UDP-blocking firewalls cannot join."
+            "description": "Optional, like 'turns:turn.example.org:443?transport=tcp'. Without it, clients behind UDP-blocking firewalls cannot join. Needs turn_ext_secret to be usable."
+        },
+        "turn_ext_secret": {
+            "type": "string",
+            "title": "External TURN shared secret",
+            "description": "The TURN server's static-auth-secret, which BigBlueButton uses to sign each client's time-limited credentials. The only authentication mode it supports, so a TURN server without it is never reached. Omit the field to keep the stored value, send an empty string to clear it: it is never returned by get-configuration."
         },
         "enable_recording": {
             "type": "boolean",

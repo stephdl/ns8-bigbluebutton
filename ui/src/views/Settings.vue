@@ -320,6 +320,26 @@
                       {{ $t("settings.turn_ext_server_tooltip") }}
                     </template>
                   </NsTextInput>
+                  <NsTextInput
+                    type="password"
+                    :label="$t('settings.turn_ext_secret')"
+                    v-model.trim="turnExtSecret"
+                    class="mg-bottom"
+                    :invalid-message="$t(error.turn_ext_secret)"
+                    :helper-text="
+                      turnExtSecretSet
+                        ? $t('settings.turn_ext_secret_stored')
+                        : $t('settings.turn_ext_secret_absent')
+                    "
+                    :disabled="stillLoading"
+                    tooltipAlignment="start"
+                    tooltipDirection="right"
+                    ref="turn_ext_secret"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.turn_ext_secret_tooltip") }}
+                    </template>
+                  </NsTextInput>
 
                   <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
                   <NsTextInput
@@ -460,6 +480,8 @@ export default {
       defaultAdminPasswordInUse: false,
       stunServer: "",
       turnExtServer: "",
+      turnExtSecret: "",
+      turnExtSecretSet: false,
       isRecordingEnabled: false,
       isLearningDashboardEnabled: true,
       isRemoveOldRecordingEnabled: false,
@@ -486,6 +508,7 @@ export default {
         private_address: "",
         stun_server: "",
         turn_ext_server: "",
+        turn_ext_secret: "",
         recording_max_age_days: "",
       },
     };
@@ -674,6 +697,9 @@ export default {
       this.defaultAdminPasswordInUse = config.default_admin_password_in_use;
       this.stunServer = config.stun_server;
       this.turnExtServer = config.turn_ext_server;
+      this.turnExtSecretSet = config.turn_ext_secret_set;
+      // Never returned by get-configuration, so an empty field means unchanged.
+      this.turnExtSecret = "";
       this.isRecordingEnabled = config.enable_recording;
       this.isLearningDashboardEnabled = config.enable_learning_dashboard;
       this.isRemoveOldRecordingEnabled = config.remove_old_recording;
@@ -706,6 +732,11 @@ export default {
       // Without it mediasoup announces nothing and no client finds a candidate.
       if (!this.publicAddress) {
         fail("public_address", "common.required");
+      }
+      // BigBlueButton signs every TURN credential with the secret, so a server
+      // without one refuses them all.
+      if (this.turnExtServer && !this.turnExtSecret && !this.turnExtSecretSet) {
+        fail("turn_ext_secret", "common.required");
       }
       if (this.isRecordingEnabled && this.isRemoveOldRecordingEnabled) {
         const days = Number(this.recordingMaxAgeDays);
@@ -767,6 +798,9 @@ export default {
             private_address: this.privateAddress,
             stun_server: this.stunServer,
             turn_ext_server: this.turnExtServer,
+            ...(this.turnExtSecret
+              ? { turn_ext_secret: this.turnExtSecret }
+              : {}),
             enable_recording: this.isRecordingEnabled,
             enable_learning_dashboard: this.isLearningDashboardEnabled,
             remove_old_recording: this.isRemoveOldRecordingEnabled,

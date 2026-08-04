@@ -11,6 +11,7 @@
             "private_address": "192.168.1.10",
             "stun_server": "",
             "turn_ext_server": "",
+            "turn_ext_secret_set": false,
             "enable_recording": false,
             "enable_learning_dashboard": true,
             "sounds_language": "en-us-callie",
@@ -33,6 +34,7 @@
         "private_address",
         "stun_server",
         "turn_ext_server",
+        "turn_ext_secret_set",
         "enable_recording",
         "enable_learning_dashboard",
         "sounds_language",
@@ -74,6 +76,11 @@
         "turn_ext_server": {
             "type": "string",
             "title": "External TURN server"
+        },
+        "turn_ext_secret_set": {
+            "type": "boolean",
+            "title": "A TURN shared secret is stored",
+            "description": "Read-only. The secret itself is never returned: it would land in the task output, which lives in Redis."
         },
         "enable_recording": {
             "type": "boolean",
