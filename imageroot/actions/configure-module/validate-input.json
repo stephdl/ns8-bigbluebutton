@@ -13,6 +13,7 @@
             "turn_ext_server": "",
             "enable_recording": false,
             "enable_learning_dashboard": true,
+            "learning_dashboard_max_age_days": 1,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
             "disable_sound_alone": false,
@@ -31,6 +32,7 @@
         "turn_ext_server",
         "enable_recording",
         "enable_learning_dashboard",
+        "learning_dashboard_max_age_days",
         "sounds_language",
         "disable_sound_muted",
         "disable_sound_alone",
@@ -80,6 +82,13 @@
             "type": "boolean",
             "title": "Enable recording",
             "description": "Record meetings. Recordings capture everything that happens in the conference: obtain participants' consent."
+        },
+        "learning_dashboard_max_age_days": {
+            "type": "integer",
+            "title": "Learning dashboard retention (days)",
+            "minimum": 0,
+            "maximum": 30,
+            "description": "How long a meeting's report stays readable after it ends. 0 keeps it forever. Enforced by the maintenance job, which runs every 30 minutes, because bbb-web's own timer does not survive a restart."
         },
         "enable_learning_dashboard": {
             "type": "boolean",

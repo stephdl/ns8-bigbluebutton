@@ -226,26 +226,6 @@
               </NsTextInput>
             </template>
 
-            <!-- learning analytics -->
-            <h4 class="mg-bottom">{{ $t("settings.analytics") }}</h4>
-            <NsToggle
-              value="enableLearningDashboard"
-              :label="$t('settings.enable_learning_dashboard')"
-              v-model="isLearningDashboardEnabled"
-              :disabled="stillLoading"
-              class="mg-bottom"
-            >
-              <template #tooltip>
-                {{ $t("settings.enable_learning_dashboard_tooltip") }}
-              </template>
-              <template slot="text-left">{{
-                $t("settings.disabled")
-              }}</template>
-              <template slot="text-right">{{
-                $t("settings.enabled")
-              }}</template>
-            </NsToggle>
-
             <!-- advanced options -->
             <cv-accordion ref="accordion" class="maxwidth mg-bottom">
               <cv-accordion-item :open="toggleAccordion[0]">
@@ -346,6 +326,43 @@
                       {{ $t("settings.turn_ext_secret_tooltip") }}
                     </template>
                   </NsTextInput>
+
+                  <!-- learning analytics -->
+                  <h4 class="mg-bottom">{{ $t("settings.analytics") }}</h4>
+                  <NsToggle
+                    value="enableLearningDashboard"
+                    :label="$t('settings.enable_learning_dashboard')"
+                    v-model="isLearningDashboardEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_learning_dashboard_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <template v-if="isLearningDashboardEnabled">
+                    <NsSlider
+                      :label="$t('settings.learning_dashboard_max_age_days')"
+                      min="1"
+                      max="30"
+                      step="1"
+                      v-model="retentionSliderValue"
+                      :disabled="stillLoading"
+                      :unitLabel="$t('settings.days')"
+                      :showUnlimited="true"
+                      :isUnlimited="learningDashboardMaxAgeDays === 0"
+                      :limitedLabel="$t('settings.retention_limited')"
+                      :unlimitedLabel="$t('settings.retention_unlimited')"
+                      @unlimited="onRetentionUnlimited"
+                      class="mg-bottom"
+                    />
+                  </template>
 
                   <h4 class="mg-bottom">{{ $t("settings.welcome") }}</h4>
                   <NsTextInput
@@ -496,6 +513,8 @@ export default {
       turnExtSecretSet: false,
       isRecordingEnabled: false,
       isLearningDashboardEnabled: true,
+      learningDashboardMaxAgeDays: 1,
+      retentionSliderValue: "1",
       isRemoveOldRecordingEnabled: false,
       recordingMaxAgeDays: "14",
       soundsLanguage: "en-us-callie",
@@ -541,6 +560,14 @@ export default {
         label: code,
         value: code,
       }));
+    },
+  },
+  watch: {
+    // Dragging counts only while "limited" is selected.
+    retentionSliderValue(value) {
+      if (this.learningDashboardMaxAgeDays !== 0) {
+        this.learningDashboardMaxAgeDays = Number(value);
+      }
     },
   },
   created() {
@@ -603,6 +630,11 @@ export default {
     getStatusCompleted(taskContext, taskResult) {
       this.status = taskResult.output;
       this.loading.getStatus = false;
+    },
+    onRetentionUnlimited(isUnlimited) {
+      this.learningDashboardMaxAgeDays = isUnlimited
+        ? 0
+        : Number(this.retentionSliderValue);
     },
     async detectAddresses() {
       this.loading.detectAddresses = true;
@@ -714,6 +746,11 @@ export default {
       this.turnExtSecret = "";
       this.isRecordingEnabled = config.enable_recording;
       this.isLearningDashboardEnabled = config.enable_learning_dashboard;
+      this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
+      // 0 is the unlimited radio, so the slider keeps the last limited value.
+      this.retentionSliderValue = String(
+        config.learning_dashboard_max_age_days || 1
+      );
       this.isRemoveOldRecordingEnabled = config.remove_old_recording;
       this.recordingMaxAgeDays = String(config.recording_max_age_days);
       this.soundsLanguage = config.sounds_language;
@@ -817,6 +854,7 @@ export default {
               : {}),
             enable_recording: this.isRecordingEnabled,
             enable_learning_dashboard: this.isLearningDashboardEnabled,
+            learning_dashboard_max_age_days: this.learningDashboardMaxAgeDays,
             remove_old_recording: this.isRemoveOldRecordingEnabled,
             recording_max_age_days: Number(this.recordingMaxAgeDays),
             sounds_language: this.soundsLanguage,

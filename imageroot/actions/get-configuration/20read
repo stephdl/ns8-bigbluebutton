@@ -34,6 +34,7 @@ config["enable_recording"] = os.getenv("ENABLE_RECORDING") == "true"
 config["remove_old_recording"] = os.getenv("REMOVE_OLD_RECORDING") == "true"
 config["recording_max_age_days"] = int(os.getenv("RECORDING_MAX_AGE_DAYS", "14"))
 config["enable_learning_dashboard"] = os.getenv("ENABLE_LEARNING_DASHBOARD", "true") == "true"
+config["learning_dashboard_max_age_days"] = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1"))
 config["sounds_language"] = os.getenv("SOUNDS_LANGUAGE", "en-us-callie")
 config["disable_sound_muted"] = os.getenv("DISABLE_SOUND_MUTED") == "true"
 config["disable_sound_alone"] = os.getenv("DISABLE_SOUND_ALONE") == "true"

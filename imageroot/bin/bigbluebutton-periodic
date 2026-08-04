@@ -61,7 +61,22 @@ find "${BBB_VOLUME}/" -maxdepth 1 -type d -name "*-[0-9]*" \
     || echo "bigbluebutton-periodic: presentation cleanup failed"
 
 #
-# 4. Delete recordings past their retention
+# 4. Delete learning dashboards past their retention
+#
+# Before the recording section, which exits early when recording is off. bbb-web
+# also schedules this, but from a timer a restart loses.
+#
+: "${LEARNING_DASHBOARD_MAX_AGE_DAYS:=1}"
+LD_DIR="${BBB_VOLUME}/learning-dashboard"
+
+if [ "${LEARNING_DASHBOARD_MAX_AGE_DAYS}" != "0" ] && [ -d "${LD_DIR}" ]; then
+    find "${LD_DIR}" -mindepth 1 -maxdepth 1 -type d \
+        -mtime "+${LEARNING_DASHBOARD_MAX_AGE_DAYS}" -print -exec rm -rf '{}' + \
+        || echo "bigbluebutton-periodic: learning dashboard cleanup failed"
+fi
+
+#
+# 5. Delete recordings past their retention
 #
 # Through bbb-record: removing the directories directly would leave the database
 # and the published tree inconsistent.

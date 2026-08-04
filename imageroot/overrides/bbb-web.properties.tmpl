@@ -22,4 +22,12 @@ beans.presentationService.defaultUploadedPresentation=${bigbluebutton.web.server
 
 learningDashboardEnabled={{ .Env.ENABLE_LEARNING_DASHBOARD }}
 
+# This timer dies with the JVM, so bin/bigbluebutton-periodic enforces retention
+# too. 0 disables it, which is also what an unconfigured instance gets.
+{{ if .Env.LEARNING_DASHBOARD_CLEANUP_MINUTES }}
+learningDashboardCleanupDelayInMinutes={{ .Env.LEARNING_DASHBOARD_CLEANUP_MINUTES }}
+{{ else }}
+learningDashboardCleanupDelayInMinutes=0
+{{ end }}
+
 defaultNumDigitsForTelVoice=9

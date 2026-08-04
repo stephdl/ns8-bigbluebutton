@@ -50,6 +50,10 @@ agent.set_env("ENABLE_RECORDING", str(data["enable_recording"]).lower())
 agent.set_env("REMOVE_OLD_RECORDING", str(data["remove_old_recording"]).lower())
 agent.set_env("RECORDING_MAX_AGE_DAYS", str(data["recording_max_age_days"]))
 agent.set_env("ENABLE_LEARNING_DASHBOARD", str(data["enable_learning_dashboard"]).lower())
+agent.set_env("LEARNING_DASHBOARD_MAX_AGE_DAYS", str(data["learning_dashboard_max_age_days"]))
+# bbb-web wants minutes and dockerize cannot multiply.
+agent.set_env("LEARNING_DASHBOARD_CLEANUP_MINUTES",
+              str(data["learning_dashboard_max_age_days"] * 1440))
 agent.set_env("SOUNDS_LANGUAGE", data["sounds_language"])
 agent.set_env("DISABLE_SOUND_MUTED", str(data["disable_sound_muted"]).lower())
 agent.set_env("DISABLE_SOUND_ALONE", str(data["disable_sound_alone"]).lower())
