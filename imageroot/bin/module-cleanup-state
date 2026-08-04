@@ -7,6 +7,4 @@
 # Runs with CWD=state/ right after Restic has taken the backup.
 #
 
-# bbb_graphql.pg_dump is still named here on purpose: an instance backed up by an
-# earlier version has one lying in state/, and nothing else would remove it.
-rm -vf bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump
+rm -vf greenlight.pg_dump

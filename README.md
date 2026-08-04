@@ -230,14 +230,15 @@ and why:
 
 ## Backup and restore
 
-Backed up: the recordings volume, the `greenlight` and `hasura_app` PostgreSQL
-databases, the raw recorder output, and the generated secrets.
+Backed up: the recordings volume, the `greenlight` PostgreSQL database, the raw
+recorder output, and the generated secrets.
 
-Not backed up: Redis, the per-meeting scratch volumes, and the `bbb_graphql`
-database. Redis holds live meeting state and the recording job queues, which are
-meaningless across a restore. `bbb_graphql` is skipped for a blunter reason:
-`bbb-graphql-server` drops and recreates it from its own schema on every start,
-so a copy would be restored and destroyed seconds later.
+Not backed up: Redis, the per-meeting scratch volumes, and the two GraphQL
+databases. Redis holds live meeting state and the recording job queues, which are
+meaningless across a restore. The GraphQL databases are skipped for a blunter
+reason: on every start `bbb-graphql-server` drops and recreates `bbb_graphql` from
+its own schema, and reapplies `hasura_app`'s metadata from the image, so a copy of
+either would be restored and overwritten seconds later.
 
 **A restore therefore loses every in-progress meeting, and any recording still
 queued for processing at backup time.** The raw media survives, but the job that

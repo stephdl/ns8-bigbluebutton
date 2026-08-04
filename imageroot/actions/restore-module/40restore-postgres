@@ -37,16 +37,14 @@ chmod 755 restore/initdb/10-create-databases.sh
 cat - >restore/20-restore.sh <<'EOS'
 #!/bin/bash
 set -e -o pipefail
-for db in hasura_app greenlight; do
-    echo "Restoring ${db}"
-    pg_restore --no-owner --no-privileges --file=- "/dumps/${db}.pg_dump" \
-        | sed "s/set_config('search_path', '', false)/set_config('search_path', 'public', false)/" \
-        | psql -v ON_ERROR_STOP=1 -U postgres -q -d "${db}" >/dev/null
-done
+echo "Restoring greenlight"
+pg_restore --no-owner --no-privileges --file=- /dumps/greenlight.pg_dump \
+    | sed "s/set_config('search_path', '', false)/set_config('search_path', 'public', false)/" \
+    | psql -v ON_ERROR_STOP=1 -U postgres -q -d greenlight >/dev/null
 EOS
 chmod 755 restore/20-restore.sh
 
-# bbb_graphql is created but not loaded: the data directory must look fresh.
+# All three are created, only greenlight is loaded: the same set as a fresh install.
 podman run \
     --rm --detach \
     --network=none \
@@ -85,5 +83,4 @@ podman exec restore_db /restore.sh
 # it needing crash recovery.
 podman stop --time 60 restore_db >/dev/null
 
-# bbb_graphql.pg_dump is named because an older backup still carries one.
-rm -rfv restore/ bbb_graphql.pg_dump hasura_app.pg_dump greenlight.pg_dump
+rm -rfv restore/ greenlight.pg_dump
