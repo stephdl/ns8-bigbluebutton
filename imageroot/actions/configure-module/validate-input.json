@@ -9,15 +9,35 @@
             "lets_encrypt": true,
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
+            "stun_server": "",
+            "turn_ext_server": "",
             "enable_recording": false,
+            "enable_learning_dashboard": true,
             "sounds_language": "en-us-callie",
+            "disable_sound_muted": false,
+            "disable_sound_alone": false,
+            "welcome_message": "",
+            "welcome_footer": "",
             "remove_old_recording": false,
             "recording_max_age_days": 14
         }
     ],
     "type": "object",
     "required": [
-        "host"
+        "host",
+        "public_address",
+        "private_address",
+        "stun_server",
+        "turn_ext_server",
+        "enable_recording",
+        "enable_learning_dashboard",
+        "sounds_language",
+        "disable_sound_muted",
+        "disable_sound_alone",
+        "welcome_message",
+        "welcome_footer",
+        "remove_old_recording",
+        "recording_max_age_days"
     ],
     "properties": {
         "host": {
