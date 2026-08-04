@@ -277,6 +277,11 @@ and why:
   ns8-nethvoice-proxy on the same node.
 - **Recordings produce the web player only, not MP4.** The `video` playback
   format is not built into the upstream recordings image.
+- **The learning analytics dashboard is served its data.** The image's nginx
+  points `/learning-analytics-dashboard/` at the app alone, while `bbb-web` writes
+  each meeting's JSON to `/var/bigbluebutton/learning-dashboard`. Nothing served
+  it, so the dashboard opened empty as soon as the meeting ended and the session
+  token stopped working. This module adds the missing location.
 
 ## Maintenance timer
 

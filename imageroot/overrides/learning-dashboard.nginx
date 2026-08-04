@@ -1,0 +1,19 @@
+# Replaces /etc/nginx/bbb/learning-dashboard.nginx from alangecker/bbb-docker-nginx.
+#
+# Upstream BigBlueButton installs the dashboard app into
+# /var/bigbluebutton/learning-dashboard, next to the per-meeting JSON bbb-web
+# writes there, so one alias serves both. The image moves the app to /www and
+# keeps the single alias, leaving the data unreachable: once the meeting ends the
+# session token stops working and the app falls back to fetching
+# <meetingId>/<token>/learning_dashboard_data.json, which then 404s.
+#
+# The regex location wins over the prefix one, so only the data path is redirected.
+
+location /learning-analytics-dashboard/ {
+    alias /www/learning-analytics-dashboard/;
+    autoindex off;
+}
+
+location ~ "^/learning-analytics-dashboard/(?<ld_meeting>[^/]+)/(?<ld_token>[^/]+)/learning_dashboard_data\.json$" {
+    alias /var/bigbluebutton/learning-dashboard/$ld_meeting/$ld_token/learning_dashboard_data.json;
+}

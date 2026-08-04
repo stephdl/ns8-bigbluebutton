@@ -36,6 +36,7 @@ VERBATIM = (
     "turn-stun-servers.xml",
     "bbb-apps-akka.conf",
     "webrtc-sfu.nginx",
+    "learning-dashboard.nginx",
     "nginx-default.conf",
     # Every room's first slide, and tldraw only draws over a presentation.
     "default.pdf",
