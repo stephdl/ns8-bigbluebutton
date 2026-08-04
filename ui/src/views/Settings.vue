@@ -119,7 +119,7 @@
 
             <!-- network -->
             <h4 class="mg-bottom">{{ $t("settings.network") }}</h4>
-            <div class="address-row maxwidth mg-bottom">
+            <div class="address-row mg-bottom">
               <NsTextInput
                 :label="$t('settings.public_address')"
                 placeholder="203.0.113.10"
@@ -136,6 +136,7 @@
               </NsTextInput>
               <NsButton
                 kind="tertiary"
+                size="field"
                 :icon="Reset20"
                 :loading="loading.detectAddresses"
                 :disabled="stillLoading"
@@ -499,6 +500,9 @@ import {
 } from "@nethserver/ns8-ui-lib";
 
 // Keep in sync with the enum in configure-module/validate-input.json.
+const IPV4 =
+  /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+
 const SOUNDS_LANGUAGES = [
   "en-ca-june",
   "en-us-allison",
@@ -805,6 +809,19 @@ export default {
       this.loading.getConfiguration = false;
       this.focusElement("host");
     },
+    // Brackets make the URL parser an IPv6 parser; a zone index is rejected, which
+    // is what mediasoup wants.
+    isIpAddress(value) {
+      if (IPV4.test(value)) {
+        return true;
+      }
+      try {
+        new URL(`http://[${value}]/`);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    },
     validateConfigureModule() {
       this.clearErrors(this);
       this.validationErrorDetails = [];
@@ -824,6 +841,12 @@ export default {
       // Without it mediasoup announces nothing and no client finds a candidate.
       if (!this.publicAddress) {
         fail("public_address", "common.required");
+      } else if (!this.isIpAddress(this.publicAddress)) {
+        fail("public_address", "settings.address_invalid");
+      }
+
+      if (this.privateAddress && !this.isIpAddress(this.privateAddress)) {
+        fail("private_address", "settings.address_invalid");
       }
       // BigBlueButton signs every TURN credential with the secret, so a server
       // without one refuses them all.
@@ -952,14 +975,21 @@ export default {
   max-width: 38rem;
 }
 
-// keep the detect button on the input baseline, not on the label
 .address-row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: $spacing-05;
 }
 
+// The field keeps the width of every other one; the button sits beyond it.
+.address-row > *:first-child {
+  flex: 0 1 38rem;
+}
+
+// Clear the label, so the button lines up with the input and not with its caption:
+// .bx--label is 1rem of line plus 0.5rem of margin.
 .detect-button {
   flex-shrink: 0;
+  margin-top: 1.5rem;
 }
 </style>

@@ -59,11 +59,32 @@
         },
         "public_address": {
             "type": "string",
+            "anyOf": [
+                {
+                    "format": "ipv4"
+                },
+                {
+                    "format": "ipv6"
+                }
+            ],
             "title": "Public IP address",
             "description": "The address WebRTC clients use to reach this node. It is announced by mediasoup, not bound locally, so a NAT address is correct here. Detected at install time; override when a port-forward uses a different address."
         },
         "private_address": {
             "type": "string",
+            "anyOf": [
+                {
+                    "enum": [
+                        ""
+                    ]
+                },
+                {
+                    "format": "ipv4"
+                },
+                {
+                    "format": "ipv6"
+                }
+            ],
             "title": "LAN IP address",
             "description": "Optional. When set, mediasoup also advertises this address so clients on the local network connect directly instead of relying on NAT reflection."
         },
