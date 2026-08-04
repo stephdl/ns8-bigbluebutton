@@ -22,6 +22,14 @@ const routes = [
     component: Settings,
   },
   {
+    path: "/learning-analytics",
+    name: "LearningAnalytics",
+    component: () =>
+      import(
+        /* webpackChunkName: "learning-analytics" */ "../views/LearningAnalytics.vue"
+      ),
+  },
+  {
     path: "/about",
     name: "About",
     // route level code-splitting

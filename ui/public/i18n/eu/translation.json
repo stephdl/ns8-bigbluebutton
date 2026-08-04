@@ -86,6 +86,25 @@
     "default_admin_description": "admin@nethserver.org-ek Nethesis,1234 pasahitza darabil oraindik; moduluarekin banatzen da eta, beraz, publikoa da. Hasi saioa harekin, sortu zeure kontua Administrator rolarekin, eta ezabatu hau gero.",
     "open_bigbluebutton": "Ireki BigBlueButton"
   },
+  "analytics": {
+    "title": "Ikaskuntzaren analisia",
+    "policy": "Iraganeko bileren txostenak",
+    "retention_days": "Bilera amaitu eta {days} egunez gordetzen dira, gero mantentze-lanak ezabatzen ditu.",
+    "retention_unlimited": "Betirako gordetzen dira.",
+    "policy_disabled": "Ikaskuntzaren analisiaren panela desgaituta dago",
+    "policy_disabled_description": "Ez da txosten berririk idazten. Behekoak, baldin badaude, gordetze-epea agortzean ezabatuko dira.",
+    "go_to_settings": "Aldatu ezarpenetan",
+    "meeting": "Bilera",
+    "started": "Hasiera",
+    "ended": "Amaiera",
+    "participants": "Partaideak",
+    "not_ended": "Ez erregistratuta",
+    "open_report": "Ireki txostena",
+    "search": "Bilatu bilera bat",
+    "no_reports": "Ez dago txostenik",
+    "no_reports_description": "Txosten bat bilera egin ondoren agertzen da, eta gordetze-epeak uzten duen bitartean irauten du.",
+    "no_reports_disabled_description": "Gaitu panela ezarpenetan hurrengo bilerak erregistra daitezen."
+  },
   "about": {
     "title": "Honi buruz"
   },
@@ -97,6 +116,7 @@
     "get-configuration": "Irakurri konfigurazioa",
     "configure-module": "Konfiguratu modulua",
     "detect-addresses": "Hauteman helbideak",
+    "list-learning-dashboards": "Zerrendatu ikaskuntzaren analisiaren txostenak",
     "get-module-info": "Irakurri moduluaren informazioa",
     "get-name": "Irakurri izena",
     "list-backup-repositories": "Zerrendatu babeskopien biltegiak",

@@ -1,0 +1,90 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "List the learning analytics reports",
+    "$id": "http://nethserver.org/json-schema/task/output/bigbluebutton/list-learning-dashboards",
+    "description": "Reports still on disk, with the policy that governs them",
+    "examples": [
+        {
+            "enabled": true,
+            "max_age_days": 1,
+            "reports": [
+                {
+                    "meeting_id": "75bc5c9a7a343f2606894c7f4e947a09e6268f1d-1785851324500",
+                    "name": "Maths, group B",
+                    "created_on": 1785851324500,
+                    "ended_on": 1785853104000,
+                    "participants": 12,
+                    "polls": 2,
+                    "url": "https://bbb.domain.org/learning-analytics-dashboard/?meeting=75bc5c9a7a343f2606894c7f4e947a09e6268f1d-1785851324500&report=hc6remamehdd"
+                }
+            ]
+        }
+    ],
+    "type": "object",
+    "required": [
+        "enabled",
+        "max_age_days",
+        "reports"
+    ],
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "title": "The learning dashboard is enabled",
+            "description": "When false the list can only shrink: no new report is written."
+        },
+        "max_age_days": {
+            "type": "integer",
+            "title": "Retention in days",
+            "description": "0 means the reports are kept indefinitely."
+        },
+        "reports": {
+            "type": "array",
+            "title": "Reports still on disk",
+            "description": "Newest first.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "meeting_id",
+                    "name",
+                    "created_on",
+                    "ended_on",
+                    "participants",
+                    "polls",
+                    "url"
+                ],
+                "properties": {
+                    "meeting_id": {
+                        "type": "string",
+                        "title": "Internal meeting identifier"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Meeting name"
+                    },
+                    "created_on": {
+                        "type": "integer",
+                        "title": "Start time, in milliseconds since the epoch"
+                    },
+                    "ended_on": {
+                        "type": "integer",
+                        "title": "End time, in milliseconds since the epoch",
+                        "description": "0 when the end was never recorded, which happens if bbb-web restarted first."
+                    },
+                    "participants": {
+                        "type": "integer",
+                        "title": "Number of participants in the report"
+                    },
+                    "polls": {
+                        "type": "integer",
+                        "title": "Number of polls in the report"
+                    },
+                    "url": {
+                        "type": "string",
+                        "title": "Dashboard link",
+                        "description": "Carries the access token, so it grants whoever holds it access to the report."
+                    }
+                }
+            }
+        }
+    }
+}

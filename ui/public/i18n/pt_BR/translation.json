@@ -86,6 +86,25 @@
     "default_admin_description": "admin@nethserver.org continua usando a senha Nethesis,1234, que é distribuída com o módulo e portanto é pública. Entre com ela, crie sua própria conta com o papel Administrator e depois exclua esta.",
     "open_bigbluebutton": "Abrir o BigBlueButton"
   },
+  "analytics": {
+    "title": "Análise de aprendizagem",
+    "policy": "Relatórios de reuniões anteriores",
+    "retention_days": "Mantidos {days} dias após o fim da reunião e depois excluídos pela tarefa de manutenção.",
+    "retention_unlimited": "Mantidos indefinidamente.",
+    "policy_disabled": "O painel de análise de aprendizagem está desativado",
+    "policy_disabled_description": "Nenhum relatório novo é gravado. Os abaixo, se houver, são excluídos quando a retenção terminar.",
+    "go_to_settings": "Alterar nas configurações",
+    "meeting": "Reunião",
+    "started": "Início",
+    "ended": "Fim",
+    "participants": "Participantes",
+    "not_ended": "Não registrada",
+    "open_report": "Abrir o relatório",
+    "search": "Procurar uma reunião",
+    "no_reports": "Nenhum relatório disponível",
+    "no_reports_description": "Um relatório aparece depois de uma reunião e permanece pelo tempo que a retenção permitir.",
+    "no_reports_disabled_description": "Ative o painel nas configurações para que as próximas reuniões sejam registradas."
+  },
   "about": {
     "title": "Sobre"
   },
@@ -97,6 +116,7 @@
     "get-configuration": "Ler a configuração",
     "configure-module": "Configurar o módulo",
     "detect-addresses": "Detectar os endereços",
+    "list-learning-dashboards": "Listar os relatórios de análise de aprendizagem",
     "get-module-info": "Ler as informações do módulo",
     "get-name": "Ler o nome",
     "list-backup-repositories": "Listar os repositórios de backup",
