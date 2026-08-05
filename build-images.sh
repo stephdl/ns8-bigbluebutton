@@ -41,7 +41,7 @@ BBB_IMAGES=(
     "docker.io/alangecker/bbb-docker-recordings:v3.0.23"
     "docker.io/bigbluebutton/greenlight:v3.8.2"
     "docker.io/library/postgres:16.14-alpine"
-    "docker.io/library/redis:8.4.5-alpine"
+    "docker.io/library/redis:8.8.1-alpine"
 )
 
 # Create a new empty container image
