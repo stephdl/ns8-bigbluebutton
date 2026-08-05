@@ -16,6 +16,8 @@ import subprocess
 import sys
 import time
 
+import greenlight_db
+
 # Mirrored by bin/seed-default-admin and settings.default_admin_description in
 # ui/public/i18n/en/translation.json. Change all three together.
 DEFAULT_EMAIL = "admin@nethserver.org"
@@ -29,10 +31,10 @@ def run(cmd, **kwargs):
 
 
 def query_digest():
-    return run([
-        "podman", "exec", "postgres-app", "psql", "-U", "postgres", "-d", "greenlight",
-        "-tAc", f"SELECT password_digest FROM users WHERE email = '{DEFAULT_EMAIL}'",
-    ])
+    return greenlight_db.psql(
+        f"SELECT password_digest FROM users WHERE email = '{DEFAULT_EMAIL}'",
+        timeout=20,
+    )
 
 
 def wait_for_peers(seconds):
@@ -54,11 +56,7 @@ def wait_for_peers(seconds):
         time.sleep(2)
 
 
-wait = 0
-if len(sys.argv) == 3 and sys.argv[1] == "--wait":
-    wait = int(sys.argv[2])
-
-digest = wait_for_peers(wait)
+digest = wait_for_peers(greenlight_db.parse_wait_arg(sys.argv))
 
 # Exit 2, printing nothing, so the caller can tell "could not check" from a
 # verified answer. Callers that treat this as false hide a shipped password.
