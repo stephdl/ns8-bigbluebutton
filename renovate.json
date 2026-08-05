@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>NethServer/.github:ns8"
+  ],
+  "packageRules": [
+    {
+      "description": "Stay on the PostgreSQL 16 branch used by upstream bigbluebutton/docker (postgres:16-alpine): a major bump needs the pgdata volume path and greenlight/graphql schema compat reviewed first",
+      "matchDatasources": ["docker"],
+      "matchDepNames": ["postgres"],
+      "allowedVersions": "<17"
+    }
   ]
 }
