@@ -1,4 +1,5 @@
-#!/bin/bash -e -o pipefail
+#!/bin/bash
+set -e -o pipefail
 
 #
 # Copyright (C) 2026 Nethesis S.r.l.
