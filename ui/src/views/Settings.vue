@@ -266,8 +266,10 @@
                     <NsSlider
                       :label="$t('settings.learning_dashboard_max_age_days')"
                       min="1"
-                      max="30"
+                      max="180"
                       step="1"
+                      minLabel=""
+                      maxLabel=""
                       v-model="retentionSliderValue"
                       :disabled="stillLoading"
                       :unitLabel="$t('settings.days')"
