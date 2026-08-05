@@ -44,9 +44,14 @@ config["welcome_message"] = os.getenv("WELCOME_MESSAGE", "")
 config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
 
 # Live, not cached: the password is changed in Greenlight, which cannot tell us.
+#
+# --wait 0, unlike the systemd callers: this action is what the UI runs on every
+# page load, and Status.vue and Settings.vue both call it on mount. Waiting out a
+# restart here would stall the whole page for half a minute to reach the same
+# fail-safe answer the except branch already gives, and the UI reloads anyway.
 try:
-    probe = subprocess.run(["check-default-admin", "--wait", "25"],
-                           capture_output=True, text=True, timeout=40)
+    probe = subprocess.run(["check-default-admin", "--wait", "0"],
+                           capture_output=True, text=True, timeout=30)
     if probe.returncode == 0:
         config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
     else:
