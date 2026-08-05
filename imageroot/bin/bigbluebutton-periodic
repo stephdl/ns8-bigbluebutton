@@ -71,7 +71,7 @@ find "${BBB_VOLUME}/" -maxdepth 1 -type d -name "*-[0-9]*" \
 # Before the recording section, which exits early when recording is off. bbb-web
 # also schedules this, but from a timer a restart loses.
 #
-: "${LEARNING_DASHBOARD_MAX_AGE_DAYS:=7}"
+: "${LEARNING_DASHBOARD_MAX_AGE_DAYS:=0}"
 LD_DIR="${BBB_VOLUME}/learning-dashboard"
 
 if [ "${LEARNING_DASHBOARD_MAX_AGE_DAYS}" != "0" ] && [ -d "${LD_DIR}" ]; then
@@ -91,7 +91,7 @@ if [ "${ENABLE_RECORDING}" != "true" ]; then
     exit 0
 fi
 
-: "${RECORDING_MAX_AGE_DAYS:=7}"
+: "${RECORDING_MAX_AGE_DAYS:=0}"
 
 if [ "${RECORDING_MAX_AGE_DAYS}" = "0" ]; then
     exit 0
