@@ -1257,12 +1257,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@carbon/icon-helpers@npm:^10.37.0, @carbon/icon-helpers@npm:^10.53.1":
+"@carbon/icon-helpers@npm:^10.37.0":
   version: 10.69.0
   resolution: "@carbon/icon-helpers@npm:10.69.0"
   dependencies:
     "@ibm/telemetry-js": "npm:^1.5.0"
   checksum: 10c0/51fbc42b7e7584ea18c855a31ade924b30d740ea0af00d9cfcde5caf988d0a1381734bee1b454aa2d8432bdf0ea9fe831cea3814e597483372c4cbef1dcd790b
+  languageName: node
+  linkType: hard
+
+"@carbon/icon-helpers@npm:^10.79.0":
+  version: 10.79.0
+  resolution: "@carbon/icon-helpers@npm:10.79.0"
+  dependencies:
+    "@ibm/telemetry-js": "npm:^1.5.0"
+  checksum: 10c0/9fa34738c284fd5754829f6d7ffbbf3f267efc4c501c869f25d34a02ba6f7afca65145e4fe94c0de38323b3d3bfea745691f8c1d9b73e46cb3bb203297479f21
   languageName: node
   linkType: hard
 
@@ -1276,12 +1285,12 @@ __metadata:
   linkType: hard
 
 "@carbon/icons-vue@npm:^10.37.0":
-  version: 10.99.1
-  resolution: "@carbon/icons-vue@npm:10.99.1"
+  version: 10.134.0
+  resolution: "@carbon/icons-vue@npm:10.134.0"
   dependencies:
-    "@carbon/icon-helpers": "npm:^10.53.1"
+    "@carbon/icon-helpers": "npm:^10.79.0"
     "@ibm/telemetry-js": "npm:^1.5.0"
-  checksum: 10c0/88a70aaa4687a916431ac548ba07e90a012c01c2f11a196b7e7ad976011e812870b6c03d56db59c3061067341d15449aee05c808b2084674d7d63c563b8e416e
+  checksum: 10c0/ec29493e57a66a8b505531543853d54cdf209378c5a35d86ff38aa88f34669581ee02561e9ce5b269ceafcc547460d6e8a4bb5686833339ebad4a046890df704
   languageName: node
   linkType: hard
 
