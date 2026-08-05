@@ -499,10 +499,11 @@ import {
   PageTitleService,
 } from "@nethserver/ns8-ui-lib";
 
-// Keep in sync with the enum in configure-module/validate-input.json.
 const IPV4 =
   /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
 
+// Keep in sync with the sounds_language enum in configure-module/validate-input.json:
+// a code listed only here is rejected by the backend on save.
 const SOUNDS_LANGUAGES = [
   "en-ca-june",
   "en-us-allison",

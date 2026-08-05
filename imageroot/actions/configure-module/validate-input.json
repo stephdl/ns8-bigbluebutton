@@ -155,6 +155,7 @@
         "sounds_language": {
             "type": "string",
             "title": "Sound announcements language",
+            "$comment": "Keep in sync with SOUNDS_LANGUAGES in ui/src/views/Settings.vue: a code listed only there is rejected on save, one listed only here is never offered.",
             "enum": [
                 "en-ca-june",
                 "en-us-allison",
