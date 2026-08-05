@@ -13,12 +13,17 @@
 # failure is silent and it still exits 0. rails runner gives a real exit code.
 #
 
+import contextlib
 import json
 import subprocess
 import sys
 import time
 
 import agent
+import greenlight_db
+
+# Arbitrary, just needs to not collide with another advisory lock in this DB.
+ADMIN_SEED_LOCK_KEY = 72901
 
 # Mirrored by bin/check-default-admin and settings.default_admin_description in
 # ui/public/i18n/en/translation.json. Change all three together.
@@ -30,7 +35,9 @@ DEFAULT_PASSWORD = "Nethesis,1234"
 # so a dot and an alpha TLD are mandatory: admin@local would be rejected.
 
 # Runs inside the Greenlight container. The existence test is repeated here to
-# close the race between the count below and the insert.
+# narrow the race between the count below and the insert; ADMIN_SEED_LOCK_KEY
+# below is what actually closes it, since greenlight-seed-admin.service and the
+# periodic timer can invoke this script at the same time.
 CREATE_ADMIN = """
 role = Role.find_by(name: 'Administrator', provider: 'greenlight')
 abort 'the Administrator role is missing: data migrations have not run' unless role
@@ -46,19 +53,39 @@ abort "rejected: #{{user.errors.full_messages.join(', ')}}" unless user.save
 """
 
 
-def psql(sql):
-    return subprocess.run(
-        ["podman", "exec", "postgres-app", "psql", "-U", "postgres",
-         "-d", "greenlight", "-tAc", sql],
-        capture_output=True, text=True, timeout=30,
+@contextlib.contextmanager
+def admin_seed_lock():
+    """Hold a Postgres session-level advisory lock for the whole check+create span.
+
+    A session-level lock needs one connection kept open start to finish: a
+    plain `psql -c` would reconnect for the unlock and release nothing. So this
+    keeps a single psql process alive, feeding it statements over stdin.
+    """
+    proc = subprocess.Popen(
+        ["podman", "exec", "-i", "postgres-app", "psql", "-U", "postgres", "-d", "greenlight", "-tA"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
     )
+    try:
+        proc.stdin.write(f"SELECT pg_advisory_lock({ADMIN_SEED_LOCK_KEY});\n")
+        proc.stdin.flush()
+        if proc.stdout.readline() == "" and proc.poll() is not None:
+            # postgres-app went away between wait_for_schema() and here: proceed
+            # unlocked rather than blocking the seed attempt on a dead connection.
+            print("could not take the administrator-seed lock, proceeding unlocked",
+                  file=sys.stderr)
+        yield
+    finally:
+        if proc.poll() is None:
+            proc.stdin.write(f"SELECT pg_advisory_unlock({ADMIN_SEED_LOCK_KEY});\n")
+        proc.stdin.close()
+        proc.wait(timeout=10)
 
 
 def wait_for_schema(seconds):
     """Block until Greenlight has migrated, or the budget runs out."""
     deadline = time.monotonic() + seconds
     while True:
-        probe = psql("SELECT to_regclass('public.users')")
+        probe = greenlight_db.psql("SELECT to_regclass('public.users')")
         if probe.returncode == 0 and probe.stdout.strip():
             return True
         if time.monotonic() >= deadline:
@@ -66,38 +93,35 @@ def wait_for_schema(seconds):
         time.sleep(5)
 
 
-wait = 0
-if len(sys.argv) == 3 and sys.argv[1] == "--wait":
-    wait = int(sys.argv[2])
-
-if not wait_for_schema(wait):
+if not wait_for_schema(greenlight_db.parse_wait_arg(sys.argv)):
     # Not an error: the periodic job and the next start try again.
     print("Greenlight database is not ready, skipping the administrator check",
           file=sys.stderr)
     sys.exit(0)
 
-admins = psql(
-    "SELECT count(*) FROM users u JOIN roles r ON r.id = u.role_id "
-    "WHERE r.name IN ('Administrator', 'SuperAdmin')"
-)
+with admin_seed_lock():
+    admins = greenlight_db.psql(
+        "SELECT count(*) FROM users u JOIN roles r ON r.id = u.role_id "
+        "WHERE r.name IN ('Administrator', 'SuperAdmin')"
+    )
 
-if admins.returncode != 0 or admins.stdout.strip() not in ("", "0"):
-    sys.exit(0)  # an administrator already exists
+    if admins.returncode != 0 or admins.stdout.strip() not in ("", "0"):
+        sys.exit(0)  # an administrator already exists
 
-print("no administrator found, creating the bootstrap account", file=sys.stderr)
+    print("no administrator found, creating the bootstrap account", file=sys.stderr)
 
-# On stdin, not -e, so the password never shows up in ps. json.dumps produces a
-# valid Ruby string literal for this character set.
-create = subprocess.run(
-    ["podman", "exec", "-i", "-w", "/usr/src/app", "greenlight-app",
-     "bundle", "exec", "rails", "runner", "-"],
-    input=CREATE_ADMIN.format(
-        name=json.dumps(DEFAULT_NAME),
-        email=json.dumps(DEFAULT_EMAIL),
-        password=json.dumps(DEFAULT_PASSWORD),
-    ),
-    capture_output=True, text=True, timeout=300,
-)
+    # On stdin, not -e, so the password never shows up in ps. json.dumps produces a
+    # valid Ruby string literal for this character set.
+    create = subprocess.run(
+        ["podman", "exec", "-i", "-w", "/usr/src/app", "greenlight-app",
+         "bundle", "exec", "rails", "runner", "-"],
+        input=CREATE_ADMIN.format(
+            name=json.dumps(DEFAULT_NAME),
+            email=json.dumps(DEFAULT_EMAIL),
+            password=json.dumps(DEFAULT_PASSWORD),
+        ),
+        capture_output=True, text=True, timeout=300,
+    )
 
 if create.returncode != 0:
     print(agent.SD_ERR + "could not create the bootstrap administrator",
