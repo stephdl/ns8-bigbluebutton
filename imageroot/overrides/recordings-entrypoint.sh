@@ -22,19 +22,12 @@ do
     sed -i -e 's/File\.exists?/File.exist?/g' -e 's/Dir\.exists?/Dir.exist?/g' "$script"
 done
 
+. /pod-trust-lib.sh
+
 # The ready callback goes to Greenlight on the public name, so point it at the
 # pod's own nginx: otherwise it dies on "certificate verify failed" and the
 # recording never reaches a room's library.
-#
-# Appended, never mounted over: replacing this file drops the pod's --add-host
-# names, and DNS can then answer for an internal name with a public address.
-if [ -n "$DOMAIN" ] && ! grep -q "[[:space:]]${DOMAIN}\$" /etc/hosts; then
-    printf '127.0.0.1\t%s\n' "$DOMAIN" >> /etc/hosts
-fi
-
-if [ -s /usr/local/share/ca-certificates/bigbluebutton-internal.crt ]; then
-    update-ca-certificates >/dev/null 2>&1 || \
-        echo "recordings: could not refresh the CA store, the ready callback may fail" >&2
-fi
+pod_trust_add_host
+pod_trust_refresh_ca "the ready callback may fail"
 
 exec /entrypoint.sh

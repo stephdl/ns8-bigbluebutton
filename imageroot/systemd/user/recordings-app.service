@@ -35,6 +35,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/recordings-app.pid \
     --volume mediasoup:/var/mediasoup:z \
     --volume bbb-webrtc-recorder:/var/lib/bbb-webrtc-recorder:z \
     --volume %S/state/overrides/recordings-entrypoint.sh:/recordings-entrypoint.sh:ro,z \
+    --volume %S/state/overrides/pod-trust-lib.sh:/pod-trust-lib.sh:ro,z \
     --volume %S/state/overrides/internal.crt:/usr/local/share/ca-certificates/bigbluebutton-internal.crt:ro,z \
     --tmpfs /var/log/bigbluebutton \
     --tmpfs /tmp \
