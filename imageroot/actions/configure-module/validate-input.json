@@ -15,14 +15,13 @@
             "enable_learning_dashboard": true,
             "enable_external_videos": true,
             "enable_breakout_rooms": true,
-            "learning_dashboard_max_age_days": 1,
+            "learning_dashboard_max_age_days": 7,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
             "disable_sound_alone": false,
             "welcome_message": "",
             "welcome_footer": "",
-            "remove_old_recording": false,
-            "recording_max_age_days": 14
+            "recording_max_age_days": 7
         }
     ],
     "type": "object",
@@ -42,7 +41,6 @@
         "disable_sound_alone",
         "welcome_message",
         "welcome_footer",
-        "remove_old_recording",
         "recording_max_age_days"
     ],
     "allOf": [
@@ -192,16 +190,12 @@
             "title": "Welcome footer",
             "description": "Replaces the default welcome footer shown in the chat"
         },
-        "remove_old_recording": {
-            "type": "boolean",
-            "title": "Delete old recordings",
-            "description": "Let the periodic maintenance job delete recordings past their retention. Requires recording to be enabled."
-        },
         "recording_max_age_days": {
             "type": "integer",
             "title": "Recording retention (days)",
-            "minimum": 1,
-            "description": "Recordings older than this are deleted, provided deletion is enabled."
+            "minimum": 0,
+            "maximum": 180,
+            "description": "How long a recording stays available after the meeting ends. 0 keeps it forever. Enforced by the maintenance job, which runs every 30 minutes."
         }
     }
 }

@@ -71,7 +71,7 @@ find "${BBB_VOLUME}/" -maxdepth 1 -type d -name "*-[0-9]*" \
 # Before the recording section, which exits early when recording is off. bbb-web
 # also schedules this, but from a timer a restart loses.
 #
-: "${LEARNING_DASHBOARD_MAX_AGE_DAYS:=1}"
+: "${LEARNING_DASHBOARD_MAX_AGE_DAYS:=7}"
 LD_DIR="${BBB_VOLUME}/learning-dashboard"
 
 if [ "${LEARNING_DASHBOARD_MAX_AGE_DAYS}" != "0" ] && [ -d "${LD_DIR}" ]; then
@@ -87,7 +87,13 @@ fi
 # Through bbb-record: removing the directories directly would leave the database
 # and the published tree inconsistent.
 #
-if [ "${ENABLE_RECORDING}" != "true" ] || [ "${REMOVE_OLD_RECORDING}" != "true" ]; then
+if [ "${ENABLE_RECORDING}" != "true" ]; then
+    exit 0
+fi
+
+: "${RECORDING_MAX_AGE_DAYS:=7}"
+
+if [ "${RECORDING_MAX_AGE_DAYS}" = "0" ]; then
     exit 0
 fi
 
@@ -96,7 +102,6 @@ if ! podman container exists recordings-app; then
     exit 0
 fi
 
-: "${RECORDING_MAX_AGE_DAYS:=14}"
 NOW=$(date +%s)
 shopt -s nullglob
 

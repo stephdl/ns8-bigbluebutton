@@ -47,7 +47,6 @@ config = {
     "stun_server": os.environ.get("STUN_SERVER", ""),
     "turn_ext_server": os.environ.get("TURN_EXT_SERVER", ""),
     "enable_recording": os.environ.get("ENABLE_RECORDING", "false") == "true",
-    "remove_old_recording": os.environ.get("REMOVE_OLD_RECORDING", "false") == "true",
     "recording_max_age_days": int(os.environ.get("RECORDING_MAX_AGE_DAYS", "14")),
     "enable_learning_dashboard": os.environ.get("ENABLE_LEARNING_DASHBOARD", "true") == "true",
     "enable_external_videos": os.environ.get("ENABLE_EXTERNAL_VIDEOS", "true") == "true",
