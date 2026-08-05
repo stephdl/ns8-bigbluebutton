@@ -54,8 +54,8 @@ whether or not a meeting is. On a 7.5 GB node that is 4.5 GB gone at rest.
 transcoding, and FreeSWITCH mixes the audio of everyone in a conference. Both
 scale with participants, and neither parallelises beyond the workers it starts —
 mediasoup runs one worker per core by default. Recording is the heaviest
-consumer of all, and it is off by default: turning it on cuts capacity
-noticeably, because the post-processing competes with the live meeting.
+consumer of all, and it is on by default: the post-processing competes with the
+live meeting, so turning it off buys back noticeable capacity.
 
 **Bandwidth is rarely the wall**, thanks to `cameraQualityThresholds`. Every
 camera drops to 100 kbps once a meeting reaches 8 participants, then 90, 70, 50,
@@ -136,13 +136,12 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "stun_server": "",
   "turn_ext_server": "",
   "turn_ext_secret": "",
-  "enable_recording": false,
-  "remove_old_recording": false,
-  "recording_max_age_days": 14,
+  "enable_recording": true,
+  "recording_max_age_days": 30,
   "enable_learning_dashboard": true,
   "enable_external_videos": true,
   "enable_breakout_rooms": true,
-  "learning_dashboard_max_age_days": 1,
+  "learning_dashboard_max_age_days": 7,
   "sounds_language": "en-us-callie",
   "disable_sound_muted": false,
   "disable_sound_alone": false,
@@ -180,16 +179,15 @@ What each field does, and the value a fresh install carries:
 | `stun_server` | empty | See *STUN and TURN* below. A public STUN server receives the IP address of every participant. |
 | `turn_ext_server` | empty | Without TURN, participants behind UDP-blocking firewalls cannot join. |
 | `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
-| `enable_recording` | `false` | Recordings capture audio, video, chat, shared notes and presentations. |
-| `remove_old_recording` | `false` | Let the maintenance timer delete recordings past their retention. |
-| `recording_max_age_days` | `14` | Only meaningful with the above. |
+| `enable_recording` | `true` | Recordings capture audio, video, chat, shared notes and presentations. |
+| `recording_max_age_days` | `0` | How long a recording stays available after the meeting. `0` keeps it forever, otherwise 1 to 180 days. Deletion goes through `bbb-record --delete`, so the database and the published tree stay consistent. |
 | `sounds_language` | `en-us-callie` | Language of the spoken announcements. |
 | `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
 | `enable_learning_dashboard` | `true` | Moderators can open a dashboard reporting each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link, not by role: whoever holds the link can read it. |
 | `enable_external_videos` | `true` | A moderator can play a YouTube or media URL in sync for everyone. The server relays nothing, but every participant's browser fetches it from the third party. |
 | `enable_breakout_rooms` | `true` | Each breakout room is a full meeting of its own, so a split multiplies what the node carries. |
-| `learning_dashboard_max_age_days` | `1` | How long a report stays readable after the meeting. `0` keeps it forever. Upstream deletes it 2 minutes after the meeting ends, from a timer inside `bbb-web` that a restart loses; the maintenance job enforces this value instead. |
+| `learning_dashboard_max_age_days` | `0` | How long a report stays readable after the meeting. `0` keeps it forever, otherwise 1 to 180 days. Upstream deletes it 2 minutes after the meeting ends, from a timer inside `bbb-web` that a restart loses; the maintenance job enforces this value instead. |
 
 ## STUN and TURN
 
@@ -257,8 +255,10 @@ deleting it once you have your own does not bring it back.
 
     api-cli run get-configuration --agent module/bigbluebutton1
 
-The output includes a read-only `mediasoup_port_range`: this is the UDP range
-that must be reachable from the internet.
+Two read-only fields come back with it. `mediasoup_port_range` is the UDP range
+that must be reachable from the internet. `certificate_matches_host` is `false`
+when Traefik serves a certificate for another name, which the Settings page
+reports rather than silently ignoring.
 
 ## Differences from upstream
 
@@ -295,9 +295,13 @@ and why:
 `periodic` container:
 
 1. resynchronises the FreeSWITCH clock
-2. deletes presentation upload directories older than 5 days
-3. deletes recordings past their retention, when both `enable_recording` and
-   `remove_old_recording` are set
+2. seeds the bootstrap administrator, in case the database was not ready when
+   Greenlight last started
+3. deletes presentation upload directories older than 5 days
+4. deletes learning dashboards past `learning_dashboard_max_age_days`, unless it
+   is `0`
+5. deletes recordings past `recording_max_age_days`, when `enable_recording` is
+   set and the retention is not `0`
 
     systemctl --user status bigbluebutton-periodic.timer
     journalctl --user -u bigbluebutton-periodic.service
@@ -305,7 +309,7 @@ and why:
 ## Backup and restore
 
 Backed up: the recordings volume, the `greenlight` PostgreSQL database, the raw
-recorder output, and the generated secrets.
+recorder output, the Greenlight uploads, and the generated secrets.
 
 Not backed up: Redis, the per-meeting scratch volumes, and the two GraphQL
 databases. Redis holds live meeting state and the recording job queues, which are
