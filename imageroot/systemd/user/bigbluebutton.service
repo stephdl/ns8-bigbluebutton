@@ -30,7 +30,7 @@ Before=postgres-app.service redis-app.service bbb-web-app.service \
 Environment=PODMAN_SYSTEMD_UNIT=%n
 EnvironmentFile=%S/state/environment
 Restart=always
-TimeoutStopSec=70
+TimeoutStopSec=90
 ExecStartPre=/bin/rm -f %t/bigbluebutton.pid %t/bigbluebutton.pod-id
 # Render state/overrides/ before anything mounts from it: podman answers a missing
 # bind mount source by creating a directory, and an entrypoint mounted that way

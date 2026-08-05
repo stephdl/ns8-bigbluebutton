@@ -25,7 +25,7 @@ EnvironmentFile=%S/state/environment
 EnvironmentFile=-%S/state/passwords.env
 WorkingDirectory=%S/state
 Restart=always
-TimeoutStopSec=70
+TimeoutStopSec=90
 ExecStartPre=/bin/rm -f %t/greenlight-app.pid %t/greenlight-app.ctr-id
 # Before every start, so a smarthost change lands without reconfiguring.
 ExecStartPre=runagent discover-smarthost

@@ -18,7 +18,7 @@ Environment=PODMAN_SYSTEMD_UNIT=%n
 EnvironmentFile=%S/state/environment
 WorkingDirectory=%S/state
 Restart=always
-TimeoutStopSec=70
+TimeoutStopSec=90
 ExecStartPre=/bin/rm -f %t/redis-app.pid %t/redis-app.ctr-id
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/redis-app.pid \
     --cidfile %t/redis-app.ctr-id --cgroups=no-conmon \
