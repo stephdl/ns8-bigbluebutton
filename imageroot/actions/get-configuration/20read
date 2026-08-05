@@ -30,13 +30,12 @@ secrets_path = os.path.join(os.environ["AGENT_STATE_DIR"], "passwords.env")
 stored = agent.read_envfile(secrets_path) if os.path.exists(secrets_path) else {}
 config["turn_ext_secret_set"] = bool(stored.get("TURN_EXT_SECRET", ""))
 
-config["enable_recording"] = os.getenv("ENABLE_RECORDING") == "true"
-config["remove_old_recording"] = os.getenv("REMOVE_OLD_RECORDING") == "true"
-config["recording_max_age_days"] = int(os.getenv("RECORDING_MAX_AGE_DAYS", "14"))
+config["enable_recording"] = os.getenv("ENABLE_RECORDING", "true") == "true"
+config["recording_max_age_days"] = int(os.getenv("RECORDING_MAX_AGE_DAYS", "0"))
 config["enable_learning_dashboard"] = os.getenv("ENABLE_LEARNING_DASHBOARD", "true") == "true"
 config["enable_external_videos"] = os.getenv("ENABLE_EXTERNAL_VIDEOS", "true") == "true"
 config["enable_breakout_rooms"] = os.getenv("ENABLE_BREAKOUT_ROOMS", "true") == "true"
-config["learning_dashboard_max_age_days"] = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1"))
+config["learning_dashboard_max_age_days"] = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "0"))
 config["sounds_language"] = os.getenv("SOUNDS_LANGUAGE", "en-us-callie")
 config["disable_sound_muted"] = os.getenv("DISABLE_SOUND_MUTED") == "true"
 config["disable_sound_alone"] = os.getenv("DISABLE_SOUND_ALONE") == "true"
@@ -44,9 +43,14 @@ config["welcome_message"] = os.getenv("WELCOME_MESSAGE", "")
 config["welcome_footer"] = os.getenv("WELCOME_FOOTER", "")
 
 # Live, not cached: the password is changed in Greenlight, which cannot tell us.
+#
+# --wait 0, unlike the systemd callers: this action is what the UI runs on every
+# page load, and Status.vue and Settings.vue both call it on mount. Waiting out a
+# restart here would stall the whole page for half a minute to reach the same
+# fail-safe answer the except branch already gives, and the UI reloads anyway.
 try:
-    probe = subprocess.run(["check-default-admin", "--wait", "25"],
-                           capture_output=True, text=True, timeout=40)
+    probe = subprocess.run(["check-default-admin", "--wait", "0"],
+                           capture_output=True, text=True, timeout=30)
     if probe.returncode == 0:
         config["default_admin_password_in_use"] = probe.stdout.strip() == "true"
     else:

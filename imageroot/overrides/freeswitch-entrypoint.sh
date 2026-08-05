@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/bin/bash
+set -e -o pipefail
 
 #
 # Copyright (C) 2026 Nethesis S.r.l.
@@ -71,7 +72,7 @@ install_sounds() {
         return 0
         ;;
     de-de-daedalus3)
-        [ -d "$SOUNDS_DIR/de/de/daedalus3" ] && return 0
+        [ -f "$SOUNDS_DIR/de-de-daedalus3.installed" ] && return 0
         echo "sounds package for de-de-daedalus3 not installed yet"
         # GitHub's tarball, not its zip: this image has no unzip.
         mkdir -p "$SOUNDS_DIR/de/de/daedalus3/conference" || return 1
@@ -82,6 +83,7 @@ install_sounds() {
         for folder in digits ivr misc; do
             ln -sfn "$SOUNDS_DIR/en/us/callie/$folder" "$SOUNDS_DIR/de/de/daedalus3/$folder"
         done
+        touch "$SOUNDS_DIR/de-de-daedalus3.installed"
         ;;
     *)
         [ -f "$SOUNDS_DIR/$SOUNDS_LANGUAGE.installed" ] && return 0

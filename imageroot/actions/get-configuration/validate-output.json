@@ -16,15 +16,14 @@
             "enable_learning_dashboard": true,
             "enable_external_videos": true,
             "enable_breakout_rooms": true,
-            "learning_dashboard_max_age_days": 1,
+            "learning_dashboard_max_age_days": 7,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
             "disable_sound_alone": false,
             "welcome_message": "",
             "welcome_footer": "",
             "mediasoup_port_range": "20000-28191",
-            "remove_old_recording": false,
-            "recording_max_age_days": 14,
+            "recording_max_age_days": 7,
             "certificate_matches_host": true,
             "default_admin_password_in_use": false
         }
@@ -49,7 +48,6 @@
         "welcome_message",
         "welcome_footer",
         "mediasoup_port_range",
-        "remove_old_recording",
         "recording_max_age_days",
         "certificate_matches_host",
         "default_admin_password_in_use"
@@ -134,13 +132,10 @@
             "title": "Public UDP port range",
             "description": "Read-only. The mediasoup RTC range allocated by the node, which must be reachable from the internet."
         },
-        "remove_old_recording": {
-            "type": "boolean",
-            "title": "Delete old recordings"
-        },
         "recording_max_age_days": {
             "type": "integer",
-            "title": "Recording retention (days)"
+            "title": "Recording retention (days)",
+            "description": "0 means recordings are kept indefinitely."
         },
         "certificate_matches_host": {
             "type": "boolean",

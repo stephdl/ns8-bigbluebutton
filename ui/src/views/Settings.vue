@@ -207,40 +207,23 @@
                     }}</template>
                   </NsToggle>
                   <template v-if="isRecordingEnabled">
-                    <NsToggle
-                      value="removeOldRecording"
-                      :label="$t('settings.remove_old_recording')"
-                      v-model="isRemoveOldRecordingEnabled"
-                      :disabled="stillLoading"
-                      class="mg-bottom"
-                    >
-                      <template #tooltip>
-                        {{ $t("settings.remove_old_recording_tooltip") }}
-                      </template>
-                      <template slot="text-left">{{
-                        $t("settings.disabled")
-                      }}</template>
-                      <template slot="text-right">{{
-                        $t("settings.enabled")
-                      }}</template>
-                    </NsToggle>
-                    <NsTextInput
-                      v-if="isRemoveOldRecordingEnabled"
-                      type="number"
-                      min="1"
+                    <NsSlider
                       :label="$t('settings.recording_max_age_days')"
-                      v-model.trim="recordingMaxAgeDays"
-                      class="mg-bottom"
-                      :invalid-message="$t(error.recording_max_age_days)"
+                      min="1"
+                      max="180"
+                      step="1"
+                      minLabel=""
+                      maxLabel=""
+                      v-model="recordingSliderValue"
                       :disabled="stillLoading"
-                      tooltipAlignment="start"
-                      tooltipDirection="right"
-                      ref="recording_max_age_days"
-                    >
-                      <template #tooltip>
-                        {{ $t("settings.recording_max_age_days_tooltip") }}
-                      </template>
-                    </NsTextInput>
+                      :unitLabel="$t('settings.days')"
+                      :showUnlimited="true"
+                      :isUnlimited="recordingMaxAgeDays === 0"
+                      :limitedLabel="$t('settings.retention_limited')"
+                      :unlimitedLabel="$t('settings.retention_unlimited')"
+                      @unlimited="onRecordingRetentionUnlimited"
+                      class="mg-bottom"
+                    />
                   </template>
 
                   <!-- what a meeting is allowed to do -->
@@ -266,8 +249,10 @@
                     <NsSlider
                       :label="$t('settings.learning_dashboard_max_age_days')"
                       min="1"
-                      max="30"
+                      max="180"
                       step="1"
+                      minLabel=""
+                      maxLabel=""
                       v-model="retentionSliderValue"
                       :disabled="stillLoading"
                       :unitLabel="$t('settings.days')"
@@ -499,10 +484,11 @@ import {
   PageTitleService,
 } from "@nethserver/ns8-ui-lib";
 
-// Keep in sync with the enum in configure-module/validate-input.json.
 const IPV4 =
   /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
 
+// Keep in sync with the sounds_language enum in configure-module/validate-input.json:
+// a code listed only here is rejected by the backend on save.
 const SOUNDS_LANGUAGES = [
   "en-ca-june",
   "en-us-allison",
@@ -552,14 +538,14 @@ export default {
       turnExtServer: "",
       turnExtSecret: "",
       turnExtSecretSet: false,
-      isRecordingEnabled: false,
+      isRecordingEnabled: true,
       isLearningDashboardEnabled: true,
       areExternalVideosEnabled: true,
       areBreakoutRoomsEnabled: true,
-      learningDashboardMaxAgeDays: 1,
-      retentionSliderValue: "1",
-      isRemoveOldRecordingEnabled: false,
-      recordingMaxAgeDays: "14",
+      learningDashboardMaxAgeDays: 0,
+      retentionSliderValue: "7",
+      recordingMaxAgeDays: 0,
+      recordingSliderValue: "7",
       soundsLanguage: "en-us-callie",
       isMuteAnnounced: true,
       isAloneAnnounced: true,
@@ -583,7 +569,6 @@ export default {
         stun_server: "",
         turn_ext_server: "",
         turn_ext_secret: "",
-        recording_max_age_days: "",
       },
     };
   },
@@ -610,6 +595,11 @@ export default {
     retentionSliderValue(value) {
       if (this.learningDashboardMaxAgeDays !== 0) {
         this.learningDashboardMaxAgeDays = Number(value);
+      }
+    },
+    recordingSliderValue(value) {
+      if (this.recordingMaxAgeDays !== 0) {
+        this.recordingMaxAgeDays = Number(value);
       }
     },
   },
@@ -678,6 +668,11 @@ export default {
       this.learningDashboardMaxAgeDays = isUnlimited
         ? 0
         : Number(this.retentionSliderValue);
+    },
+    onRecordingRetentionUnlimited(isUnlimited) {
+      this.recordingMaxAgeDays = isUnlimited
+        ? 0
+        : Number(this.recordingSliderValue);
     },
     async detectAddresses() {
       this.loading.detectAddresses = true;
@@ -794,10 +789,11 @@ export default {
       this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
       // 0 is the unlimited radio, so the slider keeps the last limited value.
       this.retentionSliderValue = String(
-        config.learning_dashboard_max_age_days || 1
+        config.learning_dashboard_max_age_days || 7
       );
-      this.isRemoveOldRecordingEnabled = config.remove_old_recording;
-      this.recordingMaxAgeDays = String(config.recording_max_age_days);
+      this.recordingMaxAgeDays = config.recording_max_age_days;
+      // 0 is the unlimited radio, so the slider keeps the last limited value.
+      this.recordingSliderValue = String(config.recording_max_age_days || 7);
       this.soundsLanguage = config.sounds_language;
       // The action keeps upstream's DISABLE_SOUND_* sense; the toggles read the
       // other way round, so a positive label needs no double negative.
@@ -852,15 +848,6 @@ export default {
       // without one refuses them all.
       if (this.turnExtServer && !this.turnExtSecret && !this.turnExtSecretSet) {
         fail("turn_ext_secret", "common.required");
-      }
-      if (this.isRecordingEnabled && this.isRemoveOldRecordingEnabled) {
-        const days = Number(this.recordingMaxAgeDays);
-        if (!Number.isInteger(days) || days < 1) {
-          fail(
-            "recording_max_age_days",
-            "settings.recording_max_age_days_invalid"
-          );
-        }
       }
       return isValidationOk;
     },
@@ -921,8 +908,7 @@ export default {
             enable_external_videos: this.areExternalVideosEnabled,
             enable_breakout_rooms: this.areBreakoutRoomsEnabled,
             learning_dashboard_max_age_days: this.learningDashboardMaxAgeDays,
-            remove_old_recording: this.isRemoveOldRecordingEnabled,
-            recording_max_age_days: Number(this.recordingMaxAgeDays),
+            recording_max_age_days: this.recordingMaxAgeDays,
             sounds_language: this.soundsLanguage,
             disable_sound_muted: !this.isMuteAnnounced,
             disable_sound_alone: !this.isAloneAnnounced,

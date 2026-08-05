@@ -50,7 +50,6 @@ agent.set_env("STUN_SERVER", data["stun_server"])
 agent.set_env("TURN_EXT_SERVER", data["turn_ext_server"])
 
 agent.set_env("ENABLE_RECORDING", str(data["enable_recording"]).lower())
-agent.set_env("REMOVE_OLD_RECORDING", str(data["remove_old_recording"]).lower())
 agent.set_env("RECORDING_MAX_AGE_DAYS", str(data["recording_max_age_days"]))
 agent.set_env("ENABLE_LEARNING_DASHBOARD", str(data["enable_learning_dashboard"]).lower())
 agent.set_env("ENABLE_EXTERNAL_VIDEOS", str(data["enable_external_videos"]).lower())

@@ -22,7 +22,7 @@ import agent
 
 host = os.getenv("TRAEFIK_HOST", "")
 enabled = os.getenv("ENABLE_LEARNING_DASHBOARD", "true") == "true"
-max_age_days = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1"))
+max_age_days = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "0"))
 
 volume = subprocess.run(
     ["podman", "volume", "inspect", "bigbluebutton", "--format", "{{.Mountpoint}}"],

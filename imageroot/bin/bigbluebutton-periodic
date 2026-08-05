@@ -56,8 +56,13 @@ seed-default-admin --wait 0 || echo "bigbluebutton-periodic: administrator check
 #
 # 3. Drop stale presentation upload directories
 #
+# The volume belongs to the container's rootless user namespace, not the host
+# UID this script runs as: an rm here would get "Permission denied" and this
+# stage would silently never delete anything. podman unshare re-execs the
+# rm in that namespace, where the container's root actually owns the files.
 find "${BBB_VOLUME}/" -maxdepth 1 -type d -name "*-[0-9]*" \
-    -mtime "+${PRESENTATION_MAX_AGE_DAYS}" -exec rm -rf '{}' + \
+    -mtime "+${PRESENTATION_MAX_AGE_DAYS}" -print0 \
+    | podman unshare xargs -0 --no-run-if-empty rm -rf \
     || echo "bigbluebutton-periodic: presentation cleanup failed"
 
 #
@@ -66,12 +71,13 @@ find "${BBB_VOLUME}/" -maxdepth 1 -type d -name "*-[0-9]*" \
 # Before the recording section, which exits early when recording is off. bbb-web
 # also schedules this, but from a timer a restart loses.
 #
-: "${LEARNING_DASHBOARD_MAX_AGE_DAYS:=1}"
+: "${LEARNING_DASHBOARD_MAX_AGE_DAYS:=0}"
 LD_DIR="${BBB_VOLUME}/learning-dashboard"
 
 if [ "${LEARNING_DASHBOARD_MAX_AGE_DAYS}" != "0" ] && [ -d "${LD_DIR}" ]; then
     find "${LD_DIR}" -mindepth 1 -maxdepth 1 -type d \
-        -mtime "+${LEARNING_DASHBOARD_MAX_AGE_DAYS}" -print -exec rm -rf '{}' + \
+        -mtime "+${LEARNING_DASHBOARD_MAX_AGE_DAYS}" -print0 \
+        | podman unshare xargs -0 --no-run-if-empty rm -rf \
         || echo "bigbluebutton-periodic: learning dashboard cleanup failed"
 fi
 
@@ -81,7 +87,13 @@ fi
 # Through bbb-record: removing the directories directly would leave the database
 # and the published tree inconsistent.
 #
-if [ "${ENABLE_RECORDING}" != "true" ] || [ "${REMOVE_OLD_RECORDING}" != "true" ]; then
+if [ "${ENABLE_RECORDING}" != "true" ]; then
+    exit 0
+fi
+
+: "${RECORDING_MAX_AGE_DAYS:=0}"
+
+if [ "${RECORDING_MAX_AGE_DAYS}" = "0" ]; then
     exit 0
 fi
 
@@ -90,7 +102,6 @@ if ! podman container exists recordings-app; then
     exit 0
 fi
 
-: "${RECORDING_MAX_AGE_DAYS:=14}"
 NOW=$(date +%s)
 shopt -s nullglob
 

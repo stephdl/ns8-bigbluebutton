@@ -13,15 +13,9 @@
 
 set -e
 
-# Appended, never mounted over: replacing this file drops the pod's --add-host
-# names, and DNS can then answer for an internal name with a public address.
-if [ -n "$DOMAIN" ] && ! grep -q "[[:space:]]${DOMAIN}\$" /etc/hosts; then
-    printf '127.0.0.1\t%s\n' "$DOMAIN" >> /etc/hosts
-fi
+. /pod-trust-lib.sh
 
-if [ -s /usr/local/share/ca-certificates/bigbluebutton-internal.crt ]; then
-    update-ca-certificates >/dev/null 2>&1 || \
-        echo "greenlight: could not refresh the CA store, API calls may fail" >&2
-fi
+pod_trust_add_host
+pod_trust_refresh_ca "API calls may fail"
 
 exec ./bin/start

@@ -25,7 +25,7 @@ EnvironmentFile=%S/state/environment
 EnvironmentFile=-%S/state/passwords.env
 WorkingDirectory=%S/state
 Restart=always
-TimeoutStopSec=70
+TimeoutStopSec=90
 ExecStartPre=/bin/rm -f %t/greenlight-app.pid %t/greenlight-app.ctr-id
 # Before every start, so a smarthost change lands without reconfiguring.
 ExecStartPre=runagent discover-smarthost
@@ -40,6 +40,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --env-file=%S/state/smarthost.env \
     --volume greenlight:/usr/src/app/storage:z \
     --volume %S/state/overrides/greenlight-entrypoint.sh:/greenlight-entrypoint.sh:ro,z \
+    --volume %S/state/overrides/pod-trust-lib.sh:/pod-trust-lib.sh:ro,z \
     --volume %S/state/overrides/internal.crt:/usr/local/share/ca-certificates/bigbluebutton-internal.crt:ro,z \
     --entrypoint=/greenlight-entrypoint.sh \
     ${GREENLIGHT_IMAGE}

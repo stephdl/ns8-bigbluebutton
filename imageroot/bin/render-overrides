@@ -41,6 +41,8 @@ VERBATIM = (
     # Every room's first slide, and tldraw only draws over a presentation.
     "default.pdf",
     "bbb-web.properties.tmpl",
+    # Sourced by two entrypoints, never executed, so no +x below.
+    "pod-trust-lib.sh",
 )
 
 ENTRYPOINTS = (
