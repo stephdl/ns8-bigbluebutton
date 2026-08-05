@@ -45,6 +45,28 @@
         "remove_old_recording",
         "recording_max_age_days"
     ],
+    "allOf": [
+        {
+            "$comment": "turn_ext_server is unusable without the secret that signs its credentials. Settings.vue already refuses that pair, so this guards the direct API callers it cannot reach. Only the explicit clear is catchable here: an omitted turn_ext_secret means 'keep the stored one', which the schema cannot see, so 15turn_secret warns about that case at run time.",
+            "if": {
+                "required": [
+                    "turn_ext_secret"
+                ],
+                "properties": {
+                    "turn_ext_secret": {
+                        "const": ""
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "turn_ext_server": {
+                        "const": ""
+                    }
+                }
+            }
+        }
+    ],
     "properties": {
         "host": {
             "type": "string",
