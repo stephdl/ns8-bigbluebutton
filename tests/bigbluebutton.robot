@@ -46,10 +46,7 @@ Check if the secrets file is not world readable
     Should Not Contain    ${output}    FSESL_PASSWORD=
 
 Check if bigbluebutton can be configured
-    ${rc} =    Execute Command
-    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","lets_encrypt":false,"http2https":false}'
-    ...    return_rc=True  return_stdout=False
-    Should Be Equal As Integers    ${rc}  0
+    Configure module    en-us-callie
 
 Check if configure-module refuses a missing public address
     # Without it mediasoup announces nothing and participants get no media, so
@@ -160,7 +157,7 @@ Check if bigbluebutton is removed correctly
     Should Be Equal As Integers    ${rc}  0
 
 *** Keywords ***
-Configure sounds language
+Configure module
     [Arguments]    ${language}
     # The schema requires every field, so a partial payload would be rejected here
     # even though only sounds_language is under test.
@@ -168,6 +165,10 @@ Configure sounds language
     ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"learning_dashboard_max_age_days":7,"sounds_language":"${language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
+
+Configure sounds language
+    [Arguments]    ${language}
+    Configure module    ${language}
     Wait Until Keyword Succeeds    120s    5s    FreeSWITCH answers on the event socket
 
 FreeSWITCH answers on the event socket
