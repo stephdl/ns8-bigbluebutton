@@ -13,7 +13,6 @@
 # a cluster change lands without reconfiguring the module.
 #
 
-import ipaddress
 import os
 import sys
 
@@ -28,27 +27,6 @@ envfile = "smarthost.env"
 if not smtp["enabled"]:
     print("smarthost is not configured; Greenlight will not be able to send mail",
           file=sys.stderr)
-
-
-def on_cluster_network(host):
-    """True when the smarthost is a cluster node, reached over the VPN."""
-    network = rdb.get("cluster/network")
-    if not network:
-        return False
-    try:
-        return ipaddress.ip_address(host) in ipaddress.ip_network(network)
-    except ValueError:
-        return False
-
-
-# The Mail module then, whose 10587 listener trusts the VPN network and asks for
-# neither credentials nor TLS. Overriding the configured port is deliberate: 25
-# and 587 work too, but only 10587 stays off the public firewall.
-if on_cluster_network(smtp["host"]):
-    smtp["port"] = 10587
-    smtp["username"] = ""
-    smtp["password"] = ""
-    smtp["encrypt_smtp"] = "none"
 
 starttls = "true" if smtp["encrypt_smtp"] == "starttls" else "false"
 
