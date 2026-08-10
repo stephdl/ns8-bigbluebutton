@@ -80,7 +80,7 @@
     "welcome_footer": "Rodapé",
     "welcome_footer_tooltip": "Acrescentado abaixo da mensagem de boas-vindas. HTML simples é aceito.",
     "bigbluebutton_fqdn_tooltip": "O nome que os participantes digitam. Ele precisa resolver para este servidor e apresentar um certificado em que o navegador confie: sem isso, os navegadores negam o acesso ao microfone e à câmera.",
-    "sounds_language_tooltip": "Idioma dos avisos falados dentro de uma conferência. O pacote de sons é baixado na primeira inicialização.",
+    "sounds_language_tooltip": "Idioma dos avisos falados dentro de uma conferência. O alemão e o francês vêm com o módulo; os outros pacotes são baixados uma vez e mantidos no nó.",
     "welcome_message_tooltip": "Exibida no chat quando uma reunião começa. HTML simples é aceito.",
     "certificate_mismatch_title": "O certificado não corresponde a este nome de host",
     "certificate_mismatch_description": "As salas continuam abrindo, mas cada participante recebe um aviso do navegador para este endereço, e o microfone e a câmera ficam bloqueados até que ele o aceite. Solicite um certificado Let's Encrypt acima, ou envie um para este nome de host em Configurações > Certificados TLS.",

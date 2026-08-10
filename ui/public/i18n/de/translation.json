@@ -80,7 +80,7 @@
     "welcome_footer": "Fußzeile",
     "welcome_footer_tooltip": "Wird unter der Willkommensnachricht angefügt. Einfaches HTML ist erlaubt.",
     "bigbluebutton_fqdn_tooltip": "Der Name, den die Teilnehmer eingeben. Er muss auf diesen Server auflösen und ein Zertifikat tragen, dem der Browser vertraut: ohne ein solches verweigern Browser den Zugriff auf Mikrofon und Kamera.",
-    "sounds_language_tooltip": "Sprache der gesprochenen Ansagen innerhalb einer Konferenz. Das Sprachpaket wird beim ersten Start heruntergeladen.",
+    "sounds_language_tooltip": "Sprache der gesprochenen Ansagen innerhalb einer Konferenz. Deutsch und Französisch werden mit dem Modul ausgeliefert, die übrigen Pakete werden einmal heruntergeladen und auf dem Knoten behalten.",
     "welcome_message_tooltip": "Wird im Chat angezeigt, wenn eine Konferenz beginnt. Einfaches HTML ist erlaubt.",
     "certificate_mismatch_title": "Das Zertifikat passt nicht zu diesem Hostnamen",
     "certificate_mismatch_description": "Räume starten weiterhin, aber jeder Teilnehmer erhält für diese Adresse eine Browserwarnung, und Mikrofon und Kamera bleiben gesperrt, bis er sie akzeptiert. Fordern Sie oben ein Let's-Encrypt-Zertifikat an oder laden Sie unter Einstellungen > TLS-Zertifikate eines für diesen Hostnamen hoch.",

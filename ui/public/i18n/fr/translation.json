@@ -80,7 +80,7 @@
     "welcome_footer": "Pied de message",
     "welcome_footer_tooltip": "Ajouté sous le message d'accueil. Le HTML simple est accepté.",
     "bigbluebutton_fqdn_tooltip": "Le nom que saisissent les participants. Il doit pointer vers ce serveur et présenter un certificat reconnu par le navigateur : sans cela, les navigateurs refusent l'accès au micro et à la caméra.",
-    "sounds_language_tooltip": "Langue des annonces vocales dans une conférence. Le paquet de sons est téléchargé au premier démarrage.",
+    "sounds_language_tooltip": "Langue des annonces vocales dans une conférence. L'allemand et le français sont fournis avec le module ; les autres paquets sont téléchargés une fois et conservés sur le nœud.",
     "welcome_message_tooltip": "Affiché dans le chat au début d'une réunion. Le HTML simple est accepté.",
     "certificate_mismatch_title": "Le certificat ne correspond pas à ce nom d'hôte",
     "certificate_mismatch_description": "Les salles démarrent quand même, mais chaque participant reçoit un avertissement du navigateur pour cette adresse, et le micro et la caméra restent bloqués jusqu'à ce qu'il l'accepte. Demandez un certificat Let's Encrypt ci-dessus, ou téléversez-en un pour ce nom d'hôte depuis Paramètres > Certificats TLS.",

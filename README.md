@@ -181,7 +181,7 @@ What each field does, and the value a fresh install carries:
 | `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
 | `enable_recording` | `true` | Recordings capture audio, video, chat, shared notes and presentations. |
 | `recording_max_age_days` | `0` | How long a recording stays available after the meeting. `0` keeps it forever, otherwise 1 to 180 days. Deletion goes through `bbb-record --delete`, so the database and the published tree stay consistent. |
-| `sounds_language` | `en-us-callie` | Language of the spoken announcements. |
+| `sounds_language` | `en-us-callie` | Language of the spoken announcements. `en-us-callie` comes with the FreeSWITCH image, `de-de-daedalus3` and `fr-fr-sibylle` with this module (see `imageroot/sounds/README.md`); every other code is downloaded from `files.freeswitch.org` on first use and cached in the `freeswitch-sounds` volume. |
 | `disable_sound_muted`, `disable_sound_alone` | `false` | Suppress the corresponding announcement. |
 | `welcome_message`, `welcome_footer` | empty | Shown in the chat when a meeting starts. |
 | `enable_learning_dashboard` | `true` | Moderators can open a dashboard reporting each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link, not by role: whoever holds the link can read it. |
