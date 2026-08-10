@@ -305,6 +305,7 @@
                     :options="soundsLanguageOptions"
                     :label="$t('settings.sounds_language')"
                     :title="$t('settings.sounds_language')"
+                    :helper-text="$t('settings.sounds_language_helper')"
                     :disabled="stillLoading"
                     :acceptUserInput="false"
                     tooltipAlignment="start"
@@ -496,6 +497,7 @@ const SOUNDS_LANGUAGES = [
   "de-de-daedalus3",
   "es-ar-mario",
   "fr-ca-june",
+  "fr-fr-sibylle",
   "pt-BR-karina",
   "ru-RU-elena",
   "ru-RU-kirill",

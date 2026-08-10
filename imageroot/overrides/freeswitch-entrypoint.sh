@@ -56,7 +56,7 @@ chown -R freeswitch:daemon /opt/freeswitch/var
 chown -R freeswitch:daemon /opt/freeswitch/etc
 chmod -R g-rwx,o-rwx /opt/freeswitch/etc
 
-# Install the sound pack, unless the image already ships it.
+# Resolve the sound pack, unless the image already ships it.
 #
 # In a function so a failure here cannot take FreeSWITCH down with it: the script
 # runs under bash -e, and a pack that will not download is a worse announcement,
@@ -64,54 +64,127 @@ chmod -R g-rwx,o-rwx /opt/freeswitch/etc
 #
 # Every download says || return 1 for itself: bash suspends -e inside the
 # condition of an if, so a silent failure would otherwise be reported as success.
+#
+# Each branch sets SOUNDS_PATH itself: the German and French packs ship in the
+# module image, the downloaded ones live in a volume, and the two roots differ.
 SOUNDS_DIR=/opt/freeswitch/share/freeswitch/sounds
+# Named volume. Without it a pack would be fetched again at every start: the unit
+# runs podman run --replace with rm -f on stop, so the writable layer -- and the
+# marker file that used to guard the download -- never survives a restart.
+CACHE_DIR=/var/lib/freeswitch-sounds
+SOUNDS_INDEX=https://files.freeswitch.org/releases/sounds/
+
+#
+# en/us/callie is the only complete pack, and it is the only one the image ships.
+# The rest are partial recordings: Russian and Brazilian Portuguese cover
+# everything, both Chinese voices carry digits and time alone, and Spanish and
+# Swedish have no conference prompts at all. The two vendored packs carry
+# conference and nothing else.
+#
+# A prompt whose file is missing plays as silence -- mod_sndfile logs one warning
+# and the conference carries on -- so an admin picking Spanish hears nothing and
+# has no reason to suspect the pack. Symlink every category the pack lacks to the
+# English one: an unrecorded prompt is then spoken in English instead of dropped.
+#
+# Called for whatever pack was resolved, English included, where it is a no-op.
+link_missing_folders() {
+    local root=$1 callie=$SOUNDS_DIR/en/us/callie folder name
+    for folder in "$callie"/*/; do
+        name=$(basename "$folder")
+        [ -e "$root/$name" ] || ln -sfn "$callie/$name" "$root/$name"
+    done
+}
+
+# Unpack aside, then swap: a transfer cut halfway would otherwise leave truncated
+# files where working prompts used to be. The caller keeps the old pack when this
+# fails, so nothing here may touch the target before the last download lands.
+download_pack() {
+    local filename=$1 lang_path=$2 root=$3 bitrate url
+    rm -rf "$CACHE_DIR/.staging"
+    mkdir -p "$CACHE_DIR/.staging" || return 1
+    for bitrate in 8000 16000 32000 48000; do
+        url=$SOUNDS_INDEX$(echo "$filename" | sed "s/48000/$bitrate/")
+        curl -fsSL "$url" | tar -xz -C "$CACHE_DIR/.staging" || return 1
+    done
+    mkdir -p "$(dirname "$root")" || return 1
+    rm -rf "$root"
+    mv "$CACHE_DIR/.staging/$lang_path" "$root" || return 1
+    rm -rf "$CACHE_DIR/.staging"
+    # FreeSWITCH itself runs as the freeswitch user, whatever modes the tarballs
+    # carry.
+    chmod -R a+rX "$root"
+}
 
 install_sounds() {
+    local lang_path root version cached filename
+    lang_path=$(echo "$SOUNDS_LANGUAGE" | sed 's|-|/|g')
+
     case "$SOUNDS_LANGUAGE" in
     en-us-callie)
+        SOUNDS_PATH=$SOUNDS_DIR/en/us/callie
         return 0
         ;;
-    de-de-daedalus3)
-        [ -f "$SOUNDS_DIR/de-de-daedalus3.installed" ] && return 0
-        echo "sounds package for de-de-daedalus3 not installed yet"
-        # GitHub's tarball, not its zip: this image has no unzip.
-        mkdir -p "$SOUNDS_DIR/de/de/daedalus3/conference" || return 1
-        curl -fsSL "https://github.com/Daedalus3/freeswitch-german-soundfiles/archive/refs/heads/master.tar.gz" \
-            | tar -xz --strip-components=1 -C "$SOUNDS_DIR/de/de/daedalus3/conference" \
-            || return 1
-        # This pack carries the conference prompts only.
-        for folder in digits ivr misc; do
-            ln -sfn "$SOUNDS_DIR/en/us/callie/$folder" "$SOUNDS_DIR/de/de/daedalus3/$folder"
-        done
-        touch "$SOUNDS_DIR/de-de-daedalus3.installed"
-        ;;
-    *)
-        [ -f "$SOUNDS_DIR/$SOUNDS_LANGUAGE.installed" ] && return 0
-        echo "sounds package for $SOUNDS_LANGUAGE not installed yet"
-
-        # get filename of latest release for this sound package
-        FILENAME=$(curl -s https://files.freeswitch.org/releases/sounds/ | grep -i $SOUNDS_LANGUAGE 2> /dev/null | awk -F'"' '{print $8}' | grep -E '\-48000-.*\.gz$' | sort -V | tail -n 1)
-
-        if [ "$FILENAME" = "" ]; then
-            echo "no sounds published for '$SOUNDS_LANGUAGE' on https://files.freeswitch.org/releases/sounds/" >&2
+    de-de-daedalus3|fr-fr-sibylle)
+        # Vendored in imageroot/sounds, bind-mounted read-only. The mount covers
+        # conference/ alone so this directory stays writable for the symlinks.
+        root=$SOUNDS_DIR/$lang_path
+        if [ -z "$(ls -A "$root/conference" 2>/dev/null)" ]; then
+            echo "no vendored sound pack mounted at $root/conference" >&2
             return 1
         fi
-        for bitrate in 8000 16000 32000 48000; do
-            URL=https://files.freeswitch.org/releases/sounds/$(echo $FILENAME | sed "s/48000/$bitrate/")
-            curl -fsSL "$URL" | tar -xz -C "$SOUNDS_DIR" || return 1
-        done
+        SOUNDS_PATH=$root
+        return 0
+        ;;
+    *)
+        root=$CACHE_DIR/$lang_path
+        SOUNDS_PATH=$root
 
-        touch "$SOUNDS_DIR/$SOUNDS_LANGUAGE.installed"
+        # The index costs ~200 kB against ~160 MB of tarballs, so read it at every
+        # start and download only when upstream published a new version.
+        filename=$(curl -fsS "$SOUNDS_INDEX" | grep -i "$SOUNDS_LANGUAGE" | awk -F'"' '{print $8}' | grep -E '\-48000-.*\.gz$' | sort -V | tail -n 1) || filename=""
+        version=$(echo "$filename" | sed -E 's/.*-48000-(.*)\.tar\.gz$/\1/')
+        cached=$(cat "$CACHE_DIR/.version-$SOUNDS_LANGUAGE" 2>/dev/null) || cached=""
+
+        if [ -z "$filename" ]; then
+            # A slightly stale pack beats dropping the configured language because
+            # the index was briefly unreachable.
+            if [ -d "$root" ]; then
+                echo "sounds index unreachable, keeping the cached $SOUNDS_LANGUAGE pack ($cached)" >&2
+                return 0
+            fi
+            echo "no sounds published for '$SOUNDS_LANGUAGE' on $SOUNDS_INDEX" >&2
+            return 1
+        fi
+
+        [ "$version" = "$cached" ] && [ -d "$root" ] && return 0
+
+        echo "installing sound pack $SOUNDS_LANGUAGE $version"
+        if download_pack "$filename" "$lang_path" "$root"; then
+            echo "$version" > "$CACHE_DIR/.version-$SOUNDS_LANGUAGE"
+            # One language at a time: each pack runs to ~160 MB.
+            find "$CACHE_DIR" -mindepth 3 -maxdepth 3 -type d ! -path "$root" -exec rm -rf {} +
+            find "$CACHE_DIR" -mindepth 1 -maxdepth 2 -type d -empty -delete
+            find "$CACHE_DIR" -maxdepth 1 -type f -name '.version-*' ! -name ".version-$SOUNDS_LANGUAGE" -delete
+            return 0
+        fi
+        # Leave nothing half-downloaded behind: staging can hold ~160 MB.
+        rm -rf "$CACHE_DIR/.staging"
+        # A version bump that fails is no reason to lose a pack that still works.
+        if [ -d "$root" ]; then
+            echo "cannot install $SOUNDS_LANGUAGE $version, keeping the cached pack ($cached)" >&2
+            return 0
+        fi
+        return 1
         ;;
     esac
 }
 
-if install_sounds; then
-    SOUNDS_PATH=$SOUNDS_DIR/$(echo "$SOUNDS_LANGUAGE" | sed 's|-|/|g')
-else
+if ! install_sounds; then
     echo "keeping the English prompts the image ships" >&2
     SOUNDS_PATH=$SOUNDS_DIR/en/us/callie
 fi
+
+link_missing_folders "$SOUNDS_PATH"
 
 export SOUNDS_PATH
 
