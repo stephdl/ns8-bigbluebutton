@@ -93,6 +93,56 @@ Check if FreeSWITCH is not listening on the SIP dial-in port
     ${output} =    Execute Command    ss -lnu sport = :5060
     Should Not Contain    ${output}    :5060
 
+Check if the vendored sound packs are mounted
+    # German and French ship in the module image under imageroot/sounds and are
+    # bind-mounted read-only, so neither needs a download.
+    ${german} =    Execute Command
+    ...    runagent -m ${module_id} podman exec freeswitch sh -c 'ls /opt/freeswitch/share/freeswitch/sounds/de/de/daedalus3/conference/48000 | wc -l'
+    Should Be Equal As Integers    ${german}    30
+    ${french} =    Execute Command
+    ...    runagent -m ${module_id} podman exec freeswitch sh -c 'ls /opt/freeswitch/share/freeswitch/sounds/fr/fr/sibylle/conference/48000 | wc -l'
+    Should Be Equal As Integers    ${french}    11
+
+Check if the vendored packs are readable by the freeswitch user
+    # The daemon drops to that user, so root being able to read them proves nothing.
+    ${rc} =    Execute Command
+    ...    runagent -m ${module_id} podman exec freeswitch su -s /bin/sh freeswitch -c 'test -r /opt/freeswitch/share/freeswitch/sounds/fr/fr/sibylle/conference/48000/conf-alone.wav'
+    ...    return_rc=True  return_stdout=False
+    Should Be Equal As Integers    ${rc}  0
+
+Check if a vendored language needs no download
+    Configure sounds language    fr-fr-sibylle
+    ${prefix} =    Sound prefix
+    Should Contain    ${prefix}    /sounds/fr/fr/sibylle
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} journalctl --user -u freeswitch --since=-5min
+    Should Not Contain    ${output}    installing sound pack
+    # Neither pack carries these three, so the entrypoint borrows the English ones.
+    ${link} =    Execute Command
+    ...    runagent -m ${module_id} podman exec freeswitch readlink /opt/freeswitch/share/freeswitch/sounds/fr/fr/sibylle/digits
+    Should Be Equal As Strings    ${link}    /opt/freeswitch/share/freeswitch/sounds/en/us/callie/digits
+
+Check if a downloaded language survives a restart
+    # zh-hk-sinmei is the smallest pack upstream publishes, 3 MB for the four
+    # rates against 161 MB for French Canadian. It carries no conference prompts,
+    # so this case asserts the cache mechanics only, not that anything is spoken.
+    Configure sounds language    zh-hk-sinmei
+    ${version} =    Execute Command
+    ...    runagent -m ${module_id} podman exec freeswitch cat /var/lib/freeswitch-sounds/.version-zh-hk-sinmei
+    Should Not Be Empty    ${version}
+    ${before} =    Count sound pack installs
+    Execute Command    runagent -m ${module_id} systemctl --user restart freeswitch
+    Wait Until Keyword Succeeds    120s    5s    FreeSWITCH answers on the event socket
+    ${after} =    Count sound pack installs
+    Should Be Equal As Integers    ${before}    ${after}
+    ${prefix} =    Sound prefix
+    Should Contain    ${prefix}    /var/lib/freeswitch-sounds/zh/hk/sinmei
+
+Check if the English pack is served from the image
+    Configure sounds language    en-us-callie
+    ${prefix} =    Sound prefix
+    Should Contain    ${prefix}    /sounds/en/us/callie
+
 Check if nginx answers behind Traefik
     ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
     ${rc} =    Execute Command    curl -f http://127.0.0.1:${port}/bigbluebutton/api
@@ -108,3 +158,29 @@ Check if bigbluebutton is removed correctly
     ${rc} =    Execute Command    remove-module --no-preserve ${module_id}
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
+
+*** Keywords ***
+Configure sounds language
+    [Arguments]    ${language}
+    # The schema requires every field, so a partial payload would be rejected here
+    # even though only sounds_language is under test.
+    ${rc} =    Execute Command
+    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"learning_dashboard_max_age_days":7,"sounds_language":"${language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
+    ...    return_rc=True  return_stdout=False
+    Should Be Equal As Integers    ${rc}  0
+    Wait Until Keyword Succeeds    120s    5s    FreeSWITCH answers on the event socket
+
+FreeSWITCH answers on the event socket
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} bash -c 'source state/passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "status"'
+    Should Contain    ${output}    UP
+
+Sound prefix
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} bash -c 'source state/passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "global_getvar sound_prefix"'
+    [Return]    ${output}
+
+Count sound pack installs
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} bash -c 'journalctl --user -u freeswitch | grep -c "installing sound pack" || true'
+    [Return]    ${output}

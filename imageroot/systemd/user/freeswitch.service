@@ -13,6 +13,13 @@
 # See docs/packaging-analysis.md sections 2b and 5 for both, and for the trimmed
 # capabilities.
 #
+# The two sound mounts carry the German and French packs from imageroot/sounds,
+# pinned in git because neither upstream is safe to fetch live. conference/ alone
+# is mounted, which leaves the parent writable for the symlinks the entrypoint
+# adds. freeswitch-sounds caches the packs downloaded for the other languages,
+# which the rm -f below would otherwise discard at every restart; it carries no :z
+# because relabelling a pack of that size on each start would slow the unit down.
+#
 
 [Unit]
 Description=Podman freeswitch.service
@@ -44,6 +51,9 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/freeswitch.pid \
     --cap-add=SYS_RESOURCE \
     --volume freeswitch-meetings:/var/freeswitch/meetings:z \
     --volume %S/state/overrides/freeswitch-entrypoint.sh:/entrypoint.sh:ro,z \
+    --volume %S/sounds/de/de/daedalus3/conference:/opt/freeswitch/share/freeswitch/sounds/de/de/daedalus3/conference:ro,z \
+    --volume %S/sounds/fr/fr/sibylle/conference:/opt/freeswitch/share/freeswitch/sounds/fr/fr/sibylle/conference:ro,z \
+    --volume freeswitch-sounds:/var/lib/freeswitch-sounds \
     ${BBB_DOCKER_FREESWITCH_IMAGE}
 ExecStop=/usr/bin/podman stop --ignore --cidfile %t/freeswitch.ctr-id -t 3
 ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/freeswitch.ctr-id
