@@ -13,6 +13,7 @@
 # a cluster change lands without reconfiguring the module.
 #
 
+import ipaddress
 import os
 import sys
 
@@ -28,25 +29,59 @@ if not smtp["enabled"]:
     print("smarthost is not configured; Greenlight will not be able to send mail",
           file=sys.stderr)
 
-# ActionMailer vocabulary, not the cluster's, so map rather than copy: Rails
-# wants "none" for a relay without credentials, and fails on an empty username.
-auth = "plain" if smtp["username"] else "none"
+
+def on_cluster_network(host):
+    """True when the smarthost is a cluster node, reached over the VPN."""
+    network = rdb.get("cluster/network")
+    if not network:
+        return False
+    try:
+        return ipaddress.ip_address(host) in ipaddress.ip_network(network)
+    except ValueError:
+        return False
+
+
+# The Mail module then, whose 10587 listener trusts the VPN network and asks for
+# neither credentials nor TLS. Overriding the configured port is deliberate: 25
+# and 587 work too, but only 10587 stays off the public firewall.
+if on_cluster_network(smtp["host"]):
+    smtp["port"] = 10587
+    smtp["username"] = ""
+    smtp["password"] = ""
+    smtp["encrypt_smtp"] = "none"
+
 starttls = "true" if smtp["encrypt_smtp"] == "starttls" else "false"
 
 # HELO domain and envelope sender: the module has no mail identity of its own.
+# Greenlight fetches both without a default, so omitting either is a boot-time
+# KeyError, not a silent skip.
 domain = os.environ.get("TRAEFIK_HOST", "")
 
 lines = [
     f"SMTP_SERVER={smtp['host']}",
     f"SMTP_PORT={smtp['port']}",
     f"SMTP_DOMAIN={domain}",
-    f"SMTP_USERNAME={smtp['username']}",
-    f"SMTP_PASSWORD={smtp['password']}",
-    f"SMTP_AUTH={auth}",
+    f"SMTP_TLS={'true' if smtp['encrypt_smtp'] == 'tls' else 'false'}",
+    # _AUTO alone falls back to plaintext when the server hides STARTTLS from
+    # its EHLO; the pair makes an explicit choice binding.
+    f"SMTP_STARTTLS={starttls}",
     f"SMTP_STARTTLS_AUTO={starttls}",
+    # Greenlight compares against the literal string, so "false" has to be
+    # written rather than left to the VERIFY_PEER default.
+    f"SMTP_SSL_VERIFY={'true' if smtp['tls_verify'] else 'false'}",
     f"SMTP_SENDER_EMAIL=no-reply@{domain}" if domain else "SMTP_SENDER_EMAIL=",
     "SMTP_SENDER_NAME=BigBlueButton",
 ]
+
+# Greenlight drops only nil from its settings, so an empty SMTP_USERNAME
+# survives as "" -- truthy in Ruby -- and net-smtp authenticates anyway,
+# answering "wrong authentication type none". Unset is the only way out.
+if smtp["username"]:
+    lines += [
+        f"SMTP_USERNAME={smtp['username']}",
+        f"SMTP_PASSWORD={smtp['password']}",
+        "SMTP_AUTH=plain",
+    ]
 
 # Carries the relay password: 0600 from the start, then moved into place.
 tmp = envfile + ".tmp"
@@ -56,5 +91,6 @@ with os.fdopen(fd, "w") as efp:
         print(line, file=efp)
 os.replace(tmp, envfile)
 
-print(f"smarthost discovery: host={smtp['host'] or '(unset)'} port={smtp['port']} auth={auth}",
+print(f"smarthost discovery: host={smtp['host'] or '(unset)'} port={smtp['port']}"
+      f" auth={'plain' if smtp['username'] else 'none'}",
       file=sys.stderr)
