@@ -74,12 +74,24 @@ SOUNDS_DIR=/opt/freeswitch/share/freeswitch/sounds
 CACHE_DIR=/var/lib/freeswitch-sounds
 SOUNDS_INDEX=https://files.freeswitch.org/releases/sounds/
 
-# Neither vendored pack carries digits, ivr or misc. Borrowing the English ones is
-# upstream's own compromise for German, kept here for both.
-link_english_folders() {
-    local root=$1 folder
-    for folder in digits ivr misc; do
-        ln -sfn "$SOUNDS_DIR/en/us/callie/$folder" "$root/$folder"
+#
+# en/us/callie is the only complete pack, and it is the only one the image ships.
+# The rest are partial recordings: Russian and Brazilian Portuguese cover
+# everything, both Chinese voices carry digits and time alone, and Spanish and
+# Swedish have no conference prompts at all. The two vendored packs carry
+# conference and nothing else.
+#
+# A prompt whose file is missing plays as silence -- mod_sndfile logs one warning
+# and the conference carries on -- so an admin picking Spanish hears nothing and
+# has no reason to suspect the pack. Symlink every category the pack lacks to the
+# English one: an unrecorded prompt is then spoken in English instead of dropped.
+#
+# Called for whatever pack was resolved, English included, where it is a no-op.
+link_missing_folders() {
+    local root=$1 callie=$SOUNDS_DIR/en/us/callie folder name
+    for folder in "$callie"/*/; do
+        name=$(basename "$folder")
+        [ -e "$root/$name" ] || ln -sfn "$callie/$name" "$root/$name"
     done
 }
 
@@ -120,7 +132,6 @@ install_sounds() {
             echo "no vendored sound pack mounted at $root/conference" >&2
             return 1
         fi
-        link_english_folders "$root"
         SOUNDS_PATH=$root
         return 0
         ;;
@@ -172,6 +183,8 @@ if ! install_sounds; then
     echo "keeping the English prompts the image ships" >&2
     SOUNDS_PATH=$SOUNDS_DIR/en/us/callie
 fi
+
+link_missing_folders "$SOUNDS_PATH"
 
 export SOUNDS_PATH
 

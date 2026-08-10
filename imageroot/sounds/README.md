@@ -4,9 +4,14 @@ German and French conference prompts, carried in the module image and bind-mount
 read-only into the FreeSWITCH container. Refresh them with
 `dev/update-sound-packs.sh`, which records the pinned sources.
 
-Only `conference/` is here: it holds every prompt
-`conference.conf.xml.tmpl` names. The entrypoint symlinks `digits`, `ivr` and `misc`
-to the English pack that the image ships, as upstream already did for German.
+Only `conference/` is here: it holds every prompt `conference.conf.xml.tmpl` names.
+Every other category is symlinked to the English pack at start time, by
+`link_missing_folders` in the entrypoint — which does the same for the downloaded
+packs, four of which carry no conference prompts at all.
+
+`en/us/callie` is the reference set. Every other pack, vendored or downloaded, is a
+partial recording, and a missing file plays as silence rather than as an error an
+admin would notice.
 
 | Pack | Voice | Licence | Source |
 |---|---|---|---|
