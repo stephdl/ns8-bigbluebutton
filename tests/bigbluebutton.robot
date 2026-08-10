@@ -84,7 +84,7 @@ Check if the host network containers are running
 
 Check if FreeSWITCH answers on the event socket
     ${output} =    Execute Command
-    ...    runagent -m ${module_id} bash -c 'source state/passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "status"'
+    ...    runagent -m ${module_id} bash -c 'source passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "status"'
     Should Contain    ${output}    UP
 
 Check if FreeSWITCH is not listening on the SIP dial-in port
@@ -115,7 +115,7 @@ Check if a vendored language needs no download
     ${prefix} =    Sound prefix
     Should Contain    ${prefix}    /sounds/fr/fr/sibylle
     ${output} =    Execute Command
-    ...    runagent -m ${module_id} journalctl --user -u freeswitch --since=-5min
+    ...    journalctl _UID=$(id -u ${module_id}) -t freeswitch --no-pager --since=-5min
     Should Not Contain    ${output}    installing sound pack
     # Neither pack carries these three, so the entrypoint borrows the English ones.
     ${link} =    Execute Command
@@ -172,15 +172,15 @@ Configure sounds language
 
 FreeSWITCH answers on the event socket
     ${output} =    Execute Command
-    ...    runagent -m ${module_id} bash -c 'source state/passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "status"'
+    ...    runagent -m ${module_id} bash -c 'source passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "status"'
     Should Contain    ${output}    UP
 
 Sound prefix
     ${output} =    Execute Command
-    ...    runagent -m ${module_id} bash -c 'source state/passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "global_getvar sound_prefix"'
+    ...    runagent -m ${module_id} bash -c 'source passwords.env && podman exec freeswitch /opt/freeswitch/bin/fs_cli -H 127.0.0.1 -p "$FSESL_PASSWORD" -x "global_getvar sound_prefix"'
     [Return]    ${output}
 
 Count sound pack installs
     ${output} =    Execute Command
-    ...    runagent -m ${module_id} bash -c 'journalctl --user -u freeswitch | grep -c "installing sound pack" || true'
+    ...    journalctl _UID=$(id -u ${module_id}) -t freeswitch --no-pager | grep -c "installing sound pack" || true
     [Return]    ${output}
