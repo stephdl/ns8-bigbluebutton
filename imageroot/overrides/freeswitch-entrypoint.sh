@@ -83,8 +83,28 @@ link_english_folders() {
     done
 }
 
+# Unpack aside, then swap: a transfer cut halfway would otherwise leave truncated
+# files where working prompts used to be. The caller keeps the old pack when this
+# fails, so nothing here may touch the target before the last download lands.
+download_pack() {
+    local filename=$1 lang_path=$2 root=$3 bitrate url
+    rm -rf "$CACHE_DIR/.staging"
+    mkdir -p "$CACHE_DIR/.staging" || return 1
+    for bitrate in 8000 16000 32000 48000; do
+        url=$SOUNDS_INDEX$(echo "$filename" | sed "s/48000/$bitrate/")
+        curl -fsSL "$url" | tar -xz -C "$CACHE_DIR/.staging" || return 1
+    done
+    mkdir -p "$(dirname "$root")" || return 1
+    rm -rf "$root"
+    mv "$CACHE_DIR/.staging/$lang_path" "$root" || return 1
+    rm -rf "$CACHE_DIR/.staging"
+    # FreeSWITCH itself runs as the freeswitch user, whatever modes the tarballs
+    # carry.
+    chmod -R a+rX "$root"
+}
+
 install_sounds() {
-    local lang_path root version cached filename url bitrate
+    local lang_path root version cached filename
     lang_path=$(echo "$SOUNDS_LANGUAGE" | sed 's|-|/|g')
 
     case "$SOUNDS_LANGUAGE" in
@@ -128,27 +148,22 @@ install_sounds() {
         [ "$version" = "$cached" ] && [ -d "$root" ] && return 0
 
         echo "installing sound pack $SOUNDS_LANGUAGE $version"
-        # Unpack aside, then swap: a transfer cut halfway would otherwise leave
-        # truncated files where working prompts used to be.
+        if download_pack "$filename" "$lang_path" "$root"; then
+            echo "$version" > "$CACHE_DIR/.version-$SOUNDS_LANGUAGE"
+            # One language at a time: each pack runs to ~160 MB.
+            find "$CACHE_DIR" -mindepth 3 -maxdepth 3 -type d ! -path "$root" -exec rm -rf {} +
+            find "$CACHE_DIR" -mindepth 1 -maxdepth 2 -type d -empty -delete
+            find "$CACHE_DIR" -maxdepth 1 -type f -name '.version-*' ! -name ".version-$SOUNDS_LANGUAGE" -delete
+            return 0
+        fi
+        # Leave nothing half-downloaded behind: staging can hold ~160 MB.
         rm -rf "$CACHE_DIR/.staging"
-        mkdir -p "$CACHE_DIR/.staging" || return 1
-        for bitrate in 8000 16000 32000 48000; do
-            url=$SOUNDS_INDEX$(echo "$filename" | sed "s/48000/$bitrate/")
-            curl -fsSL "$url" | tar -xz -C "$CACHE_DIR/.staging" || return 1
-        done
-        mkdir -p "$(dirname "$root")" || return 1
-        rm -rf "$root"
-        mv "$CACHE_DIR/.staging/$lang_path" "$root" || return 1
-        rm -rf "$CACHE_DIR/.staging"
-        # FreeSWITCH itself runs as the freeswitch user, whatever modes the
-        # tarballs carry.
-        chmod -R a+rX "$root"
-        echo "$version" > "$CACHE_DIR/.version-$SOUNDS_LANGUAGE"
-        # One language at a time: each pack runs to ~160 MB.
-        find "$CACHE_DIR" -mindepth 3 -maxdepth 3 -type d ! -path "$root" -exec rm -rf {} +
-        find "$CACHE_DIR" -mindepth 1 -maxdepth 2 -type d -empty -delete
-        find "$CACHE_DIR" -maxdepth 1 -type f -name '.version-*' ! -name ".version-$SOUNDS_LANGUAGE" -delete
-        return 0
+        # A version bump that fails is no reason to lose a pack that still works.
+        if [ -d "$root" ]; then
+            echo "cannot install $SOUNDS_LANGUAGE $version, keeping the cached pack ($cached)" >&2
+            return 0
+        fi
+        return 1
         ;;
     esac
 }
