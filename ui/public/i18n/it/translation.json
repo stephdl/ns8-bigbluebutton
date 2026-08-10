@@ -81,6 +81,7 @@
     "welcome_footer_tooltip": "Aggiunto sotto il messaggio di benvenuto. È accettato semplice HTML.",
     "bigbluebutton_fqdn_tooltip": "Il nome che digitano i partecipanti. Deve risolvere a questo server e avere un certificato considerato attendibile dal browser: senza, i browser negano l'accesso a microfono e telecamera.",
     "sounds_language_tooltip": "Lingua degli annunci vocali all'interno di una conferenza. Tedesco e francese sono inclusi nel modulo; gli altri pacchetti vengono scaricati una volta e conservati sul nodo.",
+    "sounds_language_helper": "Solo il pacchetto inglese è completo. Gli annunci che una voce non ha mai registrato vengono detti in inglese.",
     "welcome_message_tooltip": "Mostrato nella chat all'inizio di una riunione. È accettato semplice HTML.",
     "certificate_mismatch_title": "Il certificato non corrisponde a questo nome host",
     "certificate_mismatch_description": "Le stanze si avviano comunque, ma ogni partecipante riceve un avviso del browser per questo indirizzo, e microfono e telecamera restano bloccati finché non lo accetta. Richiedi un certificato Let's Encrypt qui sopra, oppure caricane uno per questo nome host da Impostazioni > Certificati TLS.",

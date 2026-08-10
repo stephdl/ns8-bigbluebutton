@@ -305,6 +305,7 @@
                     :options="soundsLanguageOptions"
                     :label="$t('settings.sounds_language')"
                     :title="$t('settings.sounds_language')"
+                    :helper-text="$t('settings.sounds_language_helper')"
                     :disabled="stillLoading"
                     :acceptUserInput="false"
                     tooltipAlignment="start"

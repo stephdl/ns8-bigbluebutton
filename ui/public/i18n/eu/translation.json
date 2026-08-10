@@ -81,6 +81,7 @@
     "welcome_footer_tooltip": "Ongi etorriko mezuaren azpian eransten da. HTML soila onartzen da.",
     "bigbluebutton_fqdn_tooltip": "Partaideek idazten duten izena. Zerbitzari honetara ebatzi behar du eta nabigatzaileak fidagarri jotzen duen ziurtagiri bat izan: hori gabe, nabigatzaileek mikrofonora eta kamerara sartzea ukatzen dute.",
     "sounds_language_tooltip": "Konferentzia barruko ahots-iragarkien hizkuntza. Alemana eta frantsesa moduluarekin datoz; gainerako paketeak behin deskargatzen dira eta nodoan gordetzen dira.",
+    "sounds_language_helper": "Ingelesezko paketea baino ez dago osatuta. Ahots batek grabatu ez dituen iragarkiak ingelesez esaten dira.",
     "welcome_message_tooltip": "Txatean erakusten da bilera hasten denean. HTML soila onartzen da.",
     "certificate_mismatch_title": "Ziurtagiria ez dator bat ostalari-izen honekin",
     "certificate_mismatch_description": "Gelak abiatzen dira oraindik, baina partaide bakoitzak nabigatzailearen abisu bat jasotzen du helbide honentzat, eta mikrofonoa eta kamera blokeatuta geratzen dira onartu arte. Eskatu Let's Encrypt ziurtagiri bat goian, edo kargatu ostalari-izen honentzat bat Ezarpenak > TLS ziurtagiriak atalean.",

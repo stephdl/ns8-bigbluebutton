@@ -81,6 +81,7 @@
     "welcome_footer_tooltip": "Appended below the welcome message. Simple HTML is accepted.",
     "bigbluebutton_fqdn_tooltip": "The name participants type. It must resolve to this server and carry a certificate the browser trusts: without one, browsers refuse microphone and camera access.",
     "sounds_language_tooltip": "Language of the spoken announcements inside a conference. German and French ship with the module; the other packs are downloaded once and kept on the node.",
+    "sounds_language_helper": "Only the English pack is complete. Prompts a voice never recorded are spoken in English.",
     "welcome_message_tooltip": "Shown in the chat when a meeting starts. Simple HTML is accepted.",
     "certificate_mismatch_title": "The certificate does not match this hostname",
     "certificate_mismatch_description": "Rooms still start, but every participant gets a browser warning for this address, and microphone and camera stay blocked until they accept it. Request a Let's Encrypt certificate above, or upload one for this hostname from Settings > TLS certificates.",

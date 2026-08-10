@@ -81,6 +81,7 @@
     "welcome_footer_tooltip": "Acrescentado abaixo da mensagem de boas-vindas. É aceite HTML simples.",
     "bigbluebutton_fqdn_tooltip": "O nome que os participantes escrevem. Tem de resolver para este servidor e apresentar um certificado em que o navegador confie: sem ele, os navegadores recusam o acesso ao microfone e à câmara.",
     "sounds_language_tooltip": "Idioma dos anúncios falados dentro de uma conferência. O alemão e o francês são fornecidos com o módulo; os restantes pacotes são descarregados uma vez e mantidos no nó.",
+    "sounds_language_helper": "Apenas o pacote inglês está completo. Os anúncios que uma voz nunca gravou são ditos em inglês.",
     "welcome_message_tooltip": "Mostrada na conversa quando uma reunião começa. É aceite HTML simples.",
     "certificate_mismatch_title": "O certificado não corresponde a este nome de anfitrião",
     "certificate_mismatch_description": "As salas continuam a arrancar, mas cada participante recebe um aviso do navegador para este endereço, e o microfone e a câmara ficam bloqueados até o aceitar. Solicite um certificado Let's Encrypt acima, ou carregue um para este nome de anfitrião em Definições > Certificados TLS.",
