@@ -255,25 +255,26 @@ deleting it once you have your own does not bring it back.
 
 Every room opens on `default.pdf`. The module ships one; put yours in
 `state/custom/`, under that exact name, to serve it instead. The directory is
-created when the module starts.
+created when the module starts. As `root` on the node:
 
-    runagent -m bigbluebutton1
-    cp /path/to/yours.pdf state/custom/default.pdf
+    cp yours.pdf /home/bigbluebutton1/.config/state/custom/default.pdf
+    chown -R bigbluebutton1:bigbluebutton1 /home/bigbluebutton1/.config/state/custom/
 
-The module only reads this file, so a copy made as `root` is fine as long as the
-module user can read it. If not, the render falls back to the bundled
-presentation with a warning in the journal, and restic fails on the file it
-cannot read. Give it back when in doubt:
+The `chown` matters. The module only reads the file, but a mode that shuts the
+module user out costs the presentation — the render falls back to the bundled one
+with a warning in the journal — and, less visibly, the backup: restic runs as the
+module user too.
 
-    chown bigbluebutton1:bigbluebutton1 /home/bigbluebutton1/.config/state/custom/default.pdf
-    chmod 644 /home/bigbluebutton1/.config/state/custom/default.pdf
+Then apply it by running `configure-module` again with the current configuration,
+as shown above. **That restarts every unit, so any meeting in progress ends.**
 
-Apply it by running `configure-module` again with the current configuration, as
-shown above. **That restarts every unit, so any meeting in progress ends.** Do
-not use `systemctl --user restart bigbluebutton` instead: systemd does not
-cascade a restart from the pod unit to the containers that joined it, so it takes
-BigBlueButton down rather than restarting it. Only meetings created afterwards
-use the new file.
+Do not reach for `systemctl --user restart bigbluebutton` instead. systemd does
+not cascade a restart from the pod unit to the containers that joined it, and the
+unit removes the pod when it stops, so that command takes BigBlueButton down
+rather than restarting it. `configure-module` is the only supported way to apply
+this, because it names every unit.
+
+Only meetings created afterwards use the new file.
 
 A file that is not a PDF is refused, with a warning in
 `journalctl --user -u bigbluebutton`, and the bundled one stays in use rather
