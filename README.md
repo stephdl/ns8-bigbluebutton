@@ -259,19 +259,36 @@ there is always one. The module ships its own. To serve yours instead, drop it i
 
     runagent -m bigbluebutton1
     cp /path/to/yours.pdf state/custom/default.pdf
-    systemctl --user restart bigbluebutton
 
-The directory is created when the module starts, so it is already there. The
-restart is what picks the file up: rendering `state/overrides/` is the unit's own
-`ExecStartPre`. Only meetings created from then on use it, since bbb-web fetches
-the URL when the meeting starts.
+The directory is created when the module starts, so it is already there.
+
+**The file must belong to the module user.** Copying it in as `root` leaves it
+owned by `root`, and the module only ever reads it. A mode that keeps the module
+user out means the render falls back to the bundled presentation with a warning
+in the journal, and, worse, restic cannot read the file either, so the backup
+fails on it. If you copied it as `root`, hand it back:
+
+    chown bigbluebutton1:bigbluebutton1 /home/bigbluebutton1/.config/state/custom/default.pdf
+    chmod 644 /home/bigbluebutton1/.config/state/custom/default.pdf
+
+Then apply it by running `configure-module` again with the current configuration,
+as shown above. That renders `state/overrides/` and restarts every unit.
+
+**This interrupts the service.** `configure-module` restarts every unit, so any
+meeting in progress ends. Do not reach for
+`systemctl --user restart bigbluebutton` instead: systemd does not cascade a
+restart from the pod unit to the containers that joined it, so that command takes
+BigBlueButton down rather than restarting it.
+
+Only meetings created afterwards use the new file: bbb-web fetches the URL when
+the meeting starts.
 
 The file must really be a PDF. A file that is not one is refused, with a warning
 in `journalctl --user -u bigbluebutton`, and the bundled presentation stays in
 use rather than every room breaking at once.
 
-Delete `state/custom/default.pdf` and restart again to go back to the bundled
-one. The file is included in the backup and comes back on restore.
+Delete `state/custom/default.pdf` and run `configure-module` again to go back to
+the bundled one. The file is included in the backup and comes back on restore.
 
 Editing `state/overrides/default.pdf` directly does not work: everything in that
 directory is re-rendered at every module start, from the image or from
