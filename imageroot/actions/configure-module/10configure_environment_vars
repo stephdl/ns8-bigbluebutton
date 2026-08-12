@@ -54,6 +54,8 @@ agent.set_env("RECORDING_MAX_AGE_DAYS", str(data["recording_max_age_days"]))
 agent.set_env("ENABLE_LEARNING_DASHBOARD", str(data["enable_learning_dashboard"]).lower())
 agent.set_env("ENABLE_EXTERNAL_VIDEOS", str(data["enable_external_videos"]).lower())
 agent.set_env("ENABLE_BREAKOUT_ROOMS", str(data["enable_breakout_rooms"]).lower())
+# Not a bbb-web feature: the HTML5 client reads it, so it goes to apps-akka.
+agent.set_env("SHOW_PRESENTATION_ON_JOIN", str(data["show_presentation_on_join"]).lower())
 
 # bbb-web disables a feature by naming it, so send the complement of the toggles.
 # A list, not one key per feature: the next one costs a line here.

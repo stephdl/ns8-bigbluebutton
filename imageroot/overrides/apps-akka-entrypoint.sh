@@ -14,11 +14,18 @@ set -e
 
 SETTINGS=/usr/share/bigbluebutton/html5-client/private/config/settings.yml
 
-# The default deck exists to give the whiteboard a surface, not to take the screen
-# on join. A failure here is a worse default, not a broken room.
+# Unset on an install older than the setting, and podman turns an unset variable
+# into an empty one, so fall back to upstream's value.
+if [ "${SHOW_PRESENTATION_ON_JOIN:-true}" = "false" ]; then
+    hide=true
+else
+    hide=false
+fi
+
+# A failure here is a worse default, not a broken room.
 if [ -f "$SETTINGS" ]; then
-    if ! yq e -i '.public.layout.hidePresentationOnJoin = true' "$SETTINGS"; then
-        echo "apps-akka: could not set hidePresentationOnJoin, rooms will open on the presentation" >&2
+    if ! yq e -i ".public.layout.hidePresentationOnJoin = $hide" "$SETTINGS"; then
+        echo "apps-akka: could not set hidePresentationOnJoin, keeping the image default" >&2
     fi
 fi
 

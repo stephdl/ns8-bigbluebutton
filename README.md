@@ -138,6 +138,7 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "enable_learning_dashboard": true,
   "enable_external_videos": true,
   "enable_breakout_rooms": true,
+  "show_presentation_on_join": true,
   "learning_dashboard_max_age_days": 7,
   "sounds_language": "en-us-callie",
   "disable_sound_muted": false,
@@ -184,6 +185,7 @@ What each field does, and the value a fresh install carries:
 | `enable_learning_dashboard` | `true` | Moderators can open a dashboard reporting each participant's connection time, talking time, chat messages, raised emojis and poll answers. Access is by shared link, not by role: whoever holds the link can read it. |
 | `enable_external_videos` | `true` | A moderator can play a YouTube or media URL in sync for everyone. The server relays nothing, but every participant's browser fetches it from the third party. |
 | `enable_breakout_rooms` | `true` | Each breakout room is a full meeting of its own, so a split multiplies what the node carries. |
+| `show_presentation_on_join` | `true` | Whether the presentation panel is open when a participant joins. The deck itself is always loaded, since the whiteboard needs a surface to draw over; `false` only minimizes the panel, and anyone can restore it. See *Custom default presentation*. |
 | `learning_dashboard_max_age_days` | `0` | How long a report stays readable after the meeting. `0` keeps it forever, otherwise 1 to 180 days. Upstream deletes it 2 minutes after the meeting ends, from a timer inside `bbb-web` that a restart loses; the maintenance job enforces this value instead. |
 
 ## STUN and TURN
@@ -250,9 +252,9 @@ deleting it once you have your own does not bring it back.
 
 ## Custom default presentation
 
-Every room opens on `default.pdf`. The module ships one; put yours in
-`state/custom/`, under that exact name, to serve it instead. The directory is
-created when the module starts. As `root` on the node:
+Every room is given `default.pdf` as its first slide. The module ships one; put
+yours in `state/custom/`, under that exact name, to serve it instead. The
+directory is created when the module starts. As `root` on the node:
 
     cp yours.pdf /home/bigbluebutton1/.config/state/custom/default.pdf
     chown -R bigbluebutton1:bigbluebutton1 /home/bigbluebutton1/.config/state/custom/
@@ -280,6 +282,13 @@ Editing `state/overrides/default.pdf` directly does not work: that directory is
 re-rendered at every module start. The render now warns when it overwrites a file
 that changed since it last wrote it, so a hand-made edit no longer disappears
 silently.
+
+The deck is always uploaded, because the whiteboard only draws over a
+presentation, but whether its panel is open on join is a separate setting:
+`show_presentation_on_join`, *Open the presentation on join* in Settings. Turn it
+off when the default file is a blank canvas nobody needs to look at; participants
+can still restore the panel themselves. A room whose owner attached a
+presentation in Greenlight uses that file instead of `default.pdf`.
 
 ## Get the configuration
 
