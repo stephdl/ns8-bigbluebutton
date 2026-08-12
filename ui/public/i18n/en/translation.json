@@ -3,7 +3,8 @@
     "required": "Required",
     "work_in_progress": "Work in progress",
     "processing": "Processing...",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "type_start_date_to_confirm": "Type the start date, {date}, to confirm the deletion"
   },
   "status": {
     "title": "Status",
@@ -111,7 +112,7 @@
     "delete": "Delete",
     "deleting": "Deleting {name}",
     "delete_title": "Delete this report",
-    "delete_description": "The learning analytics report of “{name}” is deleted from the server. This cannot be undone.",
+    "delete_description": "This learning analytics report is deleted from the server. This cannot be undone.",
     "delete_confirm": "Delete the report"
   },
   "recordings": {
@@ -134,7 +135,7 @@
     "delete": "Delete",
     "deleting": "Deleting {name}",
     "delete_title": "Delete this recording",
-    "delete_description": "The recording of “{name}” is deleted from the server, along with its playback link. This cannot be undone.",
+    "delete_description": "This recording is deleted from the server, along with its playback link. This cannot be undone.",
     "delete_confirm": "Delete the recording",
     "search": "Search a recording",
     "no_recordings": "No recording available",

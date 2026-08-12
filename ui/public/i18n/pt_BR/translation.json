@@ -3,7 +3,8 @@
     "required": "Obrigatório",
     "work_in_progress": "Em andamento",
     "processing": "Processando...",
-    "refresh": "Atualizar"
+    "refresh": "Atualizar",
+    "type_start_date_to_confirm": "Digite a data de início, {date}, para confirmar a exclusão"
   },
   "status": {
     "title": "Estado",
@@ -111,7 +112,7 @@
     "delete": "Excluir",
     "deleting": "Excluindo {name}",
     "delete_title": "Excluir este relatório",
-    "delete_description": "O relatório de análise de aprendizagem de “{name}” será excluído do servidor. Esta ação não pode ser desfeita.",
+    "delete_description": "Este relatório de análise de aprendizagem será excluído do servidor. Esta ação não pode ser desfeita.",
     "delete_confirm": "Excluir o relatório"
   },
   "recordings": {
@@ -134,7 +135,7 @@
     "delete": "Excluir",
     "deleting": "Excluindo {name}",
     "delete_title": "Excluir esta gravação",
-    "delete_description": "A gravação de “{name}” será excluída do servidor, junto com seu link de reprodução. Esta ação não pode ser desfeita.",
+    "delete_description": "Esta gravação será excluída do servidor, junto com seu link de reprodução. Esta ação não pode ser desfeita.",
     "delete_confirm": "Excluir a gravação",
     "search": "Procurar uma gravação",
     "no_recordings": "Nenhuma gravação disponível",

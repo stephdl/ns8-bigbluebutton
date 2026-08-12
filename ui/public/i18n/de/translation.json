@@ -3,7 +3,8 @@
     "required": "Erforderlich",
     "work_in_progress": "In Arbeit",
     "processing": "Wird ausgeführt...",
-    "refresh": "Aktualisieren"
+    "refresh": "Aktualisieren",
+    "type_start_date_to_confirm": "Geben Sie zur Bestätigung das Startdatum ein: {date}"
   },
   "status": {
     "title": "Status",
@@ -111,7 +112,7 @@
     "delete": "Löschen",
     "deleting": "{name} wird gelöscht",
     "delete_title": "Diesen Bericht löschen",
-    "delete_description": "Der Lernanalyse-Bericht von „{name}“ wird vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
+    "delete_description": "Dieser Lernanalyse-Bericht wird vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
     "delete_confirm": "Bericht löschen"
   },
   "recordings": {
@@ -134,7 +135,7 @@
     "delete": "Löschen",
     "deleting": "{name} wird gelöscht",
     "delete_title": "Diese Aufzeichnung löschen",
-    "delete_description": "Die Aufzeichnung von „{name}“ wird samt ihrem Wiedergabelink vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
+    "delete_description": "Diese Aufzeichnung wird samt ihrem Wiedergabelink vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
     "delete_confirm": "Aufzeichnung löschen",
     "search": "Aufzeichnung suchen",
     "no_recordings": "Keine Aufzeichnung vorhanden",

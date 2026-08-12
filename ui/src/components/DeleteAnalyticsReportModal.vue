@@ -3,42 +3,37 @@
   SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <template>
-  <NsModal
-    size="default"
-    kind="danger"
-    :visible="visible"
-    :isLoading="loading.deleteLearningDashboard"
-    :primary-button-disabled="loading.deleteLearningDashboard"
-    @modal-hidden="onModalHidden"
-    @primary-click="deleteLearningDashboard"
+  <!-- The start date is what must be typed: it is the only field that tells two
+       sessions of the same room apart. -->
+  <NsDangerDeleteModal
+    :isShown="visible"
+    :name="startedLabel"
+    :title="$t('analytics.delete_title')"
+    :warning="core.$t('common.please_read_carefully')"
+    :typeToConfirm="
+      $t('common.type_start_date_to_confirm', { date: startedLabel })
+    "
+    :cancelLabel="core.$t('common.cancel')"
+    :deleteLabel="$t('analytics.delete_confirm')"
+    :isErrorShown="!!error.deleteLearningDashboard"
+    :errorTitle="$t('action.delete-learning-dashboard')"
+    :errorDescription="error.deleteLearningDashboard"
+    :loading="loading.deleteLearningDashboard"
+    @hide="onModalHidden"
+    @confirmDelete="deleteLearningDashboard"
   >
-    <template slot="title">
-      {{ $t("analytics.delete_title") }}
-    </template>
-    <template slot="content">
-      <p>
-        {{ $t("analytics.delete_description", { name: reportName }) }}
-      </p>
-      <!-- The times, so a wrong row is caught before the deletion and not after. -->
-      <dl v-if="report" class="times">
+    <template slot="description">
+      <p>{{ $t("analytics.delete_description") }}</p>
+      <dl v-if="report" class="details">
+        <dt>{{ $t("analytics.meeting") }}</dt>
+        <dd>{{ reportName }}</dd>
         <dt>{{ $t("analytics.started") }}</dt>
         <dd>{{ startedLabel }}</dd>
         <dt>{{ $t("analytics.ended") }}</dt>
         <dd>{{ endedLabel }}</dd>
       </dl>
-      <NsInlineNotification
-        v-if="error.deleteLearningDashboard"
-        kind="error"
-        :title="$t('action.delete-learning-dashboard')"
-        :description="error.deleteLearningDashboard"
-        :showCloseButton="false"
-      />
     </template>
-    <template slot="secondary-button">{{ core.$t("common.cancel") }}</template>
-    <template slot="primary-button">{{
-      $t("analytics.delete_confirm")
-    }}</template>
-  </NsModal>
+  </NsDangerDeleteModal>
 </template>
 
 <script>
@@ -158,7 +153,7 @@ export default {
 <style scoped lang="scss">
 @import "../styles/carbon-utils";
 
-.times {
+.details {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: $spacing-02 $spacing-05;

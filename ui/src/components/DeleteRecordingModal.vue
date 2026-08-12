@@ -3,42 +3,37 @@
   SPDX-License-Identifier: GPL-3.0-or-later
 -->
 <template>
-  <NsModal
-    size="default"
-    kind="danger"
-    :visible="visible"
-    :isLoading="loading.deleteRecording"
-    :primary-button-disabled="loading.deleteRecording"
-    @modal-hidden="onModalHidden"
-    @primary-click="deleteRecording"
+  <!-- The start date is what must be typed: it is the only field that tells two
+       sessions of the same room apart. -->
+  <NsDangerDeleteModal
+    :isShown="visible"
+    :name="startedLabel"
+    :title="$t('recordings.delete_title')"
+    :warning="core.$t('common.please_read_carefully')"
+    :typeToConfirm="
+      $t('common.type_start_date_to_confirm', { date: startedLabel })
+    "
+    :cancelLabel="core.$t('common.cancel')"
+    :deleteLabel="$t('recordings.delete_confirm')"
+    :isErrorShown="!!error.deleteRecording"
+    :errorTitle="$t('action.delete-recording')"
+    :errorDescription="error.deleteRecording"
+    :loading="loading.deleteRecording"
+    @hide="onModalHidden"
+    @confirmDelete="deleteRecording"
   >
-    <template slot="title">
-      {{ $t("recordings.delete_title") }}
-    </template>
-    <template slot="content">
-      <p>
-        {{ $t("recordings.delete_description", { name: recordingName }) }}
-      </p>
-      <!-- The times, so a wrong row is caught before the deletion and not after. -->
-      <dl v-if="recording" class="times">
+    <template slot="description">
+      <p>{{ $t("recordings.delete_description") }}</p>
+      <dl v-if="recording" class="details">
+        <dt>{{ $t("recordings.room") }}</dt>
+        <dd>{{ recordingName }}</dd>
         <dt>{{ $t("recordings.started") }}</dt>
         <dd>{{ startedLabel }}</dd>
         <dt>{{ $t("recordings.ended") }}</dt>
         <dd>{{ endedLabel }}</dd>
       </dl>
-      <NsInlineNotification
-        v-if="error.deleteRecording"
-        kind="error"
-        :title="$t('action.delete-recording')"
-        :description="error.deleteRecording"
-        :showCloseButton="false"
-      />
     </template>
-    <template slot="secondary-button">{{ core.$t("common.cancel") }}</template>
-    <template slot="primary-button">{{
-      $t("recordings.delete_confirm")
-    }}</template>
-  </NsModal>
+  </NsDangerDeleteModal>
 </template>
 
 <script>
@@ -158,7 +153,7 @@ export default {
 <style scoped lang="scss">
 @import "../styles/carbon-utils";
 
-.times {
+.details {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: $spacing-02 $spacing-05;

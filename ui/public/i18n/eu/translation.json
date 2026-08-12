@@ -3,7 +3,8 @@
     "required": "Beharrezkoa",
     "work_in_progress": "Lanak martxan",
     "processing": "Prozesatzen...",
-    "refresh": "Freskatu"
+    "refresh": "Freskatu",
+    "type_start_date_to_confirm": "Idatzi hasiera-data, {date}, ezabaketa berresteko"
   },
   "status": {
     "title": "Egoera",
@@ -111,7 +112,7 @@
     "delete": "Ezabatu",
     "deleting": "{name} ezabatzen",
     "delete_title": "Ezabatu txosten hau",
-    "delete_description": "«{name}» bileraren ikaskuntzaren analisiaren txostena zerbitzaritik ezabatuko da. Ekintza hau ezin da desegin.",
+    "delete_description": "Ikaskuntzaren analisiaren txosten hau zerbitzaritik ezabatuko da. Ekintza hau ezin da desegin.",
     "delete_confirm": "Ezabatu txostena"
   },
   "recordings": {
@@ -134,7 +135,7 @@
     "delete": "Ezabatu",
     "deleting": "{name} ezabatzen",
     "delete_title": "Ezabatu grabaketa hau",
-    "delete_description": "«{name}» bileraren grabaketa zerbitzaritik ezabatuko da, bere erreprodukzio-estekarekin batera. Ekintza hau ezin da desegin.",
+    "delete_description": "Grabaketa hau zerbitzaritik ezabatuko da, bere erreprodukzio-estekarekin batera. Ekintza hau ezin da desegin.",
     "delete_confirm": "Ezabatu grabaketa",
     "search": "Bilatu grabaketa bat",
     "no_recordings": "Ez dago grabaketarik",

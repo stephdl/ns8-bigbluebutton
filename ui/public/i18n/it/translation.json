@@ -3,7 +3,8 @@
     "required": "Obbligatorio",
     "work_in_progress": "In lavorazione",
     "processing": "Elaborazione in corso...",
-    "refresh": "Aggiorna"
+    "refresh": "Aggiorna",
+    "type_start_date_to_confirm": "Digita la data di inizio, {date}, per confermare l'eliminazione"
   },
   "status": {
     "title": "Stato",
@@ -111,7 +112,7 @@
     "delete": "Elimina",
     "deleting": "Eliminazione di {name}",
     "delete_title": "Elimina questo rapporto",
-    "delete_description": "Il rapporto di analisi didattica di «{name}» sarà eliminato dal server. L'operazione è irreversibile.",
+    "delete_description": "Questo rapporto di analisi didattica sarà eliminato dal server. L'operazione è irreversibile.",
     "delete_confirm": "Elimina il rapporto"
   },
   "recordings": {
@@ -134,7 +135,7 @@
     "delete": "Elimina",
     "deleting": "Eliminazione di {name}",
     "delete_title": "Elimina questa registrazione",
-    "delete_description": "La registrazione di «{name}» sarà eliminata dal server, insieme al suo link di riproduzione. L'operazione è irreversibile.",
+    "delete_description": "Questa registrazione sarà eliminata dal server, insieme al suo link di riproduzione. L'operazione è irreversibile.",
     "delete_confirm": "Elimina la registrazione",
     "search": "Cerca una registrazione",
     "no_recordings": "Nessuna registrazione disponibile",

@@ -3,7 +3,8 @@
     "required": "Obligatoire",
     "work_in_progress": "En cours",
     "processing": "Traitement en cours...",
-    "refresh": "Actualiser"
+    "refresh": "Actualiser",
+    "type_start_date_to_confirm": "Saisissez la date de début, {date}, pour confirmer la suppression"
   },
   "status": {
     "title": "État",
@@ -111,7 +112,7 @@
     "delete": "Effacer",
     "deleting": "Suppression de {name}",
     "delete_title": "Effacer ce rapport",
-    "delete_description": "Le rapport d'analyse pédagogique de « {name} » sera supprimé du serveur. Cette action est irréversible.",
+    "delete_description": "Ce rapport d'analyse pédagogique sera supprimé du serveur. Cette action est irréversible.",
     "delete_confirm": "Effacer le rapport"
   },
   "recordings": {
@@ -134,7 +135,7 @@
     "delete": "Effacer",
     "deleting": "Suppression de {name}",
     "delete_title": "Effacer cet enregistrement",
-    "delete_description": "L'enregistrement de « {name} » sera supprimé du serveur, ainsi que son lien de lecture. Cette action est irréversible.",
+    "delete_description": "Cet enregistrement sera supprimé du serveur, ainsi que son lien de lecture. Cette action est irréversible.",
     "delete_confirm": "Effacer l'enregistrement",
     "search": "Rechercher un enregistrement",
     "no_recordings": "Aucun enregistrement disponible",

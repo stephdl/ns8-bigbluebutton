@@ -3,7 +3,8 @@
     "required": "Obligatorio",
     "work_in_progress": "En curso",
     "processing": "Procesando...",
-    "refresh": "Actualizar"
+    "refresh": "Actualizar",
+    "type_start_date_to_confirm": "Escribe la fecha de inicio, {date}, para confirmar la eliminación"
   },
   "status": {
     "title": "Estado",
@@ -111,7 +112,7 @@
     "delete": "Eliminar",
     "deleting": "Eliminando {name}",
     "delete_title": "Eliminar este informe",
-    "delete_description": "El informe de análisis del aprendizaje de «{name}» se eliminará del servidor. Esta acción es irreversible.",
+    "delete_description": "Este informe de análisis del aprendizaje se eliminará del servidor. Esta acción es irreversible.",
     "delete_confirm": "Eliminar el informe"
   },
   "recordings": {
@@ -134,7 +135,7 @@
     "delete": "Eliminar",
     "deleting": "Eliminando {name}",
     "delete_title": "Eliminar esta grabación",
-    "delete_description": "La grabación de «{name}» se eliminará del servidor, junto con su enlace de reproducción. Esta acción es irreversible.",
+    "delete_description": "Esta grabación se eliminará del servidor, junto con su enlace de reproducción. Esta acción es irreversible.",
     "delete_confirm": "Eliminar la grabación",
     "search": "Buscar una grabación",
     "no_recordings": "Ninguna grabación disponible",
