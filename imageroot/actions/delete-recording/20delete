@@ -6,26 +6,52 @@
 #
 
 #
-# Through bbb-record: removing the directories directly would leave the database
-# and the published tree inconsistent, as noted in bin/bigbluebutton-periodic.
+# Both sides: Greenlight's recordings row, then the files through bbb-record.
+#
+# The row goes in SQL, not through the model: its after_destroy asks BigBlueButton to
+# delete the recording, so once the files are gone that destroy raises and rolls back,
+# leaving a row nothing can remove -- Greenlight's own delete button included.
 #
 
+import os
+import re
 import sys
 import json
 import subprocess
 
 import agent
 
+sys.path.insert(0, os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin"))
+import greenlight_db  # noqa: E402
+
 meeting_id = json.load(sys.stdin)["meeting_id"]
 
-# The periodic job skips quietly when the container is down. Here somebody asked
-# for the deletion, so silence would be a lie.
-# capture_output: stdout is the task's JSON channel, podman must not write to it.
-agent.assert_exp(
-    subprocess.run(["podman", "container", "exists", "recordings-app"],
-                   capture_output=True).returncode == 0,
-    "the recordings container is not running",
+
+def container_exists(name):
+    # capture_output: stdout is the task's JSON channel, podman must not write to it.
+    return subprocess.run(["podman", "container", "exists", name],
+                          capture_output=True).returncode == 0
+
+
+# Also pinned by validate-input.json, repeated where the value reaches SQL.
+agent.assert_exp(bool(re.fullmatch(r"[0-9a-f]{40}-[0-9]+", meeting_id)),
+                 "malformed meeting identifier")
+
+# First, so a failure here leaves a recording this module can still list and delete.
+# formats before recordings: foreign key.
+agent.assert_exp(container_exists("postgres-app"), "PostgreSQL is not running")
+
+result = greenlight_db.psql(
+    "DELETE FROM formats WHERE recording_id IN "
+    f"(SELECT id FROM recordings WHERE record_id = '{meeting_id}'); "
+    f"DELETE FROM recordings WHERE record_id = '{meeting_id}';"
 )
+agent.assert_exp(result.returncode == 0,
+                 f"cannot delete the Greenlight recording: {result.stderr.strip()}")
+
+# The periodic job skips quietly when it is down; here somebody asked for a deletion.
+agent.assert_exp(container_exists("recordings-app"),
+                 "the recordings container is not running")
 
 agent.run_helper("podman", "exec", "recordings-app",
                  "bbb-record", "--delete", meeting_id).check_returncode()
