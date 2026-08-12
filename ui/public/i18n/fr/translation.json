@@ -106,7 +106,39 @@
     "search": "Rechercher une réunion",
     "no_reports": "Aucun rapport disponible",
     "no_reports_description": "Un rapport apparaît dès qu'une réunion a eu lieu, et reste le temps que la conservation autorise.",
-    "no_reports_disabled_description": "Activez le tableau de bord dans les paramètres pour que les prochaines réunions soient suivies."
+    "no_reports_disabled_description": "Activez le tableau de bord dans les paramètres pour que les prochaines réunions soient suivies.",
+    "delete": "Effacer",
+    "deleting": "Suppression de {name}",
+    "delete_title": "Effacer ce rapport",
+    "delete_description": "Le rapport d'analyse pédagogique de « {name} » sera supprimé du serveur. Cette action est irréversible.",
+    "delete_confirm": "Effacer le rapport"
+  },
+  "recordings": {
+    "title": "Enregistrements",
+    "policy": "Enregistrements des réunions passées",
+    "retention_days": "Conservés {days} jours après la fin de la réunion, puis supprimés par la tâche de maintenance.",
+    "retention_unlimited": "Conservés indéfiniment.",
+    "policy_disabled": "L'enregistrement est désactivé",
+    "policy_disabled_description": "Aucun nouvel enregistrement n'est produit. Ceux ci-dessous, s'il y en a, seront supprimés à l'échéance de leur conservation.",
+    "go_to_settings": "Modifier dans les paramètres",
+    "room": "Salle",
+    "owner": "Propriétaire",
+    "started": "Début",
+    "ended": "Fin",
+    "duration": "Durée",
+    "size": "Taille",
+    "no_owner": "—",
+    "not_ended": "Non enregistrée",
+    "play": "Lire",
+    "delete": "Effacer",
+    "deleting": "Suppression de {name}",
+    "delete_title": "Effacer cet enregistrement",
+    "delete_description": "L'enregistrement de « {name} » sera supprimé du serveur, ainsi que son lien de lecture. Cette action est irréversible.",
+    "delete_confirm": "Effacer l'enregistrement",
+    "search": "Rechercher un enregistrement",
+    "no_recordings": "Aucun enregistrement disponible",
+    "no_recordings_description": "Un enregistrement apparaît dès qu'une réunion enregistrée a été traitée, et reste le temps que la conservation autorise.",
+    "no_recordings_disabled_description": "Activez l'enregistrement dans les paramètres pour que les prochaines réunions soient enregistrées."
   },
   "about": {
     "title": "À propos"
@@ -124,7 +156,10 @@
     "get-name": "Lire le nom",
     "list-backup-repositories": "Lister les dépôts de sauvegarde",
     "list-backups": "Lister les sauvegardes",
-    "list-installed-modules": "Lister les modules installés"
+    "list-installed-modules": "Lister les modules installés",
+    "list-recordings": "Lister les enregistrements",
+    "delete-recording": "Effacer l'enregistrement",
+    "delete-learning-dashboard": "Effacer le rapport d'analyse pédagogique"
   },
   "error": {
     "error": "Erreur",

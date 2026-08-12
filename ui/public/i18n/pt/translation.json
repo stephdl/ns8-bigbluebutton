@@ -106,7 +106,39 @@
     "search": "Procurar uma reunião",
     "no_reports": "Nenhum relatório disponível",
     "no_reports_description": "Um relatório aparece depois de uma reunião e permanece o tempo que a conservação permitir.",
-    "no_reports_disabled_description": "Ative o painel nas definições para que as próximas reuniões sejam registadas."
+    "no_reports_disabled_description": "Ative o painel nas definições para que as próximas reuniões sejam registadas.",
+    "delete": "Eliminar",
+    "deleting": "A eliminar {name}",
+    "delete_title": "Eliminar este relatório",
+    "delete_description": "O relatório de análise da aprendizagem de «{name}» será eliminado do servidor. Esta ação é irreversível.",
+    "delete_confirm": "Eliminar o relatório"
+  },
+  "recordings": {
+    "title": "Gravações",
+    "policy": "Gravações de reuniões anteriores",
+    "retention_days": "Mantidas {days} dias após o fim da reunião e depois eliminadas pela tarefa de manutenção.",
+    "retention_unlimited": "Mantidas indefinidamente.",
+    "policy_disabled": "A gravação está desativada",
+    "policy_disabled_description": "Nenhuma gravação nova é produzida. As abaixo, se existirem, são eliminadas quando a conservação terminar.",
+    "go_to_settings": "Alterar nas definições",
+    "room": "Sala",
+    "owner": "Proprietário",
+    "started": "Início",
+    "ended": "Fim",
+    "duration": "Duração",
+    "size": "Tamanho",
+    "no_owner": "—",
+    "not_ended": "Não registada",
+    "play": "Reproduzir",
+    "delete": "Eliminar",
+    "deleting": "A eliminar {name}",
+    "delete_title": "Eliminar esta gravação",
+    "delete_description": "A gravação de «{name}» será eliminada do servidor, juntamente com a sua ligação de reprodução. Esta ação é irreversível.",
+    "delete_confirm": "Eliminar a gravação",
+    "search": "Procurar uma gravação",
+    "no_recordings": "Nenhuma gravação disponível",
+    "no_recordings_description": "Uma gravação aparece depois de uma reunião gravada ser processada e permanece o tempo que a conservação permitir.",
+    "no_recordings_disabled_description": "Ative a gravação nas definições para que as próximas reuniões sejam gravadas."
   },
   "about": {
     "title": "Acerca de"
@@ -124,7 +156,10 @@
     "get-name": "Ler o nome",
     "list-backup-repositories": "Listar os repositórios de cópias de segurança",
     "list-backups": "Listar as cópias de segurança",
-    "list-installed-modules": "Listar os módulos instalados"
+    "list-installed-modules": "Listar os módulos instalados",
+    "list-recordings": "Listar as gravações",
+    "delete-recording": "Eliminar a gravação",
+    "delete-learning-dashboard": "Eliminar o relatório de análise da aprendizagem"
   },
   "error": {
     "error": "Erro",

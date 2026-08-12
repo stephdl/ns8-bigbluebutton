@@ -106,7 +106,39 @@
     "search": "Buscar una reunión",
     "no_reports": "Ningún informe disponible",
     "no_reports_description": "Un informe aparece cuando se ha celebrado una reunión y permanece el tiempo que permita la conservación.",
-    "no_reports_disabled_description": "Habilita el panel en los ajustes para que las próximas reuniones queden registradas."
+    "no_reports_disabled_description": "Habilita el panel en los ajustes para que las próximas reuniones queden registradas.",
+    "delete": "Eliminar",
+    "deleting": "Eliminando {name}",
+    "delete_title": "Eliminar este informe",
+    "delete_description": "El informe de análisis del aprendizaje de «{name}» se eliminará del servidor. Esta acción es irreversible.",
+    "delete_confirm": "Eliminar el informe"
+  },
+  "recordings": {
+    "title": "Grabaciones",
+    "policy": "Grabaciones de reuniones pasadas",
+    "retention_days": "Se conservan {days} días tras el fin de la reunión y luego las elimina la tarea de mantenimiento.",
+    "retention_unlimited": "Se conservan indefinidamente.",
+    "policy_disabled": "La grabación está deshabilitada",
+    "policy_disabled_description": "No se produce ninguna grabación nueva. Las de abajo, si hay alguna, se eliminan al agotarse su conservación.",
+    "go_to_settings": "Cambiar en los ajustes",
+    "room": "Sala",
+    "owner": "Propietario",
+    "started": "Inicio",
+    "ended": "Fin",
+    "duration": "Duración",
+    "size": "Tamaño",
+    "no_owner": "—",
+    "not_ended": "Sin registrar",
+    "play": "Reproducir",
+    "delete": "Eliminar",
+    "deleting": "Eliminando {name}",
+    "delete_title": "Eliminar esta grabación",
+    "delete_description": "La grabación de «{name}» se eliminará del servidor, junto con su enlace de reproducción. Esta acción es irreversible.",
+    "delete_confirm": "Eliminar la grabación",
+    "search": "Buscar una grabación",
+    "no_recordings": "Ninguna grabación disponible",
+    "no_recordings_description": "Una grabación aparece cuando se ha procesado una reunión grabada y permanece el tiempo que permita la conservación.",
+    "no_recordings_disabled_description": "Habilita la grabación en los ajustes para que las próximas reuniones se graben."
   },
   "about": {
     "title": "Acerca de"
@@ -124,7 +156,10 @@
     "get-name": "Leer el nombre",
     "list-backup-repositories": "Listar los repositorios de copia de seguridad",
     "list-backups": "Listar las copias de seguridad",
-    "list-installed-modules": "Listar los módulos instalados"
+    "list-installed-modules": "Listar los módulos instalados",
+    "list-recordings": "Listar las grabaciones",
+    "delete-recording": "Eliminar la grabación",
+    "delete-learning-dashboard": "Eliminar el informe de análisis del aprendizaje"
   },
   "error": {
     "error": "Error",
