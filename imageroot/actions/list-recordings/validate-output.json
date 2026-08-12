@@ -1,0 +1,105 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "List the published recordings",
+    "$id": "http://nethserver.org/json-schema/task/output/bigbluebutton/list-recordings",
+    "description": "Published recordings still on disk, with the policy that governs them",
+    "examples": [
+        {
+            "enabled": true,
+            "max_age_days": 7,
+            "recordings": [
+                {
+                    "meeting_id": "41680de9e2a596b6927cd05d598993c4e44b32f6-1786374689010",
+                    "name": "Maths, group B",
+                    "owner_name": "Ada Lovelace",
+                    "owner_email": "ada@domain.org",
+                    "start_time": 1786374689010,
+                    "end_time": 1786376469010,
+                    "duration": 1780000,
+                    "size": 4194304,
+                    "url": "https://bbb.domain.org/playback/presentation/2.3/41680de9e2a596b6927cd05d598993c4e44b32f6-1786374689010"
+                }
+            ]
+        }
+    ],
+    "type": "object",
+    "required": [
+        "enabled",
+        "max_age_days",
+        "recordings"
+    ],
+    "properties": {
+        "enabled": {
+            "type": "boolean",
+            "title": "Recording is enabled",
+            "description": "When false the list can only shrink: no new recording is produced."
+        },
+        "max_age_days": {
+            "type": "integer",
+            "title": "Retention in days",
+            "description": "0 means the recordings are kept indefinitely."
+        },
+        "recordings": {
+            "type": "array",
+            "title": "Published recordings still on disk",
+            "description": "Newest first. A recording still being processed is absent until it is published.",
+            "items": {
+                "type": "object",
+                "required": [
+                    "meeting_id",
+                    "name",
+                    "owner_name",
+                    "owner_email",
+                    "start_time",
+                    "end_time",
+                    "duration",
+                    "size",
+                    "url"
+                ],
+                "properties": {
+                    "meeting_id": {
+                        "type": "string",
+                        "title": "Internal meeting identifier",
+                        "description": "What bbb-record --delete takes."
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Meeting name"
+                    },
+                    "owner_name": {
+                        "type": "string",
+                        "title": "Name of the Greenlight room owner",
+                        "description": "Empty when no Greenlight room matches the meeting, or when the database could not be read."
+                    },
+                    "owner_email": {
+                        "type": "string",
+                        "title": "Email of the Greenlight room owner",
+                        "description": "Empty under the same conditions as owner_name."
+                    },
+                    "start_time": {
+                        "type": "integer",
+                        "title": "Start time, in milliseconds since the epoch"
+                    },
+                    "end_time": {
+                        "type": "integer",
+                        "title": "End time, in milliseconds since the epoch"
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "title": "Playback duration, in milliseconds"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "title": "Size on disk, in bytes",
+                        "description": "As recorded at publication time, or measured on the spot when the recording carries no size."
+                    },
+                    "url": {
+                        "type": "string",
+                        "title": "Playback link",
+                        "description": "Served by nginx from the published tree. Access is not restricted by a token."
+                    }
+                }
+            }
+        }
+    }
+}
