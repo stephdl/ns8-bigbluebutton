@@ -14,7 +14,7 @@
       $t('common.type_start_date_to_confirm', { date: startedLabel })
     "
     :cancelLabel="core.$t('common.cancel')"
-    :deleteLabel="$t('analytics.delete_confirm')"
+    :deleteLabel="core.$t('common.understood_delete')"
     :isErrorShown="!!error.deleteLearningDashboard"
     :errorTitle="$t('action.delete-learning-dashboard')"
     :errorDescription="error.deleteLearningDashboard"
