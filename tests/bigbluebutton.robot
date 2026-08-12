@@ -165,7 +165,7 @@ Configure sounds language
     # The schema requires every field, so a partial payload would be rejected here
     # even though only sounds_language is under test.
     ${rc} =    Execute Command
-    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"learning_dashboard_max_age_days":7,"sounds_language":"${language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
+    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"show_presentation_on_join":true,"learning_dashboard_max_age_days":7,"sounds_language":"${language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
     Wait Until Keyword Succeeds    120s    5s    FreeSWITCH answers on the event socket
