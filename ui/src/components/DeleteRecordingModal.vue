@@ -19,6 +19,13 @@
       <p>
         {{ $t("recordings.delete_description", { name: recordingName }) }}
       </p>
+      <!-- The times, so a wrong row is caught before the deletion and not after. -->
+      <dl v-if="recording" class="times">
+        <dt>{{ $t("recordings.started") }}</dt>
+        <dd>{{ startedLabel }}</dd>
+        <dt>{{ $t("recordings.ended") }}</dt>
+        <dd>{{ endedLabel }}</dd>
+      </dl>
       <NsInlineNotification
         v-if="error.deleteRecording"
         kind="error"
@@ -64,8 +71,25 @@ export default {
     recordingName() {
       return this.recording ? this.recording.name : "";
     },
+    startedLabel() {
+      return this.recording
+        ? this.formatTimestamp(this.recording.start_time)
+        : "";
+    },
+    endedLabel() {
+      if (!this.recording) {
+        return "";
+      }
+      return this.recording.end_time
+        ? this.formatTimestamp(this.recording.end_time)
+        : this.$t("recordings.not_ended");
+    },
   },
   methods: {
+    // Same formatting as the table, so the two can be compared at a glance.
+    formatTimestamp(milliseconds) {
+      return milliseconds ? new Date(milliseconds).toLocaleString() : "—";
+    },
     async deleteRecording() {
       if (!this.recording) {
         return;
@@ -131,3 +155,17 @@ export default {
   },
 };
 </script>
+<style scoped lang="scss">
+@import "../styles/carbon-utils";
+
+.times {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $spacing-02 $spacing-05;
+  margin-top: $spacing-05;
+
+  dt {
+    color: $text-02;
+  }
+}
+</style>

@@ -19,6 +19,13 @@
       <p>
         {{ $t("analytics.delete_description", { name: reportName }) }}
       </p>
+      <!-- The times, so a wrong row is caught before the deletion and not after. -->
+      <dl v-if="report" class="times">
+        <dt>{{ $t("analytics.started") }}</dt>
+        <dd>{{ startedLabel }}</dd>
+        <dt>{{ $t("analytics.ended") }}</dt>
+        <dd>{{ endedLabel }}</dd>
+      </dl>
       <NsInlineNotification
         v-if="error.deleteLearningDashboard"
         kind="error"
@@ -64,8 +71,23 @@ export default {
     reportName() {
       return this.report ? this.report.name : "";
     },
+    startedLabel() {
+      return this.report ? this.formatTimestamp(this.report.created_on) : "";
+    },
+    endedLabel() {
+      if (!this.report) {
+        return "";
+      }
+      return this.report.ended_on
+        ? this.formatTimestamp(this.report.ended_on)
+        : this.$t("analytics.not_ended");
+    },
   },
   methods: {
+    // Same formatting as the table, so the two can be compared at a glance.
+    formatTimestamp(milliseconds) {
+      return milliseconds ? new Date(milliseconds).toLocaleString() : "—";
+    },
     async deleteLearningDashboard() {
       if (!this.report) {
         return;
@@ -133,3 +155,17 @@ export default {
   },
 };
 </script>
+<style scoped lang="scss">
+@import "../styles/carbon-utils";
+
+.times {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $spacing-02 $spacing-05;
+  margin-top: $spacing-05;
+
+  dt {
+    color: $text-02;
+  }
+}
+</style>
