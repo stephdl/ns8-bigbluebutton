@@ -106,6 +106,13 @@
                       @click="openReport(report)"
                       >{{ $t("analytics.open_report") }}</NsButton
                     >
+                    <NsButton
+                      kind="ghost"
+                      size="small"
+                      :icon="TrashCan20"
+                      @click="showDeleteReportModal(report)"
+                      >{{ $t("analytics.delete") }}</NsButton
+                    >
                   </cv-data-table-cell>
                 </cv-data-table-row>
               </template>
@@ -119,14 +126,18 @@
         </cv-tile>
       </cv-column>
     </cv-row>
+    <DeleteAnalyticsReportModal
+      :visible="isShownDeleteReportModal"
+      :report="reportToDelete"
+      @deleted="onReportDeleted"
+      @hide="isShownDeleteReportModal = false"
+    />
   </cv-grid>
 </template>
 
 <script>
 import to from "await-to-js";
 import { mapState } from "vuex";
-// Not in IconService.
-import LaunchIcon from "@carbon/icons-vue/es/launch/20";
 import {
   QueryParamService,
   UtilService,
@@ -134,9 +145,11 @@ import {
   IconService,
   PageTitleService,
 } from "@nethserver/ns8-ui-lib";
+import DeleteAnalyticsReportModal from "@/components/DeleteAnalyticsReportModal.vue";
 
 export default {
   name: "LearningAnalytics",
+  components: { DeleteAnalyticsReportModal },
   mixins: [
     TaskService,
     IconService,
@@ -157,6 +170,8 @@ export default {
       maxAgeDays: 1,
       reports: [],
       tablePage: [],
+      reportToDelete: null,
+      isShownDeleteReportModal: false,
       loading: {
         listLearningDashboards: true,
       },
@@ -167,9 +182,6 @@ export default {
   },
   computed: {
     ...mapState(["instanceName", "core", "appName"]),
-    Launch20() {
-      return LaunchIcon;
-    },
     columns() {
       return [
         this.$t("analytics.meeting"),
@@ -219,6 +231,20 @@ export default {
     },
     openReport(report) {
       window.open(report.url, "_blank", "noopener");
+    },
+    showDeleteReportModal(report) {
+      this.reportToDelete = report;
+      this.isShownDeleteReportModal = true;
+    },
+    onReportDeleted(deleted) {
+      // The disk state is already known: refetching would only flash the skeleton.
+      // On the token too: a meeting can hold more than one report directory, and
+      // only the one that was deleted must leave the table.
+      this.reports = this.reports.filter(
+        (report) =>
+          report.meeting_id !== deleted.meeting_id ||
+          report.token !== deleted.token
+      );
     },
     async listLearningDashboards() {
       this.loading.listLearningDashboards = true;
