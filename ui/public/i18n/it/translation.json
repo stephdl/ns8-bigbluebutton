@@ -2,7 +2,9 @@
   "common": {
     "required": "Obbligatorio",
     "work_in_progress": "In lavorazione",
-    "processing": "Elaborazione in corso..."
+    "processing": "Elaborazione in corso...",
+    "refresh": "Aggiorna",
+    "type_start_date_to_confirm": "Digita la data di inizio, {date}, per confermare l'eliminazione"
   },
   "status": {
     "title": "Stato",
@@ -90,7 +92,7 @@
     "open_bigbluebutton": "Apri BigBlueButton"
   },
   "analytics": {
-    "title": "Analisi didattica",
+    "title": "Analisi",
     "policy": "Rapporti delle riunioni passate",
     "retention_days": "Conservati {days} giorni dopo la fine della riunione, poi eliminati dall'attività di manutenzione.",
     "retention_unlimited": "Conservati a tempo indeterminato.",
@@ -106,7 +108,37 @@
     "search": "Cerca una riunione",
     "no_reports": "Nessun rapporto disponibile",
     "no_reports_description": "Un rapporto compare quando una riunione si è svolta, e resta per il tempo consentito dalla conservazione.",
-    "no_reports_disabled_description": "Abilita la dashboard nelle impostazioni perché le prossime riunioni siano registrate."
+    "no_reports_disabled_description": "Abilita la dashboard nelle impostazioni perché le prossime riunioni siano registrate.",
+    "delete": "Elimina",
+    "deleting": "Eliminazione di {name}",
+    "delete_title": "Elimina questo rapporto",
+    "delete_description": "Questo rapporto di analisi didattica sarà eliminato dal server. L'operazione è irreversibile."
+  },
+  "recordings": {
+    "title": "Registrazioni",
+    "policy": "Registrazioni delle riunioni passate",
+    "retention_days": "Conservate {days} giorni dopo la fine della riunione, poi eliminate dall'attività di manutenzione.",
+    "retention_unlimited": "Conservate a tempo indeterminato.",
+    "policy_disabled": "La registrazione è disabilitata",
+    "policy_disabled_description": "Non viene prodotta alcuna nuova registrazione. Quelle sotto, se presenti, sono eliminate allo scadere della conservazione.",
+    "go_to_settings": "Modifica nelle impostazioni",
+    "room": "Stanza",
+    "owner": "Proprietario",
+    "started": "Iniziata",
+    "ended": "Terminata",
+    "duration": "Durata",
+    "size": "Dimensione",
+    "no_owner": "—",
+    "not_ended": "Non registrata",
+    "play": "Riproduci",
+    "delete": "Elimina",
+    "deleting": "Eliminazione di {name}",
+    "delete_title": "Elimina questa registrazione",
+    "delete_description": "Questa registrazione sarà eliminata dal server, insieme al suo link di riproduzione. L'operazione è irreversibile.",
+    "search": "Cerca una registrazione",
+    "no_recordings": "Nessuna registrazione disponibile",
+    "no_recordings_description": "Una registrazione compare quando una riunione registrata è stata elaborata, e resta per il tempo consentito dalla conservazione.",
+    "no_recordings_disabled_description": "Abilita la registrazione nelle impostazioni perché le prossime riunioni siano registrate."
   },
   "about": {
     "title": "Informazioni"
@@ -124,7 +156,10 @@
     "get-name": "Leggi il nome",
     "list-backup-repositories": "Elenca i repository di backup",
     "list-backups": "Elenca i backup",
-    "list-installed-modules": "Elenca i moduli installati"
+    "list-installed-modules": "Elenca i moduli installati",
+    "list-recordings": "Elenca le registrazioni",
+    "delete-recording": "Elimina la registrazione",
+    "delete-learning-dashboard": "Elimina il rapporto di analisi didattica"
   },
   "error": {
     "error": "Errore",

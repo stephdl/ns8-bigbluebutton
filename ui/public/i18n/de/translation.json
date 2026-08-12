@@ -2,7 +2,9 @@
   "common": {
     "required": "Erforderlich",
     "work_in_progress": "In Arbeit",
-    "processing": "Wird ausgeführt..."
+    "processing": "Wird ausgeführt...",
+    "refresh": "Aktualisieren",
+    "type_start_date_to_confirm": "Geben Sie zur Bestätigung das Startdatum ein: {date}"
   },
   "status": {
     "title": "Status",
@@ -90,7 +92,7 @@
     "open_bigbluebutton": "BigBlueButton öffnen"
   },
   "analytics": {
-    "title": "Lernanalyse",
+    "title": "Analysen",
     "policy": "Berichte vergangener Konferenzen",
     "retention_days": "Werden {days} Tage nach dem Ende der Konferenz aufbewahrt und dann vom Wartungsauftrag gelöscht.",
     "retention_unlimited": "Werden dauerhaft aufbewahrt.",
@@ -106,7 +108,37 @@
     "search": "Konferenz suchen",
     "no_reports": "Kein Bericht vorhanden",
     "no_reports_description": "Ein Bericht erscheint, sobald eine Konferenz stattgefunden hat, und bleibt so lange, wie die Aufbewahrung erlaubt.",
-    "no_reports_disabled_description": "Aktivieren Sie das Dashboard in den Einstellungen, damit die nächsten Konferenzen erfasst werden."
+    "no_reports_disabled_description": "Aktivieren Sie das Dashboard in den Einstellungen, damit die nächsten Konferenzen erfasst werden.",
+    "delete": "Löschen",
+    "deleting": "{name} wird gelöscht",
+    "delete_title": "Diesen Bericht löschen",
+    "delete_description": "Dieser Lernanalyse-Bericht wird vom Server gelöscht. Das lässt sich nicht rückgängig machen."
+  },
+  "recordings": {
+    "title": "Aufzeichnungen",
+    "policy": "Aufzeichnungen vergangener Konferenzen",
+    "retention_days": "Werden {days} Tage nach dem Ende der Konferenz aufbewahrt und dann vom Wartungsauftrag gelöscht.",
+    "retention_unlimited": "Werden dauerhaft aufbewahrt.",
+    "policy_disabled": "Die Aufzeichnung ist deaktiviert",
+    "policy_disabled_description": "Es wird keine neue Aufzeichnung erstellt. Die unten stehenden werden gelöscht, sobald ihre Aufbewahrung endet.",
+    "go_to_settings": "In den Einstellungen ändern",
+    "room": "Raum",
+    "owner": "Eigentümer",
+    "started": "Beginn",
+    "ended": "Ende",
+    "duration": "Dauer",
+    "size": "Größe",
+    "no_owner": "—",
+    "not_ended": "Nicht erfasst",
+    "play": "Abspielen",
+    "delete": "Löschen",
+    "deleting": "{name} wird gelöscht",
+    "delete_title": "Diese Aufzeichnung löschen",
+    "delete_description": "Diese Aufzeichnung wird samt ihrem Wiedergabelink vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
+    "search": "Aufzeichnung suchen",
+    "no_recordings": "Keine Aufzeichnung vorhanden",
+    "no_recordings_description": "Eine Aufzeichnung erscheint, sobald eine aufgezeichnete Konferenz verarbeitet wurde, und bleibt so lange, wie die Aufbewahrung erlaubt.",
+    "no_recordings_disabled_description": "Aktivieren Sie die Aufzeichnung in den Einstellungen, damit die nächsten Konferenzen aufgezeichnet werden."
   },
   "about": {
     "title": "Über"
@@ -124,7 +156,10 @@
     "get-name": "Namen lesen",
     "list-backup-repositories": "Backup-Repositorys auflisten",
     "list-backups": "Backups auflisten",
-    "list-installed-modules": "Installierte Module auflisten"
+    "list-installed-modules": "Installierte Module auflisten",
+    "list-recordings": "Aufzeichnungen auflisten",
+    "delete-recording": "Aufzeichnung löschen",
+    "delete-learning-dashboard": "Lernanalyse-Bericht löschen"
   },
   "error": {
     "error": "Fehler",

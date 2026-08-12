@@ -6,36 +6,36 @@
   <cv-grid fullWidth>
     <cv-row>
       <cv-column class="page-title">
-        <h2>{{ $t("analytics.title") }}</h2>
+        <h2>{{ $t("recordings.title") }}</h2>
       </cv-column>
     </cv-row>
-    <cv-row v-if="error.listLearningDashboards">
+    <cv-row v-if="error.listRecordings">
       <cv-column>
         <NsInlineNotification
           kind="error"
-          :title="$t('action.list-learning-dashboards')"
-          :description="error.listLearningDashboards"
+          :title="$t('action.list-recordings')"
+          :description="error.listRecordings"
           :showCloseButton="false"
         />
       </cv-column>
     </cv-row>
     <!-- What the list shows depends on this policy. -->
-    <cv-row v-if="!loading.listLearningDashboards">
+    <cv-row v-if="!loading.listRecordings">
       <cv-column>
         <NsInlineNotification
           :kind="enabled ? 'info' : 'warning'"
           :title="
-            enabled ? $t('analytics.policy') : $t('analytics.policy_disabled')
+            enabled ? $t('recordings.policy') : $t('recordings.policy_disabled')
           "
           :description="
             enabled
               ? maxAgeDays === 0
-                ? $t('analytics.retention_unlimited')
-                : $t('analytics.retention_days', { days: maxAgeDays })
-              : $t('analytics.policy_disabled_description')
+                ? $t('recordings.retention_unlimited')
+                : $t('recordings.retention_days', { days: maxAgeDays })
+              : $t('recordings.policy_disabled_description')
           "
           :showCloseButton="false"
-          :actionLabel="$t('analytics.go_to_settings')"
+          :actionLabel="$t('recordings.go_to_settings')"
           @action="goToAppPage(instanceName, 'settings')"
         />
       </cv-column>
@@ -46,8 +46,8 @@
         <NsButton
           kind="secondary"
           :icon="Renew20"
-          :disabled="loading.listLearningDashboards"
-          @click="listLearningDashboards"
+          :disabled="loading.listRecordings"
+          @click="listRecordings"
           >{{ $t("common.refresh") }}</NsButton
         >
       </cv-column>
@@ -55,32 +55,32 @@
     <cv-row>
       <cv-column>
         <cv-tile light>
-          <div v-if="!loading.listLearningDashboards">
+          <div v-if="!loading.listRecordings">
             <NsEmptyState
-              v-if="!reports.length"
-              :title="$t('analytics.no_reports')"
+              v-if="!recordings.length"
+              :title="$t('recordings.no_recordings')"
             >
               <template #description>
                 {{
                   enabled
-                    ? $t("analytics.no_reports_description")
-                    : $t("analytics.no_reports_disabled_description")
+                    ? $t("recordings.no_recordings_description")
+                    : $t("recordings.no_recordings_disabled_description")
                 }}
               </template>
             </NsEmptyState>
             <NsDataTable
               v-else
-              :allRows="reports"
+              :allRows="recordings"
               :columns="columns"
               :rawColumns="rawColumns"
               :overflow-menu="true"
               :isSearchable="true"
-              :searchPlaceholder="$t('analytics.search')"
+              :searchPlaceholder="$t('recordings.search')"
               :noSearchResultsLabel="core.$t('common.no_search_results')"
               :noSearchResultsDescription="
                 core.$t('common.no_search_results_description')
               "
-              :filterRowsCallback="filterReports"
+              :filterRowsCallback="filterRecordings"
               :itemsPerPageLabel="core.$t('pagination.items_per_page')"
               :rangeOfTotalItemsLabel="
                 core.$t('pagination.range_of_total_items')
@@ -93,40 +93,55 @@
             >
               <template slot="data">
                 <cv-data-table-row
-                  v-for="report in tablePage"
-                  :key="`${report.meeting_id}-${report.token}`"
+                  v-for="recording in tablePage"
+                  :key="recording.meeting_id"
                 >
                   <cv-data-table-cell class="break-word">{{
-                    report.name
+                    recording.name
+                  }}</cv-data-table-cell>
+                  <cv-data-table-cell class="break-word">
+                    <!-- Only the room owner, never a participant. -->
+                    <span v-if="recording.owner_name || recording.owner_email">
+                      {{ recording.owner_name }}
+                      <template v-if="recording.owner_email">
+                        <br />
+                        <span class="owner-email">{{
+                          recording.owner_email
+                        }}</span>
+                      </template>
+                    </span>
+                    <span v-else>{{ $t("recordings.no_owner") }}</span>
+                  </cv-data-table-cell>
+                  <cv-data-table-cell>{{
+                    formatTimestamp(recording.start_time)
                   }}</cv-data-table-cell>
                   <cv-data-table-cell>{{
-                    formatTimestamp(report.created_on)
+                    recording.end_time
+                      ? formatTimestamp(recording.end_time)
+                      : $t("recordings.not_ended")
                   }}</cv-data-table-cell>
                   <cv-data-table-cell>{{
-                    report.ended_on
-                      ? formatTimestamp(report.ended_on)
-                      : $t("analytics.not_ended")
+                    (recording.duration / 1000) | secondsFormat
                   }}</cv-data-table-cell>
                   <cv-data-table-cell>{{
-                    report.participants
+                    recording.size | byteFormat
                   }}</cv-data-table-cell>
                   <cv-data-table-cell class="table-overflow-menu-cell">
                     <cv-overflow-menu flip-menu class="table-overflow-menu">
-                      <!-- Only the menu item carries the token. -->
-                      <cv-overflow-menu-item @click="openReport(report)">
+                      <cv-overflow-menu-item @click="openRecording(recording)">
                         <NsMenuItem
                           :icon="Launch20"
-                          :label="$t('analytics.open_report')"
+                          :label="$t('recordings.play')"
                         />
                       </cv-overflow-menu-item>
                       <NsMenuDivider />
                       <cv-overflow-menu-item
                         danger
-                        @click="showDeleteReportModal(report)"
+                        @click="showDeleteRecordingModal(recording)"
                       >
                         <NsMenuItem
                           :icon="TrashCan20"
-                          :label="$t('analytics.delete')"
+                          :label="$t('recordings.delete')"
                         />
                       </cv-overflow-menu-item>
                     </cv-overflow-menu>
@@ -143,11 +158,11 @@
         </cv-tile>
       </cv-column>
     </cv-row>
-    <DeleteAnalyticsReportModal
-      :visible="isShownDeleteReportModal"
-      :report="reportToDelete"
-      @deleted="onReportDeleted"
-      @hide="isShownDeleteReportModal = false"
+    <DeleteRecordingModal
+      :visible="isShownDeleteRecordingModal"
+      :recording="recordingToDelete"
+      @deleted="onRecordingDeleted"
+      @hide="isShownDeleteRecordingModal = false"
     />
   </cv-grid>
 </template>
@@ -164,11 +179,11 @@ import {
   IconService,
   PageTitleService,
 } from "@nethserver/ns8-ui-lib";
-import DeleteAnalyticsReportModal from "@/components/DeleteAnalyticsReportModal.vue";
+import DeleteRecordingModal from "@/components/DeleteRecordingModal.vue";
 
 export default {
-  name: "LearningAnalytics",
-  components: { DeleteAnalyticsReportModal },
+  name: "Recordings",
+  components: { DeleteRecordingModal },
   mixins: [
     TaskService,
     IconService,
@@ -177,25 +192,25 @@ export default {
     PageTitleService,
   ],
   pageTitle() {
-    return this.$t("analytics.title");
+    return this.$t("recordings.title");
   },
   data() {
     return {
       q: {
-        page: "learning-analytics",
+        page: "recordings",
       },
       urlCheckInterval: null,
       enabled: true,
-      maxAgeDays: 1,
-      reports: [],
+      maxAgeDays: 0,
+      recordings: [],
       tablePage: [],
-      reportToDelete: null,
-      isShownDeleteReportModal: false,
+      recordingToDelete: null,
+      isShownDeleteRecordingModal: false,
       loading: {
-        listLearningDashboards: true,
+        listRecordings: true,
       },
       error: {
-        listLearningDashboards: "",
+        listRecordings: "",
       },
     };
   },
@@ -206,19 +221,29 @@ export default {
     },
     columns() {
       return [
-        this.$t("analytics.meeting"),
-        this.$t("analytics.started"),
-        this.$t("analytics.ended"),
-        this.$t("analytics.participants"),
+        this.$t("recordings.room"),
+        this.$t("recordings.owner"),
+        this.$t("recordings.started"),
+        this.$t("recordings.ended"),
+        this.$t("recordings.duration"),
+        this.$t("recordings.size"),
       ];
     },
     rawColumns() {
+      // duration and size sort on the raw numbers, not on the formatted cells.
       // No entry for the overflow menu: NsDataTable adds that column itself.
-      return ["name", "created_on", "ended_on", "participants"];
+      return [
+        "name",
+        "owner_name",
+        "start_time",
+        "end_time",
+        "duration",
+        "size",
+      ];
     },
   },
   created() {
-    this.listLearningDashboards();
+    this.listRecordings();
   },
   beforeRouteEnter(to, from, next) {
     next((vm) => {
@@ -231,17 +256,19 @@ export default {
     next();
   },
   methods: {
-    // Only on what is displayed: the default would match the URL, token included.
-    filterReports(search) {
+    // Only on what is displayed: the default would match the playback URL too.
+    filterRecordings(search) {
       if (!search) {
-        return this.reports;
+        return this.recordings;
       }
       const needle = search.toLowerCase();
-      return this.reports.filter((report) =>
+      return this.recordings.filter((recording) =>
         [
-          report.name,
-          this.formatTimestamp(report.created_on),
-          report.ended_on ? this.formatTimestamp(report.ended_on) : "",
+          recording.name,
+          recording.owner_name,
+          recording.owner_email,
+          this.formatTimestamp(recording.start_time),
+          recording.end_time ? this.formatTimestamp(recording.end_time) : "",
         ]
           .join(" ")
           .toLowerCase()
@@ -249,38 +276,38 @@ export default {
       );
     },
     formatTimestamp(milliseconds) {
+      // 0 means metadata.xml carried no such time; a 1970 date would read as data.
+      if (!milliseconds) {
+        return "—";
+      }
       return new Date(milliseconds).toLocaleString();
     },
-    openReport(report) {
-      window.open(report.url, "_blank", "noopener");
+    openRecording(recording) {
+      window.open(recording.url, "_blank", "noopener");
     },
-    showDeleteReportModal(report) {
-      this.reportToDelete = report;
-      this.isShownDeleteReportModal = true;
+    showDeleteRecordingModal(recording) {
+      this.recordingToDelete = recording;
+      this.isShownDeleteRecordingModal = true;
     },
-    onReportDeleted(deleted) {
+    onRecordingDeleted(meetingId) {
       // The disk state is already known: refetching would only flash the skeleton.
-      // On the token too: a meeting can hold more than one report directory, and
-      // only the one that was deleted must leave the table.
-      this.reports = this.reports.filter(
-        (report) =>
-          report.meeting_id !== deleted.meeting_id ||
-          report.token !== deleted.token
+      this.recordings = this.recordings.filter(
+        (recording) => recording.meeting_id !== meetingId
       );
     },
-    async listLearningDashboards() {
-      this.loading.listLearningDashboards = true;
-      this.error.listLearningDashboards = "";
-      const taskAction = "list-learning-dashboards";
+    async listRecordings() {
+      this.loading.listRecordings = true;
+      this.error.listRecordings = "";
+      const taskAction = "list-recordings";
       const eventId = this.getUuid();
 
       this.core.$root.$once(
         `${taskAction}-aborted-${eventId}`,
-        this.listLearningDashboardsAborted
+        this.listRecordingsAborted
       );
       this.core.$root.$once(
         `${taskAction}-completed-${eventId}`,
-        this.listLearningDashboardsCompleted
+        this.listRecordingsCompleted
       );
 
       const res = await to(
@@ -296,23 +323,31 @@ export default {
       const err = res[0];
       if (err) {
         console.error(`error creating task ${taskAction}`, err);
-        this.error.listLearningDashboards = this.getErrorMessage(err);
-        this.loading.listLearningDashboards = false;
+        this.error.listRecordings = this.getErrorMessage(err);
+        this.loading.listRecordings = false;
         return;
       }
     },
-    listLearningDashboardsAborted(taskResult, taskContext) {
+    listRecordingsAborted(taskResult, taskContext) {
       console.error(`${taskContext.action} aborted`, taskResult);
-      this.error.listLearningDashboards = this.$t("error.generic_error");
-      this.loading.listLearningDashboards = false;
+      this.error.listRecordings = this.$t("error.generic_error");
+      this.loading.listRecordings = false;
     },
-    listLearningDashboardsCompleted(taskContext, taskResult) {
+    listRecordingsCompleted(taskContext, taskResult) {
       const output = taskResult.output;
       this.enabled = output.enabled;
       this.maxAgeDays = output.max_age_days;
-      this.reports = output.reports;
-      this.loading.listLearningDashboards = false;
+      this.recordings = output.recordings;
+      this.loading.listRecordings = false;
     },
   },
 };
 </script>
+
+<style scoped lang="scss">
+@import "../styles/carbon-utils";
+
+.owner-email {
+  color: $text-02;
+}
+</style>

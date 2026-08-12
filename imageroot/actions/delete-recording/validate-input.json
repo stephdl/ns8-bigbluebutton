@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Delete a recording",
+    "$id": "http://nethserver.org/json-schema/task/input/bigbluebutton/delete-recording",
+    "description": "Delete one recording: the Greenlight row and, through bbb-record, the files",
+    "examples": [
+        {
+            "meeting_id": "41680de9e2a596b6927cd05d598993c4e44b32f6-1786374689010"
+        }
+    ],
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "meeting_id"
+    ],
+    "properties": {
+        "meeting_id": {
+            "type": "string",
+            "title": "Internal meeting identifier",
+            "description": "The SHA-1 of the external identifier, a dash, and the start time in milliseconds. Also Greenlight's recordings.record_id. The pattern is the guard: this value reaches a podman exec argument and a SQL statement.",
+            "pattern": "^[0-9a-f]{40}-[0-9]+$"
+        }
+    }
+}

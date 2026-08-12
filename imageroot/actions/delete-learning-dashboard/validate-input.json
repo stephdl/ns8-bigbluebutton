@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Delete a learning analytics report",
+    "$id": "http://nethserver.org/json-schema/task/input/bigbluebutton/delete-learning-dashboard",
+    "description": "Delete one report, identified by the two directory levels list-learning-dashboards reads",
+    "examples": [
+        {
+            "meeting_id": "75bc5c9a7a343f2606894c7f4e947a09e6268f1d-1785851324500",
+            "token": "hc6remamehdd"
+        }
+    ],
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "meeting_id",
+        "token"
+    ],
+    "properties": {
+        "meeting_id": {
+            "type": "string",
+            "title": "Internal meeting identifier",
+            "description": "The SHA-1 of the external identifier, a dash, and the start time in milliseconds.",
+            "pattern": "^[0-9a-f]{40}-[0-9]+$"
+        },
+        "token": {
+            "type": "string",
+            "title": "Report access token",
+            "description": "The directory the report lives in. Both patterns are the guard: these values are joined into a path that gets removed recursively.",
+            "pattern": "^[A-Za-z0-9_-]+$"
+        }
+    }
+}

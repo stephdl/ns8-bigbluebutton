@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# The published recordings still on disk, with a playback link and the Greenlight
+# room owner for each.
+#
+# Read from the host: the files are world-readable under a subuid.
+#
+# The only identity here is the room owner. events.xml, where the participant names
+# are, is never opened.
+#
+
+import os
+import sys
+import json
+import glob
+import subprocess
+import xml.etree.ElementTree as ET
+from urllib.parse import urlsplit
+
+import agent
+
+# greenlight_db lives in bin/, which is not on PYTHONPATH for an action.
+sys.path.insert(0, os.path.join(os.environ["AGENT_INSTALL_DIR"], "bin"))
+import greenlight_db  # noqa: E402
+
+host = os.getenv("TRAEFIK_HOST", "")
+enabled = os.getenv("ENABLE_RECORDING", "true") == "true"
+max_age_days = int(os.getenv("RECORDING_MAX_AGE_DAYS", "0"))
+
+
+def room_owners():
+    """Map a Greenlight room meeting_id to its owner name and email.
+
+    The whole table at once, so no filesystem value is interpolated into the SQL.
+    """
+    query = """SELECT coalesce(json_agg(json_build_object(
+                   'meeting_id', r.meeting_id, 'name', u.name, 'email', u.email)), '[]'::json)
+               FROM rooms r LEFT JOIN users u ON u.id = r.user_id"""
+    try:
+        result = greenlight_db.psql(query)
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip())
+        rows = json.loads(result.stdout.strip())
+    except Exception as ex:
+        # An unreachable database costs the owner column, not the whole list.
+        print(agent.SD_WARNING + f"cannot read the room owners: {ex}", file=sys.stderr)
+        return {}
+
+    return {
+        row["meeting_id"]: (row.get("name") or "", row.get("email") or "")
+        for row in rows if row.get("meeting_id")
+    }
+
+
+def text_of(recording, path, default=""):
+    element = recording.find(path)
+    return element.text.strip() if element is not None and element.text else default
+
+
+def int_of(recording, path):
+    try:
+        return int(text_of(recording, path, "0"))
+    except ValueError:
+        return 0
+
+
+def directory_size(directory):
+    total = 0
+    for dirpath, _, filenames in os.walk(directory):
+        for filename in filenames:
+            try:
+                total += os.path.getsize(os.path.join(dirpath, filename))
+            except OSError:
+                continue
+    return total
+
+
+def playback_url(recording, meeting_id):
+    """Re-host the published link, whose host was frozen at publication time.
+
+    Keeping its path follows the player version upstream moves; the fallback below
+    hardcodes one and will rot, but a published recording always carries a link.
+    """
+    link = text_of(recording, "playback/link")
+    path = urlsplit(link).path if link else ""
+    if not path:
+        path = f"/playback/presentation/2.3/{meeting_id}"
+    return f"https://{host}{path}"
+
+
+probe = subprocess.run(
+    ["podman", "volume", "inspect", "bigbluebutton", "--format", "{{.Mountpoint}}"],
+    capture_output=True, text=True,
+)
+volume = probe.stdout.strip()
+
+# Not fatal: an empty list is a legitimate answer, and asserting would break the page
+# on an instance whose pod has never started. Say why in the journal instead.
+if not volume:
+    print(agent.SD_WARNING + "cannot resolve the bigbluebutton volume, reporting no "
+          f"recordings: {probe.stderr.strip()}", file=sys.stderr)
+
+owners = room_owners() if volume else {}
+
+recordings = []
+for path in glob.glob(os.path.join(volume, "published", "presentation", "*",
+                                   "metadata.xml")) if volume else []:
+    directory = os.path.dirname(path)
+    meeting_id = os.path.basename(directory)
+    try:
+        recording = ET.parse(path).getroot()
+    except Exception as ex:
+        print(agent.SD_WARNING + f"skipping {path}: {ex}", file=sys.stderr)
+        continue
+
+    meeting = recording.find("meeting")
+    name = text_of(recording, "meta/meetingName")
+    external_id = text_of(recording, "meta/meetingId")
+    if meeting is not None:
+        name = name or meeting.get("name", "")
+        external_id = external_id or meeting.get("externalId", "")
+
+    owner_name, owner_email = owners.get(external_id, ("", ""))
+
+    size = int_of(recording, "playback/size")
+
+    recordings.append({
+        "meeting_id": meeting_id,
+        "name": name,
+        "owner_name": owner_name,
+        "owner_email": owner_email,
+        "start_time": int_of(recording, "start_time"),
+        "end_time": int_of(recording, "end_time"),
+        "duration": int_of(recording, "playback/duration"),
+        "size": size or directory_size(directory),
+        "url": playback_url(recording, meeting_id),
+    })
+
+recordings.sort(key=lambda recording: recording["start_time"], reverse=True)
+
+json.dump({
+    "enabled": enabled,
+    "max_age_days": max_age_days,
+    "recordings": recordings,
+}, fp=sys.stdout)

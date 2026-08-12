@@ -2,7 +2,9 @@
   "common": {
     "required": "Required",
     "work_in_progress": "Work in progress",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "refresh": "Refresh",
+    "type_start_date_to_confirm": "Type the start date, {date}, to confirm the deletion"
   },
   "status": {
     "title": "Status",
@@ -90,7 +92,7 @@
     "open_bigbluebutton": "Open BigBlueButton"
   },
   "analytics": {
-    "title": "Learning analytics",
+    "title": "Analytics",
     "policy": "Reports of past meetings",
     "retention_days": "Kept for {days} days after the meeting ends, then deleted by the maintenance job.",
     "retention_unlimited": "Kept indefinitely.",
@@ -106,7 +108,37 @@
     "search": "Search a meeting",
     "no_reports": "No report available",
     "no_reports_description": "A report appears once a meeting has been held, and stays for as long as the retention allows.",
-    "no_reports_disabled_description": "Enable the learning dashboard in Settings for the next meetings to be reported."
+    "no_reports_disabled_description": "Enable the learning dashboard in Settings for the next meetings to be reported.",
+    "delete": "Delete",
+    "deleting": "Deleting {name}",
+    "delete_title": "Delete this report",
+    "delete_description": "This learning analytics report is deleted from the server. This cannot be undone."
+  },
+  "recordings": {
+    "title": "Recordings",
+    "policy": "Recordings of past meetings",
+    "retention_days": "Kept for {days} days after the meeting ends, then deleted by the maintenance job.",
+    "retention_unlimited": "Kept indefinitely.",
+    "policy_disabled": "Recording is disabled",
+    "policy_disabled_description": "No new recording is produced. The ones below, if any, are deleted when their retention runs out.",
+    "go_to_settings": "Change in Settings",
+    "room": "Room",
+    "owner": "Owner",
+    "started": "Started",
+    "ended": "Ended",
+    "duration": "Duration",
+    "size": "Size",
+    "no_owner": "—",
+    "not_ended": "Not recorded",
+    "play": "Play",
+    "delete": "Delete",
+    "deleting": "Deleting {name}",
+    "delete_title": "Delete this recording",
+    "delete_description": "This recording is deleted from the server, along with its playback link. This cannot be undone.",
+    "search": "Search a recording",
+    "no_recordings": "No recording available",
+    "no_recordings_description": "A recording appears once a recorded meeting has been processed, and stays for as long as the retention allows.",
+    "no_recordings_disabled_description": "Enable recording in Settings for the next meetings to be recorded."
   },
   "about": {
     "title": "About"
@@ -124,7 +156,10 @@
     "get-name": "Get name",
     "list-backup-repositories": "List backup repositories",
     "list-backups": "List backups",
-    "list-installed-modules": "List installed modules"
+    "list-installed-modules": "List installed modules",
+    "list-recordings": "List recordings",
+    "delete-recording": "Delete recording",
+    "delete-learning-dashboard": "Delete learning analytics report"
   },
   "error": {
     "error": "Error",

@@ -10,6 +10,7 @@
             "reports": [
                 {
                     "meeting_id": "75bc5c9a7a343f2606894c7f4e947a09e6268f1d-1785851324500",
+                    "token": "hc6remamehdd",
                     "name": "Maths, group B",
                     "created_on": 1785851324500,
                     "ended_on": 1785853104000,
@@ -45,6 +46,7 @@
                 "type": "object",
                 "required": [
                     "meeting_id",
+                    "token",
                     "name",
                     "created_on",
                     "ended_on",
@@ -56,6 +58,11 @@
                     "meeting_id": {
                         "type": "string",
                         "title": "Internal meeting identifier"
+                    },
+                    "token": {
+                        "type": "string",
+                        "title": "Report access token",
+                        "description": "Also the directory the report lives in, so it identifies the report to delete-learning-dashboard. Holding it grants access to the report, same caveat as url."
                     },
                     "name": {
                         "type": "string",

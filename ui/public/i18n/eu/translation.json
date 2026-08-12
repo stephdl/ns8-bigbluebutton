@@ -2,7 +2,9 @@
   "common": {
     "required": "Beharrezkoa",
     "work_in_progress": "Lanak martxan",
-    "processing": "Prozesatzen..."
+    "processing": "Prozesatzen...",
+    "refresh": "Freskatu",
+    "type_start_date_to_confirm": "Idatzi hasiera-data, {date}, ezabaketa berresteko"
   },
   "status": {
     "title": "Egoera",
@@ -90,7 +92,7 @@
     "open_bigbluebutton": "Ireki BigBlueButton"
   },
   "analytics": {
-    "title": "Ikaskuntzaren analisia",
+    "title": "Analisia",
     "policy": "Iraganeko bileren txostenak",
     "retention_days": "Bilera amaitu eta {days} egunez gordetzen dira, gero mantentze-lanak ezabatzen ditu.",
     "retention_unlimited": "Betirako gordetzen dira.",
@@ -106,7 +108,37 @@
     "search": "Bilatu bilera bat",
     "no_reports": "Ez dago txostenik",
     "no_reports_description": "Txosten bat bilera egin ondoren agertzen da, eta gordetze-epeak uzten duen bitartean irauten du.",
-    "no_reports_disabled_description": "Gaitu panela ezarpenetan hurrengo bilerak erregistra daitezen."
+    "no_reports_disabled_description": "Gaitu panela ezarpenetan hurrengo bilerak erregistra daitezen.",
+    "delete": "Ezabatu",
+    "deleting": "{name} ezabatzen",
+    "delete_title": "Ezabatu txosten hau",
+    "delete_description": "Ikaskuntzaren analisiaren txosten hau zerbitzaritik ezabatuko da. Ekintza hau ezin da desegin."
+  },
+  "recordings": {
+    "title": "Grabaketak",
+    "policy": "Iraganeko bileren grabaketak",
+    "retention_days": "Bilera amaitu eta {days} egunez gordetzen dira, gero mantentze-lanak ezabatzen ditu.",
+    "retention_unlimited": "Betirako gordetzen dira.",
+    "policy_disabled": "Grabaketa desgaituta dago",
+    "policy_disabled_description": "Ez da grabaketa berririk sortzen. Behekoak, baldin badaude, gordetze-epea agortzean ezabatuko dira.",
+    "go_to_settings": "Aldatu ezarpenetan",
+    "room": "Gela",
+    "owner": "Jabea",
+    "started": "Hasiera",
+    "ended": "Amaiera",
+    "duration": "Iraupena",
+    "size": "Tamaina",
+    "no_owner": "—",
+    "not_ended": "Ez erregistratuta",
+    "play": "Erreproduzitu",
+    "delete": "Ezabatu",
+    "deleting": "{name} ezabatzen",
+    "delete_title": "Ezabatu grabaketa hau",
+    "delete_description": "Grabaketa hau zerbitzaritik ezabatuko da, bere erreprodukzio-estekarekin batera. Ekintza hau ezin da desegin.",
+    "search": "Bilatu grabaketa bat",
+    "no_recordings": "Ez dago grabaketarik",
+    "no_recordings_description": "Grabaketa bat grabatutako bilera prozesatu ondoren agertzen da, eta gordetze-epeak uzten duen bitartean irauten du.",
+    "no_recordings_disabled_description": "Gaitu grabaketa ezarpenetan hurrengo bilerak graba daitezen."
   },
   "about": {
     "title": "Honi buruz"
@@ -124,7 +156,10 @@
     "get-name": "Irakurri izena",
     "list-backup-repositories": "Zerrendatu babeskopien biltegiak",
     "list-backups": "Zerrendatu babeskopiak",
-    "list-installed-modules": "Zerrendatu instalatutako moduluak"
+    "list-installed-modules": "Zerrendatu instalatutako moduluak",
+    "list-recordings": "Zerrendatu grabaketak",
+    "delete-recording": "Ezabatu grabaketa",
+    "delete-learning-dashboard": "Ezabatu ikaskuntzaren analisiaren txostena"
   },
   "error": {
     "error": "Errorea",

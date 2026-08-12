@@ -36,6 +36,13 @@
         <span>{{ $t("analytics.title") }}</span>
       </cv-side-nav-link>
       <cv-side-nav-link
+        @click="goToAppPage(instanceName, 'recordings')"
+        :class="{ 'current-page': isLinkActive('recordings') }"
+      >
+        <template v-slot:nav-icon><VideoPlayer20 /></template>
+        <span>{{ $t("recordings.title") }}</span>
+      </cv-side-nav-link>
+      <cv-side-nav-link
         @click="goToAppPage(instanceName, 'about')"
         :class="{ 'current-page': isLinkActive('about') }"
       >
@@ -51,6 +58,7 @@ import Settings20 from "@carbon/icons-vue/es/settings/20";
 import Information20 from "@carbon/icons-vue/es/information/20";
 import Activity20 from "@carbon/icons-vue/es/activity/20";
 import Analytics20 from "@carbon/icons-vue/es/analytics/20";
+import VideoPlayer20 from "@carbon/icons-vue/es/video-player/20";
 import { mapState } from "vuex";
 import { QueryParamService, UtilService } from "@nethserver/ns8-ui-lib";
 
@@ -61,6 +69,7 @@ export default {
     Information20,
     Activity20,
     Analytics20,
+    VideoPlayer20,
   },
   mixins: [QueryParamService, UtilService],
   data() {

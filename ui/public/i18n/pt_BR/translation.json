@@ -2,7 +2,9 @@
   "common": {
     "required": "Obrigatório",
     "work_in_progress": "Em andamento",
-    "processing": "Processando..."
+    "processing": "Processando...",
+    "refresh": "Atualizar",
+    "type_start_date_to_confirm": "Digite a data de início, {date}, para confirmar a exclusão"
   },
   "status": {
     "title": "Estado",
@@ -90,7 +92,7 @@
     "open_bigbluebutton": "Abrir o BigBlueButton"
   },
   "analytics": {
-    "title": "Análise de aprendizagem",
+    "title": "Análises",
     "policy": "Relatórios de reuniões anteriores",
     "retention_days": "Mantidos {days} dias após o fim da reunião e depois excluídos pela tarefa de manutenção.",
     "retention_unlimited": "Mantidos indefinidamente.",
@@ -106,7 +108,37 @@
     "search": "Procurar uma reunião",
     "no_reports": "Nenhum relatório disponível",
     "no_reports_description": "Um relatório aparece depois de uma reunião e permanece pelo tempo que a retenção permitir.",
-    "no_reports_disabled_description": "Ative o painel nas configurações para que as próximas reuniões sejam registradas."
+    "no_reports_disabled_description": "Ative o painel nas configurações para que as próximas reuniões sejam registradas.",
+    "delete": "Excluir",
+    "deleting": "Excluindo {name}",
+    "delete_title": "Excluir este relatório",
+    "delete_description": "Este relatório de análise de aprendizagem será excluído do servidor. Esta ação não pode ser desfeita."
+  },
+  "recordings": {
+    "title": "Gravações",
+    "policy": "Gravações de reuniões anteriores",
+    "retention_days": "Mantidas {days} dias após o fim da reunião e depois excluídas pela tarefa de manutenção.",
+    "retention_unlimited": "Mantidas indefinidamente.",
+    "policy_disabled": "A gravação está desativada",
+    "policy_disabled_description": "Nenhuma gravação nova é produzida. As abaixo, se houver, são excluídas quando a retenção terminar.",
+    "go_to_settings": "Alterar nas configurações",
+    "room": "Sala",
+    "owner": "Proprietário",
+    "started": "Início",
+    "ended": "Fim",
+    "duration": "Duração",
+    "size": "Tamanho",
+    "no_owner": "—",
+    "not_ended": "Não registrada",
+    "play": "Reproduzir",
+    "delete": "Excluir",
+    "deleting": "Excluindo {name}",
+    "delete_title": "Excluir esta gravação",
+    "delete_description": "Esta gravação será excluída do servidor, junto com seu link de reprodução. Esta ação não pode ser desfeita.",
+    "search": "Procurar uma gravação",
+    "no_recordings": "Nenhuma gravação disponível",
+    "no_recordings_description": "Uma gravação aparece depois que uma reunião gravada é processada e permanece pelo tempo que a retenção permitir.",
+    "no_recordings_disabled_description": "Ative a gravação nas configurações para que as próximas reuniões sejam gravadas."
   },
   "about": {
     "title": "Sobre"
@@ -124,7 +156,10 @@
     "get-name": "Ler o nome",
     "list-backup-repositories": "Listar os repositórios de backup",
     "list-backups": "Listar os backups",
-    "list-installed-modules": "Listar os módulos instalados"
+    "list-installed-modules": "Listar os módulos instalados",
+    "list-recordings": "Listar as gravações",
+    "delete-recording": "Excluir a gravação",
+    "delete-learning-dashboard": "Excluir o relatório de análise de aprendizagem"
   },
   "error": {
     "error": "Erro",

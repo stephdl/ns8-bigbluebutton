@@ -43,6 +43,7 @@ for path in glob.glob(os.path.join(volume, "learning-dashboard", "*", "*",
 
     reports.append({
         "meeting_id": meeting_id,
+        "token": token,
         "name": data.get("name", ""),
         "created_on": data.get("createdOn", 0),
         "ended_on": data.get("endedOn", 0),
