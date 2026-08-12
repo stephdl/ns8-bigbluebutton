@@ -265,20 +265,18 @@ module user out costs the presentation — the render falls back to the bundled 
 with a warning in the journal — and, less visibly, the backup: restic runs as the
 module user too.
 
-Then apply it by running `configure-module` again with the current configuration,
-as shown above. **That restarts every unit, so any meeting in progress ends.**
+Then restart the module to apply it:
 
-Do not reach for `systemctl --user restart bigbluebutton` instead. systemd does
-not cascade a restart from the pod unit to the containers that joined it, and the
-unit removes the pod when it stops, so that command takes BigBlueButton down
-rather than restarting it. `configure-module` is the only supported way to apply
-this, because it names every unit.
+    runagent -m bigbluebutton1 systemctl --user restart bigbluebutton
+
+> **Warning:** this ends every meeting in progress. Participants are
+> disconnected without notice. Pick a quiet moment.
 
 Only meetings created afterwards use the new file.
 
 A file that is not a PDF is refused, with a warning in
 `journalctl --user -u bigbluebutton`, and the bundled one stays in use rather
-than every room breaking at once. Delete `state/custom/default.pdf` and configure
+than every room breaking at once. Delete `state/custom/default.pdf` and restart
 again to go back to it. The file is backed up and comes back on restore.
 
 Editing `state/overrides/default.pdf` directly does not work: that directory is
