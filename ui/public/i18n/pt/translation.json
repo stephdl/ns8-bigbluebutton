@@ -2,7 +2,8 @@
   "common": {
     "required": "Obrigatório",
     "work_in_progress": "Em curso",
-    "processing": "A processar..."
+    "processing": "A processar...",
+    "refresh": "Atualizar"
   },
   "status": {
     "title": "Estado",

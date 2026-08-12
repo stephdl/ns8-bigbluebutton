@@ -2,7 +2,8 @@
   "common": {
     "required": "Obligatoire",
     "work_in_progress": "En cours",
-    "processing": "Traitement en cours..."
+    "processing": "Traitement en cours...",
+    "refresh": "Actualiser"
   },
   "status": {
     "title": "État",

@@ -2,7 +2,8 @@
   "common": {
     "required": "Beharrezkoa",
     "work_in_progress": "Lanak martxan",
-    "processing": "Prozesatzen..."
+    "processing": "Prozesatzen...",
+    "refresh": "Freskatu"
   },
   "status": {
     "title": "Egoera",

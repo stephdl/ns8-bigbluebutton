@@ -40,6 +40,18 @@
         />
       </cv-column>
     </cv-row>
+    <!-- Outside the tile, so refreshing stays reachable while the skeleton shows. -->
+    <cv-row class="toolbar">
+      <cv-column>
+        <NsButton
+          kind="ghost"
+          :icon="Renew20"
+          :disabled="loading.listLearningDashboards"
+          @click="listLearningDashboards"
+          >{{ $t("common.refresh") }}</NsButton
+        >
+      </cv-column>
+    </cv-row>
     <cv-row>
       <cv-column>
         <cv-tile light>
@@ -143,6 +155,8 @@
 <script>
 import to from "await-to-js";
 import { mapState } from "vuex";
+// Not in IconService.
+import RenewIcon from "@carbon/icons-vue/es/renew/20";
 import {
   QueryParamService,
   UtilService,
@@ -187,6 +201,9 @@ export default {
   },
   computed: {
     ...mapState(["instanceName", "core", "appName"]),
+    Renew20() {
+      return RenewIcon;
+    },
     columns() {
       return [
         this.$t("analytics.meeting"),
