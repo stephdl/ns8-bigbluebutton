@@ -11,6 +11,7 @@
 #
 
 import datetime
+import filecmp
 import os
 import shutil
 import sys
@@ -53,8 +54,43 @@ ENTRYPOINTS = (
     "bbb-web-entrypoint.sh",
 )
 
-for name in VERBATIM + ENTRYPOINTS:
-    shutil.copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
+
+def warn_overwrite(name, differs):
+    """Say so when the render is about to drop a hand-made edit.
+
+    Every caller rewrites unconditionally, which is what keeps the tree
+    self-healing, but an administrator who patches an entrypoint to work around
+    something loses it at the next start with no other clue why. Callers pass a
+    short-circuited expression: on the first render there is nothing to compare.
+    """
+    if differs:
+        print(agent.SD_WARNING + f"overwriting locally modified {name}", file=sys.stderr)
+
+
+# A PDF dropped here by the administrator wins over the one shipped in the image.
+custom_pdf = os.path.join(state_dir, "custom", "default.pdf")
+sources = {name: os.path.join(src_dir, name) for name in VERBATIM + ENTRYPOINTS}
+if os.path.isfile(custom_pdf):
+    try:
+        with open(custom_pdf, "rb") as fp:
+            is_pdf = fp.read(4) == b"%PDF"
+    except OSError as ex:
+        print(agent.SD_WARNING + f"could not read {custom_pdf}: {ex}", file=sys.stderr)
+        is_pdf = False
+    if is_pdf:
+        sources["default.pdf"] = custom_pdf
+    else:
+        # Falling back keeps every room opening on something: bbb-web serves this
+        # as the first slide, and a rejected file would break all of them at once.
+        print(agent.SD_WARNING + f"{custom_pdf} is not a PDF, keeping the bundled one",
+              file=sys.stderr)
+
+# Compared against the source actually chosen above, so a custom PDF is not
+# reported as a local modification on every start.
+for name, src in sources.items():
+    dst = os.path.join(dst_dir, name)
+    warn_overwrite(name, os.path.exists(dst) and not filecmp.cmp(src, dst, shallow=False))
+    shutil.copyfile(src, dst)
 
 for name in ENTRYPOINTS:
     os.chmod(os.path.join(dst_dir, name), 0o755)
@@ -73,7 +109,9 @@ for name in ("webrtc-sfu-config.yaml", "nginx.conf"):
     for key, value in placeholders.items():
         content = content.replace(key, str(value))
     agent.assert_exp("@@" not in content, f"unsubstituted placeholder in {name}")
-    with open(os.path.join(dst_dir, name), "w") as fp:
+    dst = os.path.join(dst_dir, name)
+    warn_overwrite(name, os.path.exists(dst) and open(dst).read() != content)
+    with open(dst, "w") as fp:
         fp.write(content)
 
 # A file rather than podman --env: DATABASE_URL embeds a password ps would show.

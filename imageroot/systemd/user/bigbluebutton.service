@@ -32,6 +32,11 @@ EnvironmentFile=%S/state/environment
 Restart=always
 TimeoutStopSec=90
 ExecStartPre=/bin/rm -f %t/bigbluebutton.pid %t/bigbluebutton.pod-id
+# Where the administrator drops files of their own, today a default.pdf. Created
+# here rather than by render-overrides so the directory exists even if the render
+# never runs: state-include.conf backs it up, and restic reads that list on its
+# own schedule.
+ExecStartPre=/bin/mkdir -pv %S/state/custom
 # Render state/overrides/ before anything mounts from it: podman answers a missing
 # bind mount source by creating a directory, and an entrypoint mounted that way
 # crash-loops. Every container is After= this unit, so do not drop that ordering.
