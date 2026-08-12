@@ -253,47 +253,36 @@ deleting it once you have your own does not bring it back.
 
 ## Custom default presentation
 
-Every room opens on `default.pdf`, and tldraw only draws over a presentation, so
-there is always one. The module ships its own. To serve yours instead, drop it in
-`state/custom/`, where it must be named exactly `default.pdf`:
+Every room opens on `default.pdf`. The module ships one; put yours in
+`state/custom/`, under that exact name, to serve it instead. The directory is
+created when the module starts.
 
     runagent -m bigbluebutton1
     cp /path/to/yours.pdf state/custom/default.pdf
 
-The directory is created when the module starts, so it is already there.
-
-**The file must belong to the module user.** Copying it in as `root` leaves it
-owned by `root`, and the module only ever reads it. A mode that keeps the module
-user out means the render falls back to the bundled presentation with a warning
-in the journal, and, worse, restic cannot read the file either, so the backup
-fails on it. If you copied it as `root`, hand it back:
+The module only reads this file, so a copy made as `root` is fine as long as the
+module user can read it. If not, the render falls back to the bundled
+presentation with a warning in the journal, and restic fails on the file it
+cannot read. Give it back when in doubt:
 
     chown bigbluebutton1:bigbluebutton1 /home/bigbluebutton1/.config/state/custom/default.pdf
     chmod 644 /home/bigbluebutton1/.config/state/custom/default.pdf
 
-Then apply it by running `configure-module` again with the current configuration,
-as shown above. That renders `state/overrides/` and restarts every unit.
+Apply it by running `configure-module` again with the current configuration, as
+shown above. **That restarts every unit, so any meeting in progress ends.** Do
+not use `systemctl --user restart bigbluebutton` instead: systemd does not
+cascade a restart from the pod unit to the containers that joined it, so it takes
+BigBlueButton down rather than restarting it. Only meetings created afterwards
+use the new file.
 
-**This interrupts the service.** `configure-module` restarts every unit, so any
-meeting in progress ends. Do not reach for
-`systemctl --user restart bigbluebutton` instead: systemd does not cascade a
-restart from the pod unit to the containers that joined it, so that command takes
-BigBlueButton down rather than restarting it.
+A file that is not a PDF is refused, with a warning in
+`journalctl --user -u bigbluebutton`, and the bundled one stays in use rather
+than every room breaking at once. Delete `state/custom/default.pdf` and configure
+again to go back to it. The file is backed up and comes back on restore.
 
-Only meetings created afterwards use the new file: bbb-web fetches the URL when
-the meeting starts.
-
-The file must really be a PDF. A file that is not one is refused, with a warning
-in `journalctl --user -u bigbluebutton`, and the bundled presentation stays in
-use rather than every room breaking at once.
-
-Delete `state/custom/default.pdf` and run `configure-module` again to go back to
-the bundled one. The file is included in the backup and comes back on restore.
-
-Editing `state/overrides/default.pdf` directly does not work: everything in that
-directory is re-rendered at every module start, from the image or from
-`state/custom/`. Since this version the render logs a warning naming any file
-whose local modifications it overwrites, so a hand-made edit no longer disappears
+Editing `state/overrides/default.pdf` directly does not work: that directory is
+re-rendered at every module start. The render now warns when it overwrites a file
+that changed since it last wrote it, so a hand-made edit no longer disappears
 silently.
 
 ## Get the configuration
