@@ -7,6 +7,9 @@ compose stack.
 Seventeen containers, a mediasoup SFU and a FreeSWITCH audio mixer, running
 rootless under podman, with Greenlight as the front end.
 
+A detailed gap analysis of what the port required, with references into the
+upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md).
+
 ## Requirements
 
 - **One instance per node.** The module is labelled `max-per-node=1`. It asks
