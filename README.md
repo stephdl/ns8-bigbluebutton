@@ -259,28 +259,25 @@ there is always one. The module ships its own. To serve yours instead, drop it i
 
     runagent -m bigbluebutton1
     cp /path/to/yours.pdf state/custom/default.pdf
-    render-overrides
+    systemctl --user restart bigbluebutton
 
 The directory is created when the module starts, so it is already there. The
-`render-overrides` call is what picks the file up; it also runs on its own at
-every module start and on every `configure-module`.
-
-No restart is needed. `state/overrides/default.pdf` is bind-mounted file by file
-into the nginx container and rewritten in place, so the mount stays valid and the
-new content is served immediately. Only meetings created from then on use it:
-bbb-web fetches the URL when the meeting starts.
+restart is what picks the file up: rendering `state/overrides/` is the unit's own
+`ExecStartPre`. Only meetings created from then on use it, since bbb-web fetches
+the URL when the meeting starts.
 
 The file must really be a PDF. A file that is not one is refused, with a warning
 in `journalctl --user -u bigbluebutton`, and the bundled presentation stays in
 use rather than every room breaking at once.
 
-Delete `state/custom/default.pdf` and run `render-overrides` again to go back to
-the bundled one. The file is included in the backup and comes back on restore.
+Delete `state/custom/default.pdf` and restart again to go back to the bundled
+one. The file is included in the backup and comes back on restore.
 
 Editing `state/overrides/default.pdf` directly does not work: everything in that
-directory is re-rendered from the image at every module start. Since this version
-the render logs a warning naming any file whose local modifications it overwrites,
-so a hand-made edit no longer disappears silently.
+directory is re-rendered at every module start, from the image or from
+`state/custom/`. Since this version the render logs a warning naming any file
+whose local modifications it overwrites, so a hand-made edit no longer disappears
+silently.
 
 ## Get the configuration
 
