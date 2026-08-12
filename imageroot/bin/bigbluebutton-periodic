@@ -84,8 +84,9 @@ fi
 #
 # 5. Delete recordings past their retention
 #
-# Through bbb-record: removing the directories directly would leave the database
-# and the published tree inconsistent.
+# Two databases know about a recording. BigBlueButton's own, which is why the files go
+# through bbb-record rather than a plain rm, and Greenlight's, which keeps a row of its
+# own -- see bin/delete-greenlight-recording.
 #
 if [ "${ENABLE_RECORDING}" != "true" ]; then
     exit 0
@@ -102,6 +103,12 @@ if ! podman container exists recordings-app; then
     exit 0
 fi
 
+# Deleting the files while Greenlight's rows cannot be touched is what strands them.
+if ! podman container exists postgres-app; then
+    echo "bigbluebutton-periodic: PostgreSQL is not running, skipping recording cleanup"
+    exit 0
+fi
+
 NOW=$(date +%s)
 shopt -s nullglob
 
@@ -109,6 +116,13 @@ delete_if_expired() {
     local mtime="$1" meeting_id="$2"
     if [ $(( (NOW - mtime) / 86400 )) -gt "${RECORDING_MAX_AGE_DAYS}" ]; then
         echo "bigbluebutton-periodic: deleting recording ${meeting_id}"
+        # Before the files, and give up on this one if it fails: a recording still
+        # whole is retried next run, where files without their row leave Greenlight
+        # listing a recording nothing can delete.
+        if ! delete-greenlight-recording "${meeting_id}"; then
+            echo "bigbluebutton-periodic: keeping ${meeting_id}, its Greenlight row is still there"
+            return
+        fi
         podman exec recordings-app bbb-record --delete "${meeting_id}" \
             || echo "bigbluebutton-periodic: failed to delete ${meeting_id}"
     fi
