@@ -298,6 +298,23 @@
                       $t("settings.enabled")
                     }}</template>
                   </NsToggle>
+                  <NsToggle
+                    value="showPresentationOnJoin"
+                    :label="$t('settings.show_presentation_on_join')"
+                    v-model="isPresentationShownOnJoin"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.show_presentation_on_join_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
 
                   <h4 class="mg-bottom">{{ $t("settings.media") }}</h4>
                   <NsComboBox
@@ -544,6 +561,7 @@ export default {
       isLearningDashboardEnabled: true,
       areExternalVideosEnabled: true,
       areBreakoutRoomsEnabled: true,
+      isPresentationShownOnJoin: true,
       learningDashboardMaxAgeDays: 0,
       retentionSliderValue: "7",
       recordingMaxAgeDays: 0,
@@ -788,6 +806,7 @@ export default {
       this.isLearningDashboardEnabled = config.enable_learning_dashboard;
       this.areExternalVideosEnabled = config.enable_external_videos;
       this.areBreakoutRoomsEnabled = config.enable_breakout_rooms;
+      this.isPresentationShownOnJoin = config.show_presentation_on_join;
       this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
       // 0 is the unlimited radio, so the slider keeps the last limited value.
       this.retentionSliderValue = String(
@@ -909,6 +928,7 @@ export default {
             enable_learning_dashboard: this.isLearningDashboardEnabled,
             enable_external_videos: this.areExternalVideosEnabled,
             enable_breakout_rooms: this.areBreakoutRoomsEnabled,
+            show_presentation_on_join: this.isPresentationShownOnJoin,
             learning_dashboard_max_age_days: this.learningDashboardMaxAgeDays,
             recording_max_age_days: this.recordingMaxAgeDays,
             sounds_language: this.soundsLanguage,

@@ -73,6 +73,8 @@
     "enable_external_videos_tooltip": "A moderator can play a YouTube or media URL in sync for everyone. The server relays nothing, but every participant's browser fetches it from the third party.",
     "enable_breakout_rooms": "Allow breakout rooms",
     "enable_breakout_rooms_tooltip": "Each breakout room is a full meeting of its own, with its own audio conference, so a split multiplies what this node carries.",
+    "show_presentation_on_join": "Open the presentation on join",
+    "show_presentation_on_join_tooltip": "Every room gets a default presentation, which is also the surface the whiteboard draws over, so it is always loaded. This only decides whether its panel is open when a participant joins, or minimized until someone restores it.",
     "learning_dashboard_max_age_days": "Keep the reports for",
     "days": "days",
     "retention_limited": "Delete after",

@@ -15,6 +15,7 @@
             "enable_learning_dashboard": true,
             "enable_external_videos": true,
             "enable_breakout_rooms": true,
+            "show_presentation_on_join": true,
             "learning_dashboard_max_age_days": 7,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
@@ -35,6 +36,7 @@
         "enable_learning_dashboard",
         "enable_external_videos",
         "enable_breakout_rooms",
+        "show_presentation_on_join",
         "learning_dashboard_max_age_days",
         "sounds_language",
         "disable_sound_muted",
@@ -137,6 +139,11 @@
             "type": "boolean",
             "title": "Allow breakout rooms",
             "description": "Each breakout room is a full meeting of its own, with its own audio conference and media transports, so a split multiplies what the node carries."
+        },
+        "show_presentation_on_join": {
+            "type": "boolean",
+            "title": "Open the presentation on join",
+            "description": "Every room gets a default presentation, which is also what the whiteboard draws over, so it is always loaded. This only decides whether its panel is open when a participant joins, or minimized until someone restores it."
         },
         "learning_dashboard_max_age_days": {
             "type": "integer",

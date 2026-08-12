@@ -16,6 +16,7 @@
             "enable_learning_dashboard": true,
             "enable_external_videos": true,
             "enable_breakout_rooms": true,
+            "show_presentation_on_join": true,
             "learning_dashboard_max_age_days": 7,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
@@ -41,6 +42,7 @@
         "enable_learning_dashboard",
         "enable_external_videos",
         "enable_breakout_rooms",
+        "show_presentation_on_join",
         "learning_dashboard_max_age_days",
         "sounds_language",
         "disable_sound_muted",
@@ -97,6 +99,10 @@
         "enable_breakout_rooms": {
             "type": "boolean",
             "title": "Allow breakout rooms"
+        },
+        "show_presentation_on_join": {
+            "type": "boolean",
+            "title": "Open the presentation on join"
         },
         "learning_dashboard_max_age_days": {
             "type": "integer",
