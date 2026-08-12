@@ -20,8 +20,10 @@ meeting_id = json.load(sys.stdin)["meeting_id"]
 
 # The periodic job skips quietly when the container is down. Here somebody asked
 # for the deletion, so silence would be a lie.
+# capture_output: stdout is the task's JSON channel, podman must not write to it.
 agent.assert_exp(
-    subprocess.run(["podman", "container", "exists", "recordings-app"]).returncode == 0,
+    subprocess.run(["podman", "container", "exists", "recordings-app"],
+                   capture_output=True).returncode == 0,
     "the recordings container is not running",
 )
 

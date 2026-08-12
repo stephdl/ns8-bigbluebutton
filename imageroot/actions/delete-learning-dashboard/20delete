@@ -36,12 +36,10 @@ agent.assert_exp(
     "the report path escapes the learning-dashboard directory",
 )
 
-# The volume belongs to the container's rootless user namespace, not the host UID
-# this action runs as: an rm here would get "Permission denied". podman unshare
-# re-execs it in that namespace, as steps 3 and 4 of bin/bigbluebutton-periodic do.
+# The volume is owned inside the container's user namespace: a plain rm from this UID
+# gets "Permission denied", as steps 3 and 4 of bin/bigbluebutton-periodic explain.
 agent.run_helper("podman", "unshare", "rm", "-rf", report_dir).check_returncode()
 
-# Retention prunes learning-dashboard/<meeting_id> by mtime, and only when it is
-# enabled, so nothing else would ever collect the emptied parent.
+# Retention prunes the parent by mtime, and only when enabled: nothing else collects it.
 subprocess.run(["podman", "unshare", "rmdir", meeting_dir],
                capture_output=True, text=True)

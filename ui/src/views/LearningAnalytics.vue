@@ -94,7 +94,7 @@
               <template slot="data">
                 <cv-data-table-row
                   v-for="report in tablePage"
-                  :key="report.meeting_id"
+                  :key="`${report.meeting_id}-${report.token}`"
                 >
                   <cv-data-table-cell class="break-word">{{
                     report.name

@@ -276,6 +276,10 @@ export default {
       );
     },
     formatTimestamp(milliseconds) {
+      // 0 means metadata.xml carried no such time; a 1970 date would read as data.
+      if (!milliseconds) {
+        return "—";
+      }
       return new Date(milliseconds).toLocaleString();
     },
     openRecording(recording) {

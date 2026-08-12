@@ -11,9 +11,8 @@
 #
 # Read from the host: the files are world-readable under a subuid.
 #
-# Nothing is read from events.xml, where the participant names are: metadata.xml
-# holds only a count, and not even that is returned. The one identity in this output
-# is the owner of the Greenlight room the meeting belonged to.
+# The only identity here is the room owner. events.xml, where the participant names
+# are, is never opened.
 #
 
 import os
@@ -38,8 +37,7 @@ max_age_days = int(os.getenv("RECORDING_MAX_AGE_DAYS", "0"))
 def room_owners():
     """Map a Greenlight room meeting_id to its owner name and email.
 
-    The whole table in one query: no value from the filesystem is interpolated
-    into the SQL. json_agg keeps names carrying the field separator intact.
+    The whole table at once, so no filesystem value is interpolated into the SQL.
     """
     query = """SELECT coalesce(json_agg(json_build_object(
                    'meeting_id', r.meeting_id, 'name', u.name, 'email', u.email)), '[]'::json)
@@ -50,8 +48,7 @@ def room_owners():
             raise RuntimeError(result.stderr.strip())
         rows = json.loads(result.stdout.strip())
     except Exception as ex:
-        # The recordings are on disk either way: an unreachable database must cost
-        # the owner column, not the whole list.
+        # An unreachable database costs the owner column, not the whole list.
         print(agent.SD_WARNING + f"cannot read the room owners: {ex}", file=sys.stderr)
         return {}
 
@@ -85,11 +82,10 @@ def directory_size(directory):
 
 
 def playback_url(recording, meeting_id):
-    """Re-host the published link on the current name.
+    """Re-host the published link, whose host was frozen at publication time.
 
-    The link was frozen at publication time with whatever TRAEFIK_HOST was then, so
-    only its path is reusable. Keeping the path rather than hardcoding it follows
-    the player version upstream bumps.
+    Keeping its path follows the player version upstream moves; the fallback below
+    hardcodes one and will rot, but a published recording always carries a link.
     """
     link = text_of(recording, "playback/link")
     path = urlsplit(link).path if link else ""
@@ -98,10 +94,17 @@ def playback_url(recording, meeting_id):
     return f"https://{host}{path}"
 
 
-volume = subprocess.run(
+probe = subprocess.run(
     ["podman", "volume", "inspect", "bigbluebutton", "--format", "{{.Mountpoint}}"],
     capture_output=True, text=True,
-).stdout.strip()
+)
+volume = probe.stdout.strip()
+
+# Not fatal: an empty list is a legitimate answer, and asserting would break the page
+# on an instance whose pod has never started. Say why in the journal instead.
+if not volume:
+    print(agent.SD_WARNING + "cannot resolve the bigbluebutton volume, reporting no "
+          f"recordings: {probe.stderr.strip()}", file=sys.stderr)
 
 owners = room_owners() if volume else {}
 

@@ -115,11 +115,18 @@ export default {
       this.loading.deleteLearningDashboard = false;
     },
     deleteLearningDashboardCompleted(deleted) {
+      // False when dismissed mid-task: the row still goes, but the modal on screen
+      // now belongs to another row and must not be closed.
+      const stillMine = this.loading.deleteLearningDashboard;
       this.loading.deleteLearningDashboard = false;
       this.$emit("deleted", deleted);
-      this.$emit("hide");
+      if (stillMine) {
+        this.$emit("hide");
+      }
     },
     onModalHidden() {
+      // Left true by a dismissal, it disables the primary button for good.
+      this.loading.deleteLearningDashboard = false;
       this.clearErrors();
       this.$emit("hide");
     },
