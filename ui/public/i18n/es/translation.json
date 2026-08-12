@@ -92,7 +92,7 @@
     "open_bigbluebutton": "Abrir BigBlueButton"
   },
   "analytics": {
-    "title": "Análisis del aprendizaje",
+    "title": "Análisis",
     "policy": "Informes de reuniones pasadas",
     "retention_days": "Se conservan {days} días tras el fin de la reunión y luego los elimina la tarea de mantenimiento.",
     "retention_unlimited": "Se conservan indefinidamente.",
@@ -112,8 +112,7 @@
     "delete": "Eliminar",
     "deleting": "Eliminando {name}",
     "delete_title": "Eliminar este informe",
-    "delete_description": "Este informe de análisis del aprendizaje se eliminará del servidor. Esta acción es irreversible.",
-    "delete_confirm": "Eliminar el informe"
+    "delete_description": "Este informe de análisis del aprendizaje se eliminará del servidor. Esta acción es irreversible."
   },
   "recordings": {
     "title": "Grabaciones",
@@ -136,7 +135,6 @@
     "deleting": "Eliminando {name}",
     "delete_title": "Eliminar esta grabación",
     "delete_description": "Esta grabación se eliminará del servidor, junto con su enlace de reproducción. Esta acción es irreversible.",
-    "delete_confirm": "Eliminar la grabación",
     "search": "Buscar una grabación",
     "no_recordings": "Ninguna grabación disponible",
     "no_recordings_description": "Una grabación aparece cuando se ha procesado una reunión grabada y permanece el tiempo que permita la conservación.",

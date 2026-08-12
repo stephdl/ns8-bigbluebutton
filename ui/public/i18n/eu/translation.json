@@ -92,7 +92,7 @@
     "open_bigbluebutton": "Ireki BigBlueButton"
   },
   "analytics": {
-    "title": "Ikaskuntzaren analisia",
+    "title": "Analisia",
     "policy": "Iraganeko bileren txostenak",
     "retention_days": "Bilera amaitu eta {days} egunez gordetzen dira, gero mantentze-lanak ezabatzen ditu.",
     "retention_unlimited": "Betirako gordetzen dira.",
@@ -112,8 +112,7 @@
     "delete": "Ezabatu",
     "deleting": "{name} ezabatzen",
     "delete_title": "Ezabatu txosten hau",
-    "delete_description": "Ikaskuntzaren analisiaren txosten hau zerbitzaritik ezabatuko da. Ekintza hau ezin da desegin.",
-    "delete_confirm": "Ezabatu txostena"
+    "delete_description": "Ikaskuntzaren analisiaren txosten hau zerbitzaritik ezabatuko da. Ekintza hau ezin da desegin."
   },
   "recordings": {
     "title": "Grabaketak",
@@ -136,7 +135,6 @@
     "deleting": "{name} ezabatzen",
     "delete_title": "Ezabatu grabaketa hau",
     "delete_description": "Grabaketa hau zerbitzaritik ezabatuko da, bere erreprodukzio-estekarekin batera. Ekintza hau ezin da desegin.",
-    "delete_confirm": "Ezabatu grabaketa",
     "search": "Bilatu grabaketa bat",
     "no_recordings": "Ez dago grabaketarik",
     "no_recordings_description": "Grabaketa bat grabatutako bilera prozesatu ondoren agertzen da, eta gordetze-epeak uzten duen bitartean irauten du.",

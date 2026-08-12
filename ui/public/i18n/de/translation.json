@@ -92,7 +92,7 @@
     "open_bigbluebutton": "BigBlueButton öffnen"
   },
   "analytics": {
-    "title": "Lernanalyse",
+    "title": "Analysen",
     "policy": "Berichte vergangener Konferenzen",
     "retention_days": "Werden {days} Tage nach dem Ende der Konferenz aufbewahrt und dann vom Wartungsauftrag gelöscht.",
     "retention_unlimited": "Werden dauerhaft aufbewahrt.",
@@ -112,8 +112,7 @@
     "delete": "Löschen",
     "deleting": "{name} wird gelöscht",
     "delete_title": "Diesen Bericht löschen",
-    "delete_description": "Dieser Lernanalyse-Bericht wird vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
-    "delete_confirm": "Bericht löschen"
+    "delete_description": "Dieser Lernanalyse-Bericht wird vom Server gelöscht. Das lässt sich nicht rückgängig machen."
   },
   "recordings": {
     "title": "Aufzeichnungen",
@@ -136,7 +135,6 @@
     "deleting": "{name} wird gelöscht",
     "delete_title": "Diese Aufzeichnung löschen",
     "delete_description": "Diese Aufzeichnung wird samt ihrem Wiedergabelink vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
-    "delete_confirm": "Aufzeichnung löschen",
     "search": "Aufzeichnung suchen",
     "no_recordings": "Keine Aufzeichnung vorhanden",
     "no_recordings_description": "Eine Aufzeichnung erscheint, sobald eine aufgezeichnete Konferenz verarbeitet wurde, und bleibt so lange, wie die Aufbewahrung erlaubt.",

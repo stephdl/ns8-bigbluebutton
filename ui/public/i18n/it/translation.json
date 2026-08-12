@@ -92,7 +92,7 @@
     "open_bigbluebutton": "Apri BigBlueButton"
   },
   "analytics": {
-    "title": "Analisi didattica",
+    "title": "Analisi",
     "policy": "Rapporti delle riunioni passate",
     "retention_days": "Conservati {days} giorni dopo la fine della riunione, poi eliminati dall'attività di manutenzione.",
     "retention_unlimited": "Conservati a tempo indeterminato.",
@@ -112,8 +112,7 @@
     "delete": "Elimina",
     "deleting": "Eliminazione di {name}",
     "delete_title": "Elimina questo rapporto",
-    "delete_description": "Questo rapporto di analisi didattica sarà eliminato dal server. L'operazione è irreversibile.",
-    "delete_confirm": "Elimina il rapporto"
+    "delete_description": "Questo rapporto di analisi didattica sarà eliminato dal server. L'operazione è irreversibile."
   },
   "recordings": {
     "title": "Registrazioni",
@@ -136,7 +135,6 @@
     "deleting": "Eliminazione di {name}",
     "delete_title": "Elimina questa registrazione",
     "delete_description": "Questa registrazione sarà eliminata dal server, insieme al suo link di riproduzione. L'operazione è irreversibile.",
-    "delete_confirm": "Elimina la registrazione",
     "search": "Cerca una registrazione",
     "no_recordings": "Nessuna registrazione disponibile",
     "no_recordings_description": "Una registrazione compare quando una riunione registrata è stata elaborata, e resta per il tempo consentito dalla conservazione.",
