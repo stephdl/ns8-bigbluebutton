@@ -11,6 +11,8 @@
 #
 
 import datetime
+import hashlib
+import json
 import os
 import shutil
 import sys
@@ -53,8 +55,58 @@ ENTRYPOINTS = (
     "bbb-web-entrypoint.sh",
 )
 
-for name in VERBATIM + ENTRYPOINTS:
-    shutil.copyfile(os.path.join(src_dir, name), os.path.join(dst_dir, name))
+
+# Digest of what the last render wrote. Comparing against the current source
+# instead would flag every changed template as a hand edit on module update.
+manifest_path = os.path.join(state_dir, "render-manifest.json")
+try:
+    with open(manifest_path) as fp:
+        manifest = json.load(fp)
+except (OSError, ValueError):
+    manifest = {}
+
+
+def render(name, data):
+    """Write state/overrides/<name>, warning when it drops a hand-made edit.
+
+    The rewrite is unconditional, which keeps the tree self-healing, but an
+    administrator patching an entrypoint to work around something otherwise
+    loses it at the next start with no clue why.
+    """
+    dst = os.path.join(dst_dir, name)
+    try:
+        with open(dst, "rb") as fp:
+            current = hashlib.sha256(fp.read()).hexdigest()
+    except OSError:
+        current = None
+    if current and manifest.get(name, current) != current:
+        print(agent.SD_WARNING + f"overwriting locally modified {name}", file=sys.stderr)
+    with open(dst, "wb") as fp:
+        fp.write(data)
+    manifest[name] = hashlib.sha256(data).hexdigest()
+
+
+# A PDF dropped here by the administrator wins over the one shipped in the image.
+custom_pdf = os.path.join(state_dir, "custom", "default.pdf")
+sources = {name: os.path.join(src_dir, name) for name in VERBATIM + ENTRYPOINTS}
+if os.path.isfile(custom_pdf):
+    try:
+        with open(custom_pdf, "rb") as fp:
+            is_pdf = fp.read(4) == b"%PDF"
+    except OSError as ex:
+        print(agent.SD_WARNING + f"could not read {custom_pdf}: {ex}", file=sys.stderr)
+        is_pdf = False
+    if is_pdf:
+        sources["default.pdf"] = custom_pdf
+    else:
+        # bbb-web serves this as every room's first slide, so a rejected file
+        # would break all of them at once.
+        print(agent.SD_WARNING + f"{custom_pdf} is not a PDF, keeping the bundled one",
+              file=sys.stderr)
+
+for name, src in sources.items():
+    with open(src, "rb") as fp:
+        render(name, fp.read())
 
 for name in ENTRYPOINTS:
     os.chmod(os.path.join(dst_dir, name), 0o755)
@@ -73,8 +125,10 @@ for name in ("webrtc-sfu-config.yaml", "nginx.conf"):
     for key, value in placeholders.items():
         content = content.replace(key, str(value))
     agent.assert_exp("@@" not in content, f"unsubstituted placeholder in {name}")
-    with open(os.path.join(dst_dir, name), "w") as fp:
-        fp.write(content)
+    render(name, content.encode())
+
+with open(manifest_path, "w") as fp:
+    json.dump(manifest, fp, indent=1, sort_keys=True)
 
 # A file rather than podman --env: DATABASE_URL embeds a password ps would show.
 pw = agent.read_envfile(os.path.join(state_dir, "passwords.env"))

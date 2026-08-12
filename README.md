@@ -251,6 +251,39 @@ keeps warning in the UI until it is changed.
 The account is only created when the instance has no administrator at all, so
 deleting it once you have your own does not bring it back.
 
+## Custom default presentation
+
+Every room opens on `default.pdf`. The module ships one; put yours in
+`state/custom/`, under that exact name, to serve it instead. The directory is
+created when the module starts. As `root` on the node:
+
+    cp yours.pdf /home/bigbluebutton1/.config/state/custom/default.pdf
+    chown -R bigbluebutton1:bigbluebutton1 /home/bigbluebutton1/.config/state/custom/
+
+The `chown` matters. The module only reads the file, but a mode that shuts the
+module user out costs the presentation — the render falls back to the bundled one
+with a warning in the journal — and, less visibly, the backup: restic runs as the
+module user too.
+
+Then restart the module to apply it:
+
+    runagent -m bigbluebutton1 systemctl --user restart bigbluebutton
+
+> **Warning:** this ends every meeting in progress. Participants are
+> disconnected without notice. Pick a quiet moment.
+
+Only meetings created afterwards use the new file.
+
+A file that is not a PDF is refused, with a warning in
+`journalctl --user -u bigbluebutton`, and the bundled one stays in use rather
+than every room breaking at once. Delete `state/custom/default.pdf` and restart
+again to go back to it. The file is backed up and comes back on restore.
+
+Editing `state/overrides/default.pdf` directly does not work: that directory is
+re-rendered at every module start. The render now warns when it overwrites a file
+that changed since it last wrote it, so a hand-made edit no longer disappears
+silently.
+
 ## Get the configuration
 
     api-cli run get-configuration --agent module/bigbluebutton1
@@ -309,7 +342,8 @@ and why:
 ## Backup and restore
 
 Backed up: the recordings volume, the `greenlight` PostgreSQL database, the raw
-recorder output, the Greenlight uploads, and the generated secrets.
+recorder output, the Greenlight uploads, the generated secrets, and the custom
+default presentation if there is one.
 
 Not backed up: Redis, the per-meeting scratch volumes, and the two GraphQL
 databases. Redis holds live meeting state and the recording job queues, which are
