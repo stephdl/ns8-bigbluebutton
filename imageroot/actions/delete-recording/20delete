@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Through bbb-record: removing the directories directly would leave the database
+# and the published tree inconsistent, as noted in bin/bigbluebutton-periodic.
+#
+
+import sys
+import json
+import subprocess
+
+import agent
+
+meeting_id = json.load(sys.stdin)["meeting_id"]
+
+# The periodic job skips quietly when the container is down. Here somebody asked
+# for the deletion, so silence would be a lie.
+agent.assert_exp(
+    subprocess.run(["podman", "container", "exists", "recordings-app"]).returncode == 0,
+    "the recordings container is not running",
+)
+
+agent.run_helper("podman", "exec", "recordings-app",
+                 "bbb-record", "--delete", meeting_id).check_returncode()
