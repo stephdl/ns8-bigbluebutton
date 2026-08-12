@@ -44,7 +44,7 @@
     <cv-row class="toolbar">
       <cv-column>
         <NsButton
-          kind="ghost"
+          kind="secondary"
           :icon="Renew20"
           :disabled="loading.listLearningDashboards"
           @click="listLearningDashboards"
