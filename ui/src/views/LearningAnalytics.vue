@@ -61,6 +61,7 @@
               :allRows="reports"
               :columns="columns"
               :rawColumns="rawColumns"
+              :overflow-menu="true"
               :isSearchable="true"
               :searchPlaceholder="$t('analytics.search')"
               :noSearchResultsLabel="core.$t('common.no_search_results')"
@@ -97,22 +98,26 @@
                   <cv-data-table-cell>{{
                     report.participants
                   }}</cv-data-table-cell>
-                  <cv-data-table-cell>
-                    <!-- Only the button carries the token. -->
-                    <NsButton
-                      kind="ghost"
-                      size="small"
-                      :icon="Launch20"
-                      @click="openReport(report)"
-                      >{{ $t("analytics.open_report") }}</NsButton
-                    >
-                    <NsButton
-                      kind="ghost"
-                      size="small"
-                      :icon="TrashCan20"
-                      @click="showDeleteReportModal(report)"
-                      >{{ $t("analytics.delete") }}</NsButton
-                    >
+                  <cv-data-table-cell class="table-overflow-menu-cell">
+                    <cv-overflow-menu flip-menu class="table-overflow-menu">
+                      <!-- Only the menu item carries the token. -->
+                      <cv-overflow-menu-item @click="openReport(report)">
+                        <NsMenuItem
+                          :icon="Launch20"
+                          :label="$t('analytics.open_report')"
+                        />
+                      </cv-overflow-menu-item>
+                      <NsMenuDivider />
+                      <cv-overflow-menu-item
+                        danger
+                        @click="showDeleteReportModal(report)"
+                      >
+                        <NsMenuItem
+                          :icon="TrashCan20"
+                          :label="$t('analytics.delete')"
+                        />
+                      </cv-overflow-menu-item>
+                    </cv-overflow-menu>
                   </cv-data-table-cell>
                 </cv-data-table-row>
               </template>
@@ -188,11 +193,11 @@ export default {
         this.$t("analytics.started"),
         this.$t("analytics.ended"),
         this.$t("analytics.participants"),
-        "",
       ];
     },
     rawColumns() {
-      return ["name", "created_on", "ended_on", "participants", ""];
+      // No entry for the overflow menu: NsDataTable adds that column itself.
+      return ["name", "created_on", "ended_on", "participants"];
     },
   },
   created() {

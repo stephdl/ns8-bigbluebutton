@@ -61,6 +61,7 @@
               :allRows="recordings"
               :columns="columns"
               :rawColumns="rawColumns"
+              :overflow-menu="true"
               :isSearchable="true"
               :searchPlaceholder="$t('recordings.search')"
               :noSearchResultsLabel="core.$t('common.no_search_results')"
@@ -113,21 +114,25 @@
                   <cv-data-table-cell>{{
                     recording.size | byteFormat
                   }}</cv-data-table-cell>
-                  <cv-data-table-cell>
-                    <NsButton
-                      kind="ghost"
-                      size="small"
-                      :icon="Launch20"
-                      @click="openRecording(recording)"
-                      >{{ $t("recordings.play") }}</NsButton
-                    >
-                    <NsButton
-                      kind="ghost"
-                      size="small"
-                      :icon="TrashCan20"
-                      @click="showDeleteRecordingModal(recording)"
-                      >{{ $t("recordings.delete") }}</NsButton
-                    >
+                  <cv-data-table-cell class="table-overflow-menu-cell">
+                    <cv-overflow-menu flip-menu class="table-overflow-menu">
+                      <cv-overflow-menu-item @click="openRecording(recording)">
+                        <NsMenuItem
+                          :icon="Launch20"
+                          :label="$t('recordings.play')"
+                        />
+                      </cv-overflow-menu-item>
+                      <NsMenuDivider />
+                      <cv-overflow-menu-item
+                        danger
+                        @click="showDeleteRecordingModal(recording)"
+                      >
+                        <NsMenuItem
+                          :icon="TrashCan20"
+                          :label="$t('recordings.delete')"
+                        />
+                      </cv-overflow-menu-item>
+                    </cv-overflow-menu>
                   </cv-data-table-cell>
                 </cv-data-table-row>
               </template>
@@ -205,11 +210,11 @@ export default {
         this.$t("recordings.ended"),
         this.$t("recordings.duration"),
         this.$t("recordings.size"),
-        "",
       ];
     },
     rawColumns() {
       // duration and size sort on the raw numbers, not on the formatted cells.
+      // No entry for the overflow menu: NsDataTable adds that column itself.
       return [
         "name",
         "owner_name",
@@ -217,7 +222,6 @@ export default {
         "end_time",
         "duration",
         "size",
-        "",
       ];
     },
   },
