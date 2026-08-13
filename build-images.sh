@@ -79,7 +79,7 @@ buildah add "${container}" ui/dist /ui
 # FreeSWITCH upstream defaults to 16384-24576 (8193 ports), which overlaps the
 # core allocator span 20000-45000 and is far more than the SFU<->FreeSWITCH
 # audio leg needs: that leg uses one port per audio participant, not per stream.
-# 1024 is provisional.
+# 1024 is provisional, see docs/packaging-analysis.md section 5 blocker 2.
 #
 buildah config --entrypoint=/ \
     --label="org.nethserver.authorizations=node:fwadm traefik@node:routeadm" \
