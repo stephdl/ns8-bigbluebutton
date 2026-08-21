@@ -76,7 +76,7 @@
     "show_presentation_on_join": "Open the presentation on join",
     "show_presentation_on_join_tooltip": "Every room gets a default presentation, which is also the surface the whiteboard draws over, so it is always loaded. This only decides whether its panel is open when a participant joins, or minimized until someone restores it.",
     "enable_audio_captions": "Automatic subtitles",
-    "enable_audio_captions_tooltip": "Live subtitles for participants who cannot hear. The recognition runs in each speaker's browser, not on this node. Subtitles show from the start, and the CC button only hides them for whoever clicks it.",
+    "enable_audio_captions_tooltip": "Live subtitles for participants who cannot hear. The recognition runs in each speaker's browser, not on this node. Whoever wants to read them turns them on with the CC button in the meeting.",
     "audio_captions_warning": "Every participant is transcribed by their browser vendor",
     "audio_captions_warning_description": "Google for Chrome and Edge, Apple for Safari. Nobody can opt out, Firefox and mobile produce nothing, and the transcript stays in recordings. Warn participants.",
     "audio_captions_language": "Subtitles language",
