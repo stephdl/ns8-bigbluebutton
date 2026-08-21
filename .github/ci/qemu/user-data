@@ -1,0 +1,55 @@
+#cloud-config
+# Placeholders are substituted by .github/workflows/test-module-qemu.yml.
+hostname: ns8-ci
+fqdn: ns8-ci.test.local
+prefer_fqdn_over_hostname: true
+# cloud-init's own template maps the FQDN to loopback, which is wrong for a
+# WireGuard endpoint. The real entry is written in runcmd instead.
+manage_etc_hosts: false
+
+disable_root: false
+ssh_pwauth: false
+users:
+  - name: root
+    lock_passwd: false
+    ssh_authorized_keys:
+      - "@@SSH_PUBKEY@@"
+
+growpart:
+  mode: auto
+  devices: ["/"]
+resize_rootfs: true
+
+# The module starts three JVMs, Hasura, Rails and four Node services at once and
+# none of the units cap the heap. The spike is reserved, not committed, so a
+# swapfile absorbs it without touching steady-state performance.
+swap:
+  filename: /swap.img
+  size: 4294967296
+  maxsize: 4294967296
+
+write_files:
+  - path: /etc/ssh/sshd_config.d/00-ci-root.conf
+    permissions: '0600'
+    content: |
+      PermitRootLogin prohibit-password
+      PubkeyAuthentication yes
+      UseDNS no
+  - path: /etc/sysctl.d/99-ns8ci.conf
+    content: |
+      vm.swappiness = 10
+  # The BBB images are pulled rootless by the module user, which does not exist
+  # yet at provisioning time, so its auth.json cannot be pre-seeded. Pointing
+  # every podman invocation on the node at one shared file solves it.
+  - path: /etc/containers/containers.conf
+    permissions: '0644'
+    content: |
+      [engine]
+      env = ["REGISTRY_AUTH_FILE=/etc/containers/ci-auth.json"]
+
+runcmd:
+  - [ bash, -c, "echo '@@VM_IP@@ ns8-ci.test.local ns8-ci' >> /etc/hosts" ]
+  - [ sysctl, --system ]
+  - [ systemctl, restart, sshd ]
+
+final_message: "cloud-init done after $UPTIME seconds"
