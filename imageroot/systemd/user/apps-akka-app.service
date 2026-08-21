@@ -22,6 +22,8 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/apps-akka-app.pid \
     --env-file=%S/state/passwords.env \
     --env=DOMAIN=${TRAEFIK_HOST} \
     --env=SHOW_PRESENTATION_ON_JOIN=${SHOW_PRESENTATION_ON_JOIN} \
+    --env=ENABLE_AUDIO_CAPTIONS=${ENABLE_AUDIO_CAPTIONS} \
+    --env=AUDIO_CAPTIONS_LANGUAGE=${AUDIO_CAPTIONS_LANGUAGE} \
     --volume freeswitch-meetings:/var/freeswitch/meetings:z \
     --volume %S/state/overrides/bbb-apps-akka.conf:/etc/bigbluebutton/bbb-apps-akka.conf.tmpl:ro,z \
     --volume %S/state/overrides/apps-akka-entrypoint.sh:/apps-akka-entrypoint.sh:ro,z \

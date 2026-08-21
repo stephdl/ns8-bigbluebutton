@@ -17,6 +17,8 @@
             "enable_external_videos": true,
             "enable_breakout_rooms": true,
             "show_presentation_on_join": true,
+            "enable_audio_captions": false,
+            "audio_captions_language": "browserLanguage",
             "learning_dashboard_max_age_days": 7,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
@@ -43,6 +45,8 @@
         "enable_external_videos",
         "enable_breakout_rooms",
         "show_presentation_on_join",
+        "enable_audio_captions",
+        "audio_captions_language",
         "learning_dashboard_max_age_days",
         "sounds_language",
         "disable_sound_muted",
@@ -103,6 +107,14 @@
         "show_presentation_on_join": {
             "type": "boolean",
             "title": "Open the presentation on join"
+        },
+        "enable_audio_captions": {
+            "type": "boolean",
+            "title": "Enable automatic subtitles"
+        },
+        "audio_captions_language": {
+            "type": "string",
+            "title": "Subtitles language"
         },
         "learning_dashboard_max_age_days": {
             "type": "integer",

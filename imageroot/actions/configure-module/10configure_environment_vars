@@ -57,6 +57,12 @@ agent.set_env("ENABLE_BREAKOUT_ROOMS", str(data["enable_breakout_rooms"]).lower(
 # Not a bbb-web feature: the HTML5 client reads it, so it goes to apps-akka.
 agent.set_env("SHOW_PRESENTATION_ON_JOIN", str(data["show_presentation_on_join"]).lower())
 
+# Same path as above, and the language is not optional: the client refuses to start
+# recognition for a locale missing from audioCaptions.language.available, so the
+# entrypoint writes both keys together.
+agent.set_env("ENABLE_AUDIO_CAPTIONS", str(data["enable_audio_captions"]).lower())
+agent.set_env("AUDIO_CAPTIONS_LANGUAGE", data["audio_captions_language"])
+
 # bbb-web disables a feature by naming it, so send the complement of the toggles.
 # A list, not one key per feature: the next one costs a line here.
 agent.set_env("DISABLED_FEATURES", ",".join(feature for feature, wanted in (

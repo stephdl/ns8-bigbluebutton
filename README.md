@@ -142,6 +142,8 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "enable_external_videos": true,
   "enable_breakout_rooms": true,
   "show_presentation_on_join": true,
+  "enable_audio_captions": false,
+  "audio_captions_language": "browserLanguage",
   "learning_dashboard_max_age_days": 7,
   "sounds_language": "en-us-callie",
   "disable_sound_muted": false,
@@ -189,6 +191,8 @@ What each field does, and the value a fresh install carries:
 | `enable_external_videos` | `true` | A moderator can play a YouTube or media URL in sync for everyone. The server relays nothing, but every participant's browser fetches it from the third party. |
 | `enable_breakout_rooms` | `true` | Each breakout room is a full meeting of its own, so a split multiplies what the node carries. |
 | `show_presentation_on_join` | `true` | Whether the presentation panel is open when a participant joins. The deck itself is always loaded, since the whiteboard needs a surface to draw over; `false` only minimizes the panel, and anyone can restore it. See *Custom default presentation*. |
+| `enable_audio_captions` | `false` | Live subtitles of what is being said. Recognition runs in the browser of whoever speaks, so the node carries no extra load, and the audio is sent to the browser vendor: Google for Chrome and Edge, Apple for Safari. Firefox and mobile browsers produce nothing. Once enabled every participant is transcribed as soon as they unmute and none of them can opt out, which is deliberate: accessibility cannot depend on each speaker agreeing. Announce it to participants. |
+| `audio_captions_language` | `browserLanguage` | Language the browser expects to hear. `browserLanguage` follows each participant's own browser, which covers a mixed audience; a fixed locale is more predictable when everyone speaks the same language. There is no detection of the spoken language: with the `webspeech` provider none exists, so a browser set to another language than the one being spoken transcribes nonsense. |
 | `learning_dashboard_max_age_days` | `0` | How long a report stays readable after the meeting. `0` keeps it forever, otherwise 1 to 180 days. Upstream deletes it 2 minutes after the meeting ends, from a timer inside `bbb-web` that a restart loses; the maintenance job enforces this value instead. |
 
 ## STUN and TURN

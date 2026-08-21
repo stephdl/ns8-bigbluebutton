@@ -52,6 +52,8 @@ config = {
     "enable_external_videos": os.environ.get("ENABLE_EXTERNAL_VIDEOS", "true") == "true",
     "enable_breakout_rooms": os.environ.get("ENABLE_BREAKOUT_ROOMS", "true") == "true",
     "show_presentation_on_join": os.environ.get("SHOW_PRESENTATION_ON_JOIN", "true") == "true",
+    "enable_audio_captions": os.environ.get("ENABLE_AUDIO_CAPTIONS", "false") == "true",
+    "audio_captions_language": os.environ.get("AUDIO_CAPTIONS_LANGUAGE", "browserLanguage"),
     "learning_dashboard_max_age_days": int(os.environ.get("LEARNING_DASHBOARD_MAX_AGE_DAYS", "1")),
     "sounds_language": os.environ.get("SOUNDS_LANGUAGE", "en-us-callie"),
     "disable_sound_muted": os.environ.get("DISABLE_SOUND_MUTED", "false") == "true",
