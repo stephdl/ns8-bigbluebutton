@@ -628,6 +628,9 @@ export default {
       isPresentationShownOnJoin: true,
       areAudioCaptionsEnabled: false,
       audioCaptionsLanguage: "",
+      // The field is blanked on purpose to make NsComboBox render a label, so
+      // the configured value has to survive somewhere else.
+      audioCaptionsLanguageStored: "browserLanguage",
       learningDashboardMaxAgeDays: 0,
       retentionSliderValue: "7",
       recordingMaxAgeDays: 0,
@@ -692,6 +695,12 @@ export default {
     areAudioCaptionsEnabled(enabled) {
       if (enabled) {
         this.showCaptionsLanguageLabel();
+      }
+    },
+    audioCaptionsLanguage(language) {
+      // Empty means the blank above, not a choice: only a real selection counts.
+      if (language) {
+        this.audioCaptionsLanguageStored = language;
       }
     },
     // Dragging counts only while "limited" is selected.
@@ -891,7 +900,7 @@ export default {
       this.areBreakoutRoomsEnabled = config.enable_breakout_rooms;
       this.isPresentationShownOnJoin = config.show_presentation_on_join;
       this.areAudioCaptionsEnabled = config.enable_audio_captions;
-      this.audioCaptionsLanguage = config.audio_captions_language;
+      this.audioCaptionsLanguageStored = config.audio_captions_language;
       this.showCaptionsLanguageLabel();
       this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
       // 0 is the unlimited radio, so the slider keeps the last limited value.
@@ -928,12 +937,14 @@ export default {
     showCaptionsLanguageLabel() {
       // NsComboBox writes the raw value into its field on mount and only renders
       // the option label from its value watcher, so the label appears solely
-      // after the value changes. Blank it, then restore it once the component
-      // exists: the toggle mounts the combo box long after the value is read.
-      const language = this.audioCaptionsLanguage;
+      // after the value changes. Blank the field, then restore it once the
+      // component exists: the toggle mounts the combo box long after the value
+      // is read. Restoring from the stored copy rather than from the field keeps
+      // this idempotent -- two calls in the same tick would otherwise bring the
+      // blank back and leave the field empty.
       this.audioCaptionsLanguage = "";
       this.$nextTick(() => {
-        this.audioCaptionsLanguage = language;
+        this.audioCaptionsLanguage = this.audioCaptionsLanguageStored;
       });
     },
     validateConfigureModule() {
@@ -1027,7 +1038,7 @@ export default {
             enable_breakout_rooms: this.areBreakoutRoomsEnabled,
             show_presentation_on_join: this.isPresentationShownOnJoin,
             enable_audio_captions: this.areAudioCaptionsEnabled,
-            audio_captions_language: this.audioCaptionsLanguage,
+            audio_captions_language: this.audioCaptionsLanguageStored,
             learning_dashboard_max_age_days: this.learningDashboardMaxAgeDays,
             recording_max_age_days: this.recordingMaxAgeDays,
             sounds_language: this.soundsLanguage,
