@@ -655,6 +655,7 @@ export default {
         stun_server: "",
         turn_ext_server: "",
         turn_ext_secret: "",
+        audio_captions_language: "",
       },
     };
   },
@@ -687,6 +688,12 @@ export default {
     },
   },
   watch: {
+    // The combo box is behind v-if, so it mounts only once captions are enabled.
+    areAudioCaptionsEnabled(enabled) {
+      if (enabled) {
+        this.showCaptionsLanguageLabel();
+      }
+    },
     // Dragging counts only while "limited" is selected.
     retentionSliderValue(value) {
       if (this.learningDashboardMaxAgeDays !== 0) {
@@ -884,12 +891,8 @@ export default {
       this.areBreakoutRoomsEnabled = config.enable_breakout_rooms;
       this.isPresentationShownOnJoin = config.show_presentation_on_join;
       this.areAudioCaptionsEnabled = config.enable_audio_captions;
-      // NsComboBox only renders an option label from its value watcher, so the
-      // field would show the raw code if the stored value never differs from
-      // the initial one. Empty above, assigned once the options are registered.
-      this.$nextTick(() => {
-        this.audioCaptionsLanguage = config.audio_captions_language;
-      });
+      this.audioCaptionsLanguage = config.audio_captions_language;
+      this.showCaptionsLanguageLabel();
       this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
       // 0 is the unlimited radio, so the slider keeps the last limited value.
       this.retentionSliderValue = String(
@@ -921,6 +924,17 @@ export default {
       } catch (error) {
         return false;
       }
+    },
+    showCaptionsLanguageLabel() {
+      // NsComboBox writes the raw value into its field on mount and only renders
+      // the option label from its value watcher, so the label appears solely
+      // after the value changes. Blank it, then restore it once the component
+      // exists: the toggle mounts the combo box long after the value is read.
+      const language = this.audioCaptionsLanguage;
+      this.audioCaptionsLanguage = "";
+      this.$nextTick(() => {
+        this.audioCaptionsLanguage = language;
+      });
     },
     validateConfigureModule() {
       this.clearErrors(this);

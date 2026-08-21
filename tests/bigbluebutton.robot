@@ -150,6 +150,9 @@ Check if automatic subtitles reach the client settings
     Configure audio captions    true    fr-FR
     Wait Until Keyword Succeeds    120s    5s    Client setting is
     ...    .public.app.audioCaptions.enabled    true
+    # A key the module never writes: it proves the patched path is the one the
+    # image ships, and not a branch yq created out of a typo.
+    Client setting is    .public.app.audioCaptions.provider    webspeech
     Client setting is    .public.app.audioCaptions.language.forceLocale    true
     Client setting is    .public.app.audioCaptions.language.locale    fr-FR
     Client setting is    .public.app.audioCaptions.language.available | join(",")    fr-FR

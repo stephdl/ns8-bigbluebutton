@@ -24,8 +24,10 @@ fi
 
 # Accepted by isLocaleValid() when the subtitles language follows the participant's
 # browser: navigator.language must appear here verbatim, or recognition never starts
-# and nothing says why. Hence the regional variants and the bare codes.
-BROWSER_LOCALES='["de-DE","de-AT","de-CH","de","en-US","en-GB","en-AU","en-CA","en-IN","en","es-ES","es-MX","es-AR","es","fr-FR","fr-CA","fr-BE","fr-CH","fr","hi-IN","hi","it-IT","it","ja-JP","ja","nl-NL","nl-BE","nl","pt-BR","pt-PT","pt","ru-RU","ru","zh-CN","zh-TW","zh"]'
+# and nothing says why -- and forceLocale leaves the participant no selector to
+# recover with. Hence the regional variants, the bare codes, and erring wide: an
+# entry no browser reports costs nothing, a missing one costs the subtitles.
+BROWSER_LOCALES='["ar-SA","bg-BG","ca-ES","cs-CZ","da-DK","de-AT","de-CH","de-DE","el-GR","en-AU","en-CA","en-GB","en-IE","en-IN","en-NZ","en-US","en-ZA","es-419","es-AR","es-CL","es-CO","es-ES","es-MX","et-EE","eu-ES","fi-FI","fr-BE","fr-CA","fr-CH","fr-FR","gl-ES","he-IL","hi-IN","hr-HR","hu-HU","id-ID","it-IT","ja-JP","ko-KR","lt-LT","lv-LV","nb-NO","nl-BE","nl-NL","pl-PL","pt-BR","pt-PT","ro-RO","ru-RU","sk-SK","sl-SI","sr-RS","sv-SE","th-TH","tr-TR","uk-UA","vi-VN","zh-CN","zh-HK","zh-TW","ar","bg","ca","cs","da","de","el","en","es","et","eu","fi","fr","gl","he","hi","hr","hu","id","it","ja","ko","lt","lv","nb","nl","pl","pt","ro","ru","sk","sl","sr","sv","th","tr","uk","vi","zh"]'
 
 # A failure here is a worse default, not a broken room.
 if [ -f "$SETTINGS" ]; then
