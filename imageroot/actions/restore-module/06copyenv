@@ -44,5 +44,3 @@ for evar in [
     ]:
     if evar in original_environment:
         agent.set_env(evar, original_environment[evar])
-
-agent.dump_env()
