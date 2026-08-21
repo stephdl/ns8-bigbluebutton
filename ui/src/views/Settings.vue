@@ -627,7 +627,7 @@ export default {
       areBreakoutRoomsEnabled: true,
       isPresentationShownOnJoin: true,
       areAudioCaptionsEnabled: false,
-      audioCaptionsLanguage: "browserLanguage",
+      audioCaptionsLanguage: "",
       learningDashboardMaxAgeDays: 0,
       retentionSliderValue: "7",
       recordingMaxAgeDays: 0,
@@ -884,7 +884,12 @@ export default {
       this.areBreakoutRoomsEnabled = config.enable_breakout_rooms;
       this.isPresentationShownOnJoin = config.show_presentation_on_join;
       this.areAudioCaptionsEnabled = config.enable_audio_captions;
-      this.audioCaptionsLanguage = config.audio_captions_language;
+      // NsComboBox only renders an option label from its value watcher, so the
+      // field would show the raw code if the stored value never differs from
+      // the initial one. Empty above, assigned once the options are registered.
+      this.$nextTick(() => {
+        this.audioCaptionsLanguage = config.audio_captions_language;
+      });
       this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
       // 0 is the unlimited radio, so the slider keeps the last limited value.
       this.retentionSliderValue = String(

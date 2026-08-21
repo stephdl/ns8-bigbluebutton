@@ -45,7 +45,11 @@ if [ -f "$SETTINGS" ]; then
         # that flag is off. Leaving it off would let a speaker set their locale back to
         # "disabled", which is precisely what a participant reading the subtitles
         # cannot afford.
+        # alwaysVisible seeds the CC button state at client start. Left false, a
+        # participant has to find the button before any subtitle shows up, which
+        # is not what someone who cannot hear needs. They can still hide them.
         if ! yq e -i ".public.app.audioCaptions.enabled = true
+                | .public.app.audioCaptions.alwaysVisible = true
                 | .public.app.audioCaptions.language.forceLocale = true
                 | .public.app.audioCaptions.language.locale = \"$language\"
                 | .public.app.audioCaptions.language.available = $available" "$SETTINGS"; then
