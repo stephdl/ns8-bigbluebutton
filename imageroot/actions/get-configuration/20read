@@ -36,6 +36,8 @@ config["enable_learning_dashboard"] = os.getenv("ENABLE_LEARNING_DASHBOARD", "tr
 config["enable_external_videos"] = os.getenv("ENABLE_EXTERNAL_VIDEOS", "true") == "true"
 config["enable_breakout_rooms"] = os.getenv("ENABLE_BREAKOUT_ROOMS", "true") == "true"
 config["show_presentation_on_join"] = os.getenv("SHOW_PRESENTATION_ON_JOIN", "true") == "true"
+config["enable_audio_captions"] = os.getenv("ENABLE_AUDIO_CAPTIONS", "false") == "true"
+config["audio_captions_language"] = os.getenv("AUDIO_CAPTIONS_LANGUAGE", "browserLanguage")
 config["learning_dashboard_max_age_days"] = int(os.getenv("LEARNING_DASHBOARD_MAX_AGE_DAYS", "0"))
 config["sounds_language"] = os.getenv("SOUNDS_LANGUAGE", "en-us-callie")
 config["disable_sound_muted"] = os.getenv("DISABLE_SOUND_MUTED") == "true"

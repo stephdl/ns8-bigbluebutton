@@ -16,6 +16,8 @@
             "enable_external_videos": true,
             "enable_breakout_rooms": true,
             "show_presentation_on_join": true,
+            "enable_audio_captions": false,
+            "audio_captions_language": "browserLanguage",
             "learning_dashboard_max_age_days": 7,
             "sounds_language": "en-us-callie",
             "disable_sound_muted": false,
@@ -37,6 +39,8 @@
         "enable_external_videos",
         "enable_breakout_rooms",
         "show_presentation_on_join",
+        "enable_audio_captions",
+        "audio_captions_language",
         "learning_dashboard_max_age_days",
         "sounds_language",
         "disable_sound_muted",
@@ -144,6 +148,30 @@
             "type": "boolean",
             "title": "Open the presentation on join",
             "description": "Every room gets a default presentation, which is also what the whiteboard draws over, so it is always loaded. This only decides whether its panel is open when a participant joins, or minimized until someone restores it."
+        },
+        "enable_audio_captions": {
+            "type": "boolean",
+            "title": "Enable automatic subtitles",
+            "description": "Live subtitles of what is being said, for accessibility. Speech recognition runs in each participant's browser and sends their audio to the browser vendor: Google for Chrome and Edge, Apple for Safari. Firefox and mobile browsers produce nothing. Once enabled, every participant is transcribed as soon as they unmute, with no way to opt out, and the transcript is kept as a subtitle track in recordings."
+        },
+        "audio_captions_language": {
+            "type": "string",
+            "title": "Subtitles language",
+            "description": "Language the browser transcribes. 'browserLanguage' uses each participant's own browser language, which covers a multilingual audience but transcribes badly when the browser language is not the language being spoken. It is not spoken-language detection: no such thing exists with the webspeech provider.",
+            "$comment": "Keep in sync with AUDIO_CAPTIONS_LANGUAGES in ui/src/views/Settings.vue: a code listed only there is rejected on save, one listed only here is never offered. The locales are the ones upstream documents in settings.yml.",
+            "enum": [
+                "browserLanguage",
+                "de-DE",
+                "en-US",
+                "es-ES",
+                "fr-FR",
+                "hi-IN",
+                "it-IT",
+                "ja-JP",
+                "pt-BR",
+                "ru-RU",
+                "zh-CN"
+            ]
         },
         "learning_dashboard_max_age_days": {
             "type": "integer",

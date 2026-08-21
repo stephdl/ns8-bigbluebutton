@@ -315,6 +315,53 @@
                       $t("settings.enabled")
                     }}</template>
                   </NsToggle>
+                  <NsToggle
+                    value="enableAudioCaptions"
+                    :label="$t('settings.enable_audio_captions')"
+                    v-model="areAudioCaptionsEnabled"
+                    :disabled="stillLoading"
+                    class="mg-bottom"
+                  >
+                    <template #tooltip>
+                      {{ $t("settings.enable_audio_captions_tooltip") }}
+                    </template>
+                    <template slot="text-left">{{
+                      $t("settings.disabled")
+                    }}</template>
+                    <template slot="text-right">{{
+                      $t("settings.enabled")
+                    }}</template>
+                  </NsToggle>
+                  <template v-if="areAudioCaptionsEnabled">
+                    <NsInlineNotification
+                      kind="warning"
+                      :title="$t('settings.audio_captions_warning')"
+                      :description="
+                        $t('settings.audio_captions_warning_description')
+                      "
+                      :showCloseButton="false"
+                      class="mg-bottom"
+                    />
+                    <NsComboBox
+                      v-model="audioCaptionsLanguage"
+                      :options="audioCaptionsLanguageOptions"
+                      :label="$t('settings.audio_captions_language')"
+                      :title="$t('settings.audio_captions_language')"
+                      :helper-text="
+                        $t('settings.audio_captions_language_helper')
+                      "
+                      :disabled="stillLoading"
+                      :acceptUserInput="false"
+                      tooltipAlignment="start"
+                      tooltipDirection="right"
+                      class="mg-bottom"
+                      ref="audio_captions_language"
+                    >
+                      <template #tooltip>
+                        {{ $t("settings.audio_captions_language_tooltip") }}
+                      </template>
+                    </NsComboBox>
+                  </template>
 
                   <h4 class="mg-bottom">{{ $t("settings.media") }}</h4>
                   <NsComboBox
@@ -524,6 +571,23 @@ const SOUNDS_LANGUAGES = [
   "zh-hk-sinmei",
 ];
 
+// Keep in sync with the audio_captions_language enum in
+// configure-module/validate-input.json. browserLanguage comes first: it is the
+// default, and it is the only entry that is not a locale.
+const AUDIO_CAPTIONS_LANGUAGES = [
+  "browserLanguage",
+  "de-DE",
+  "en-US",
+  "es-ES",
+  "fr-FR",
+  "hi-IN",
+  "it-IT",
+  "ja-JP",
+  "pt-BR",
+  "ru-RU",
+  "zh-CN",
+];
+
 export default {
   name: "Settings",
   mixins: [
@@ -562,6 +626,11 @@ export default {
       areExternalVideosEnabled: true,
       areBreakoutRoomsEnabled: true,
       isPresentationShownOnJoin: true,
+      areAudioCaptionsEnabled: false,
+      audioCaptionsLanguage: "",
+      // The field is blanked on purpose to make NsComboBox render a label, so
+      // the configured value has to survive somewhere else.
+      audioCaptionsLanguageStored: "browserLanguage",
       learningDashboardMaxAgeDays: 0,
       retentionSliderValue: "7",
       recordingMaxAgeDays: 0,
@@ -589,6 +658,7 @@ export default {
         stun_server: "",
         turn_ext_server: "",
         turn_ext_secret: "",
+        audio_captions_language: "",
       },
     };
   },
@@ -609,8 +679,30 @@ export default {
         value: code,
       }));
     },
+    audioCaptionsLanguageOptions() {
+      return AUDIO_CAPTIONS_LANGUAGES.map((code) => ({
+        name: code,
+        label:
+          code === "browserLanguage"
+            ? this.$t("settings.audio_captions_language_browser")
+            : code,
+        value: code,
+      }));
+    },
   },
   watch: {
+    // The combo box is behind v-if, so it mounts only once captions are enabled.
+    areAudioCaptionsEnabled(enabled) {
+      if (enabled) {
+        this.showCaptionsLanguageLabel();
+      }
+    },
+    audioCaptionsLanguage(language) {
+      // Empty means the blank above, not a choice: only a real selection counts.
+      if (language) {
+        this.audioCaptionsLanguageStored = language;
+      }
+    },
     // Dragging counts only while "limited" is selected.
     retentionSliderValue(value) {
       if (this.learningDashboardMaxAgeDays !== 0) {
@@ -807,6 +899,9 @@ export default {
       this.areExternalVideosEnabled = config.enable_external_videos;
       this.areBreakoutRoomsEnabled = config.enable_breakout_rooms;
       this.isPresentationShownOnJoin = config.show_presentation_on_join;
+      this.areAudioCaptionsEnabled = config.enable_audio_captions;
+      this.audioCaptionsLanguageStored = config.audio_captions_language;
+      this.showCaptionsLanguageLabel();
       this.learningDashboardMaxAgeDays = config.learning_dashboard_max_age_days;
       // 0 is the unlimited radio, so the slider keeps the last limited value.
       this.retentionSliderValue = String(
@@ -838,6 +933,19 @@ export default {
       } catch (error) {
         return false;
       }
+    },
+    showCaptionsLanguageLabel() {
+      // NsComboBox writes the raw value into its field on mount and only renders
+      // the option label from its value watcher, so the label appears solely
+      // after the value changes. Blank the field, then restore it once the
+      // component exists: the toggle mounts the combo box long after the value
+      // is read. Restoring from the stored copy rather than from the field keeps
+      // this idempotent -- two calls in the same tick would otherwise bring the
+      // blank back and leave the field empty.
+      this.audioCaptionsLanguage = "";
+      this.$nextTick(() => {
+        this.audioCaptionsLanguage = this.audioCaptionsLanguageStored;
+      });
     },
     validateConfigureModule() {
       this.clearErrors(this);
@@ -929,6 +1037,8 @@ export default {
             enable_external_videos: this.areExternalVideosEnabled,
             enable_breakout_rooms: this.areBreakoutRoomsEnabled,
             show_presentation_on_join: this.isPresentationShownOnJoin,
+            enable_audio_captions: this.areAudioCaptionsEnabled,
+            audio_captions_language: this.audioCaptionsLanguageStored,
             learning_dashboard_max_age_days: this.learningDashboardMaxAgeDays,
             recording_max_age_days: this.recordingMaxAgeDays,
             sounds_language: this.soundsLanguage,

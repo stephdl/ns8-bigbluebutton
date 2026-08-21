@@ -33,6 +33,8 @@ for evar in [
         "ENABLE_EXTERNAL_VIDEOS",
         "ENABLE_BREAKOUT_ROOMS",
         "SHOW_PRESENTATION_ON_JOIN",
+        "ENABLE_AUDIO_CAPTIONS",
+        "AUDIO_CAPTIONS_LANGUAGE",
         "LEARNING_DASHBOARD_MAX_AGE_DAYS",
         "SOUNDS_LANGUAGE",
         "DISABLE_SOUND_MUTED",
@@ -42,5 +44,3 @@ for evar in [
     ]:
     if evar in original_environment:
         agent.set_env(evar, original_environment[evar])
-
-agent.dump_env()
