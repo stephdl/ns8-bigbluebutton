@@ -20,6 +20,12 @@ redisHost=redis
 # Being a copy, a key added upstream is lost silently. Re-diff on every bump.
 beans.presentationService.defaultUploadedPresentation=${bigbluebutton.web.serverURL}/default.pdf
 
+# Greenlight hands bbb-web an https://DOMAIN/rails/active_storage/... URL for a
+# room's own deck, and DOMAIN resolves to 127.0.0.1 inside the pod. Without this
+# exemption PresRedirectValidator rejects it as a loopback address, and since the
+# create call did declare a presentation, the meeting opens with no slide at all.
+fetchUrlAllowedLocalHosts={{ .Env.DOMAIN }}
+
 # What actually switches features off in 3.0. learningDashboardEnabled is dead: only
 # this list is read, and the create API adds to it rather than replacing it.
 disabledFeatures={{ .Env.DISABLED_FEATURES }}
