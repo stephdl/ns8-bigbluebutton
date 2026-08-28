@@ -40,7 +40,7 @@ BBB_IMAGES=(
     "docker.io/alangecker/bbb-docker-graphql-middleware:v3.0.23"
     "docker.io/alangecker/bbb-docker-recordings:v3.0.23"
     "docker.io/bigbluebutton/greenlight:v3.8.2"
-    "docker.io/library/postgres:16.14-alpine"
+    "docker.io/library/postgres:16.15-alpine"
     "docker.io/library/redis:8.10.1-alpine"
 )
 
