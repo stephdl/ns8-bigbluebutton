@@ -294,8 +294,12 @@ The deck is always uploaded, because the whiteboard only draws over a
 presentation, but whether its panel is open on join is a separate setting:
 `show_presentation_on_join`, *Open the presentation on join* in Settings. Turn it
 off when the default file is a blank canvas nobody needs to look at; participants
-can still restore the panel themselves. A room whose owner attached a
-presentation in Greenlight uses that file instead of `default.pdf`.
+can still restore the panel themselves.
+
+A room whose owner attached a presentation in Greenlight gets that file *instead
+of* `default.pdf`, not alongside it: BigBlueButton falls back to
+`defaultUploadedPresentation` only when the meeting is created without a
+presentation of its own. Detach the room presentation to get `default.pdf` back.
 
 ## Get the configuration
 
