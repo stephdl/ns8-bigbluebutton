@@ -89,6 +89,9 @@ ports it publishes to the node loopback:
 | **Pod** | postgres, redis, bbb-web, nginx, greenlight, etherpad, bbb-pads, bbb-export-annotations, apps-akka, fsesl-akka, bbb-graphql-server, bbb-graphql-actions, bbb-graphql-middleware, recordings |
 | **Host network** | freeswitch, webrtc-sfu, bbb-webrtc-recorder |
 
+What each systemd unit is for, and the order they start in, is in
+[docs/service-topology.md](docs/service-topology.md).
+
 Inside the pod every peer resolves to `127.0.0.1` through `--add-host`.
 BigBlueButton is natively a single-host product; the `10.7.7.x` addressing in
 `bigbluebutton/docker` exists only to fit compose, and collapsing it back onto
