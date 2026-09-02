@@ -10,6 +10,14 @@ rootless under podman, with Greenlight as the front end.
 A detailed gap analysis of what the port required, with references into the
 upstream sources, is in [docs/packaging-analysis.md](docs/packaging-analysis.md).
 
+## Sponsor
+
+The port of BigBlueButton to NethServer 8 was funded by
+[Constance Associés](https://www.constance-associes.fr/). Our thanks go to
+Nicolas Braun, who sponsored the work and asked for it to be published under
+the GPL-3.0-or-later rather than kept private, so that anyone can run, study
+and improve it.
+
 ## Requirements
 
 - **One instance per node.** The module is labelled `max-per-node=1`. It asks
