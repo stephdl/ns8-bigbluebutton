@@ -9,6 +9,20 @@
       "matchDatasources": ["docker"],
       "matchDepNames": ["postgres"],
       "allowedVersions": "<17"
+    },
+    {
+      "description": "Docker versioning only considers a candidate tag when it has the same number of version parts and the same suffix as the current one, and it ranks a shorter tag as newer. greenlight v3.8.2 therefore never sees v3.8.2.4. Loose versioning compares part by part without that constraint; allowedVersions keeps the flavour tags out, since loose ignores the suffix.",
+      "matchDatasources": ["docker"],
+      "matchDepNames": ["bigbluebutton/greenlight"],
+      "versioning": "loose",
+      "allowedVersions": "!/-(alpine|amazonlinux)$/"
+    },
+    {
+      "description": "The alangecker tags carry a compatibility suffix (-v3.0.23, -v5.4.4-1.29, -s8328b77-p88f3f6b) that docker versioning requires to stay identical, so an upgrade is never offered. Group them in a single PR: mixing BigBlueButton component versions is not supported upstream.",
+      "matchDatasources": ["docker"],
+      "matchDepNames": ["alangecker/**"],
+      "versioning": "loose",
+      "groupName": "BigBlueButton images"
     }
   ]
 }
