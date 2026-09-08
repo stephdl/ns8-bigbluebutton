@@ -46,10 +46,7 @@ Check if the secrets file is not world readable
     Should Not Contain    ${output}    FSESL_PASSWORD=
 
 Check if bigbluebutton can be configured
-    ${rc} =    Execute Command
-    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","lets_encrypt":false,"http2https":false}'
-    ...    return_rc=True  return_stdout=False
-    Should Be Equal As Integers    ${rc}  0
+    Configure module    en-us-callie    false    browserLanguage
 
 Check if configure-module refuses a missing public address
     # Without it mediasoup announces nothing and participants get no media, so
