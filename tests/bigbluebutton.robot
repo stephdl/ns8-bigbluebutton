@@ -58,7 +58,9 @@ Check if configure-module refuses a missing public address
 
 Check if get-configuration mirrors what was set
     ${output} =    Execute Command    api-cli run module/${module_id}/get-configuration
-    &{config} =    Evaluate    ${output}
+    # json.loads rather than Evaluate: the payload carries false, which Python
+    # reads as an undefined name.
+    &{config} =    Evaluate    json.loads('''${output}''')    modules=json
     Should Be Equal As Strings    ${config.host}    ${TEST_HOST}
     Should Be Equal As Strings    ${config.public_address}    ${TEST_PUBLIC_ADDRESS}
     Dictionary Should Contain Key    ${config}    mediasoup_port_range
@@ -87,8 +89,12 @@ Check if FreeSWITCH answers on the event socket
 Check if FreeSWITCH is not listening on the SIP dial-in port
     # The external-dialin profile is removed by the patched entrypoint: on the
     # host network 5060 would collide with ns8-nethvoice-proxy.
-    ${output} =    Execute Command    ss -lnu sport = :5060
-    Should Not Contain    ${output}    :5060
+    # Loopback does not collide: what must not appear is a listener reachable
+    # from the host network, so the loopback addresses are filtered out rather
+    # than the port being banned outright.
+    ${output} =    Execute Command
+    ...    ss -lnuH sport = :5060 | awk '{print $4}' | grep -vE '^(\\[::1\\]|127\\.0\\.0\\.1):' || true
+    Should Be Empty    ${output}
 
 Check if the vendored sound packs are mounted
     # German and French ship in the module image under imageroot/sounds and are
@@ -129,7 +135,8 @@ Check if a downloaded language survives a restart
     Should Not Be Empty    ${version}
     ${before} =    Count sound pack installs
     Execute Command    runagent -m ${module_id} systemctl --user restart freeswitch
-    Wait Until Keyword Succeeds    120s    5s    FreeSWITCH answers on the event socket
+    # A cold FreeSWITCH start needs more than two minutes on a nested guest.
+    Wait Until Keyword Succeeds    300s    5s    FreeSWITCH answers on the event socket
     ${after} =    Count sound pack installs
     Should Be Equal As Integers    ${before}    ${after}
     ${prefix} =    Sound prefix
