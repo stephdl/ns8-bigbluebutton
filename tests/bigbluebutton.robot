@@ -198,12 +198,9 @@ Check if Greenlight serves its sign in page
     # like a networking problem rather than a Rails one.
     # Through Traefik, the way a browser reaches it. The Host header alone would
     # not survive the redirect Greenlight answers, and the name resolves nowhere
-    # on the node, so map it onto the loopback instead.
-    ${output}  ${rc} =    Execute Command
-    ...    curl -fsSLk --resolve ${TEST_HOST}:443:127.0.0.1 https://${TEST_HOST}/
-    ...    return_rc=True
-    Should Be Equal As Integers    ${rc}  0
-    Should Contain    ${output}    Greenlight
+    # on the node, so map it onto the loopback instead. Rails takes its time to
+    # boot after the migrations, hence the wait.
+    Wait Until Keyword Succeeds    120s    5s    Greenlight should answer
 
 Check if the Greenlight container is running
     ${output} =    Execute Command
@@ -267,6 +264,13 @@ Check if bigbluebutton is removed correctly
     Should Be Equal As Integers    ${rc}  0
 
 *** Keywords ***
+Greenlight should answer
+    ${output}  ${rc} =    Execute Command
+    ...    curl -sSLk -w "\n%{http_code}" --resolve ${TEST_HOST}:443:127.0.0.1 https://${TEST_HOST}/
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0    curl exited ${rc}
+    Should Contain    ${output}    Greenlight    Greenlight did not serve its page, curl said: ${output}
+
 Join the meeting
     [Documentation]    Return the Location the join endpoint redirects to.
     [Arguments]    ${meeting_id}    ${password}
