@@ -176,8 +176,7 @@ Check if nginx answers behind Traefik
     Should Be Equal As Integers    ${rc}  0
 
 Check if the API answers a signed call
-    # The contract of the product, and the only path that exercises bbb-web,
-    # apps-akka and postgres together. Checksum is sha1(action + query + secret).
+    # Exercises bbb-web, apps-akka and postgres together
     ${xml} =    Call the API    getMeetings
     Should Contain    ${xml}    <returncode>SUCCESS</returncode>
 
@@ -193,13 +192,8 @@ Check if a meeting can be created and ended
     Wait Until Keyword Succeeds    30s    3s    The meeting list should not carry    ci-meeting
 
 Check if Greenlight serves its sign in page
-    # Greenlight is the front door, and a broken one only shows up here: when it
-    # fails to start it drags nginx down with it through BindsTo, which looks
-    # like a networking problem rather than a Rails one.
-    # Through Traefik, the way a browser reaches it. The Host header alone would
-    # not survive the redirect Greenlight answers, and the name resolves nowhere
-    # on the node, so map it onto the loopback instead. Rails takes its time to
-    # boot after the migrations, hence the wait.
+    # When Greenlight fails to start it drags nginx down through BindsTo, which
+    # reads as a networking fault. Rails boots after its migrations, hence the wait.
     Wait Until Keyword Succeeds    120s    5s    Greenlight should answer
 
 Check if the Greenlight container is running
@@ -208,15 +202,13 @@ Check if the Greenlight container is running
     Should Be Equal As Strings    ${output}    active
 
 Check if a participant can be admitted to a meeting
-    # The join endpoint is where bbb-web mints a session and hands the browser
-    # over to the HTML5 client. No media is involved, so it runs like any other
-    # API call, and it covers the one path a participant actually takes.
+    # The path a participant takes, up to where media would start
     ${xml} =    Call the API    create    name=CI%20join&meetingID=ci-join&attendeePW=ap&moderatorPW=mp
     Should Contain    ${xml}    <returncode>SUCCESS</returncode>
     ${location} =    Join the meeting    ci-join    mp
     Should Contain    ${location}    /html5client/?sessionToken=
     ${client} =    Fetch the client page    ${location}
-    # The client is a single page application: this is the node it mounts on
+    # The node the single page application mounts on
     Should Contain    ${client}    id="app"
     ${xml} =    Call the API    end    meetingID=ci-join&password=mp
     Should Contain    ${xml}    <returncode>SUCCESS</returncode>
@@ -282,9 +274,8 @@ Join the meeting
     RETURN    ${output}
 
 Fetch the client page
-    [Documentation]    Follow the join redirect by hand: the name it carries
-    ...                resolves nowhere on the node, so the request goes to the
-    ...                pod with that name in the Host header.
+    [Documentation]    Follow the redirect by hand: its name resolves nowhere
+    ...                on the node, so the Host header carries it instead.
     [Arguments]    ${location}
     ${query} =    Fetch From Right    ${location}    /html5client/
     ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
@@ -295,9 +286,8 @@ Fetch the client page
     RETURN    ${output}
 
 Call the API
-    [Documentation]    Sign a BigBlueButton API call and return its XML answer.
-    ...                The secret never leaves the module: the checksum is
-    ...                computed on the node, inside the module environment.
+    [Documentation]    Sign an API call and return its XML. The checksum is
+    ...                computed inside the module, so the secret stays there.
     [Arguments]    ${action}    ${query}=${EMPTY}
     ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
     ${output}  ${rc} =    Execute Command
