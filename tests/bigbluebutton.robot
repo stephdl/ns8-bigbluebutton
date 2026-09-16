@@ -1,6 +1,7 @@
 *** Settings ***
 Library    SSHLibrary
 Library    Collections
+Library    String
 
 *** Variables ***
 ${CLUSTER_USER}     admin
@@ -174,6 +175,53 @@ Check if nginx answers behind Traefik
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
 
+Check if the API answers a signed call
+    # The contract of the product, and the only path that exercises bbb-web,
+    # apps-akka and postgres together. Checksum is sha1(action + query + secret).
+    ${xml} =    Call the API    getMeetings
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+
+Check if a meeting can be created and ended
+    ${xml} =    Call the API    create    name=CI%20meeting&meetingID=ci-meeting&attendeePW=ap&moderatorPW=mp
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+    Should Contain    ${xml}    <meetingID>ci-meeting</meetingID>
+    ${xml} =    Call the API    getMeetings
+    Should Contain    ${xml}    <meetingID>ci-meeting</meetingID>
+    ${xml} =    Call the API    end    meetingID=ci-meeting&password=mp
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+    # The meeting takes a moment to leave the list
+    Wait Until Keyword Succeeds    30s    3s    The meeting list should not carry    ci-meeting
+
+Check if Greenlight serves its sign in page
+    # Greenlight is the front door, and a broken one only shows up here: when it
+    # fails to start it drags nginx down with it through BindsTo, which looks
+    # like a networking problem rather than a Rails one.
+    ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
+    ${output}  ${rc} =    Execute Command
+    ...    curl -fsSL -H 'Host: ${TEST_HOST}' http://127.0.0.1:${port}/
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0
+    Should Contain    ${output}    Greenlight
+
+Check if the Greenlight container is running
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} systemctl --user is-active greenlight-app.service
+    Should Be Equal As Strings    ${output}    active
+
+Check if a participant can be admitted to a meeting
+    # The join endpoint is where bbb-web mints a session and hands the browser
+    # over to the HTML5 client. No media is involved, so it runs like any other
+    # API call, and it covers the one path a participant actually takes.
+    ${xml} =    Call the API    create    name=CI%20join&meetingID=ci-join&attendeePW=ap&moderatorPW=mp
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+    ${location} =    Join the meeting    ci-join    mp
+    Should Contain    ${location}    /html5client/?sessionToken=
+    ${client} =    Fetch the client page    ${location}
+    # The client is a single page application: this is the node it mounts on
+    Should Contain    ${client}    id="app"
+    ${xml} =    Call the API    end    meetingID=ci-join&password=mp
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+
 Check if the maintenance timer is active
     ${output} =    Execute Command
     ...    runagent -m ${module_id} systemctl --user is-active bigbluebutton-periodic.timer
@@ -217,6 +265,46 @@ Check if bigbluebutton is removed correctly
     Should Be Equal As Integers    ${rc}  0
 
 *** Keywords ***
+Join the meeting
+    [Documentation]    Return the Location the join endpoint redirects to.
+    [Arguments]    ${meeting_id}    ${password}
+    ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
+    ${output}  ${rc} =    Execute Command
+    ...    runagent -m ${module_id} bash -c 'source passwords.env && q="fullName=CI%20Tester&meetingID=${meeting_id}&password=${password}&redirect=true" && sum=$(printf "%s" "join$q$SHARED_SECRET" | sha1sum | cut -d" " -f1) && curl -s -o /dev/null -w "%{redirect_url}" "http://127.0.0.1:${port}/bigbluebutton/api/join?$q""&checksum=$sum"'
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0
+    RETURN    ${output}
+
+Fetch the client page
+    [Documentation]    Follow the join redirect by hand: the name it carries
+    ...                resolves nowhere on the node, so the request goes to the
+    ...                pod with that name in the Host header.
+    [Arguments]    ${location}
+    ${query} =    Fetch From Right    ${location}    /html5client/
+    ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
+    ${output}  ${rc} =    Execute Command
+    ...    runagent -m ${module_id} bash -c 'curl -fsS -H "Host: ${TEST_HOST}" "http://127.0.0.1:${port}/html5client/${query}"'
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0
+    RETURN    ${output}
+
+Call the API
+    [Documentation]    Sign a BigBlueButton API call and return its XML answer.
+    ...                The secret never leaves the module: the checksum is
+    ...                computed on the node, inside the module environment.
+    [Arguments]    ${action}    ${query}=${EMPTY}
+    ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
+    ${output}  ${rc} =    Execute Command
+    ...    runagent -m ${module_id} bash -c 'source passwords.env && q="${query}" && sum=$(printf "%s" "${action}$q$SHARED_SECRET" | sha1sum | cut -d" " -f1) && if [ -n "$q" ]; then q="$q&"; fi && curl -fsS "http://127.0.0.1:${port}/bigbluebutton/api/${action}?$q""checksum=$sum"'
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0    API call ${action} failed
+    RETURN    ${output}
+
+The meeting list should not carry
+    [Arguments]    ${meeting_id}
+    ${xml} =    Call the API    getMeetings
+    Should Not Contain    ${xml}    <meetingID>${meeting_id}</meetingID>
+
 Login to cluster-admin
     New Page    https://${NODE_ADDR}/cluster-admin/
     Fill Text    text="Username"    ${CLUSTER_USER}
