@@ -197,10 +197,18 @@ Take screenshots of the module pages
     Wait For Elements State    iframe >>> h2 >> text="Settings"    visible    timeout=10s
     Sleep    5s
     Take Screenshot    filename=${OUTPUT DIR}/browser/screenshot/2._Settings.png
+    Go To    https://${NODE_ADDR}/cluster-admin/#/apps/${module_id}?page=learning-analytics
+    Wait For Elements State    iframe >>> h2 >> text="Analytics"    visible    timeout=10s
+    Sleep    5s
+    Take Screenshot    filename=${OUTPUT DIR}/browser/screenshot/3._Analytics.png
+    Go To    https://${NODE_ADDR}/cluster-admin/#/apps/${module_id}?page=recordings
+    Wait For Elements State    iframe >>> h2 >> text="Recordings"    visible    timeout=10s
+    Sleep    5s
+    Take Screenshot    filename=${OUTPUT DIR}/browser/screenshot/4._Recordings.png
     Go To    https://${NODE_ADDR}/cluster-admin/#/apps/${module_id}?page=about
     Wait For Elements State    iframe >>> h2 >> text="About"    visible    timeout=10s
     Sleep    5s
-    Take Screenshot    filename=${OUTPUT DIR}/browser/screenshot/3._About.png
+    Take Screenshot    filename=${OUTPUT DIR}/browser/screenshot/5._About.png
     Close Browser
 
 Check if bigbluebutton is removed correctly
