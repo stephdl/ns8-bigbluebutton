@@ -174,6 +174,39 @@ Check if nginx answers behind Traefik
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
 
+Check if the API answers a signed call
+    # The contract of the product, and the only path that exercises bbb-web,
+    # apps-akka and postgres together. Checksum is sha1(action + query + secret).
+    ${xml} =    Call the API    getMeetings
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+
+Check if a meeting can be created and ended
+    ${xml} =    Call the API    create    name=CI%20meeting&meetingID=ci-meeting&attendeePW=ap&moderatorPW=mp
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+    Should Contain    ${xml}    <meetingID>ci-meeting</meetingID>
+    ${xml} =    Call the API    getMeetings
+    Should Contain    ${xml}    <meetingID>ci-meeting</meetingID>
+    ${xml} =    Call the API    end    meetingID=ci-meeting&password=mp
+    Should Contain    ${xml}    <returncode>SUCCESS</returncode>
+    # The meeting takes a moment to leave the list
+    Wait Until Keyword Succeeds    30s    3s    The meeting list should not carry    ci-meeting
+
+Check if Greenlight serves its sign in page
+    # Greenlight is the front door, and a broken one only shows up here: when it
+    # fails to start it drags nginx down with it through BindsTo, which looks
+    # like a networking problem rather than a Rails one.
+    ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
+    ${output}  ${rc} =    Execute Command
+    ...    curl -fsSL -H 'Host: ${TEST_HOST}' http://127.0.0.1:${port}/
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0
+    Should Contain    ${output}    Greenlight
+
+Check if the Greenlight container is running
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} systemctl --user is-active greenlight-app.service
+    Should Be Equal As Strings    ${output}    active
+
 Check if the maintenance timer is active
     ${output} =    Execute Command
     ...    runagent -m ${module_id} systemctl --user is-active bigbluebutton-periodic.timer
@@ -217,6 +250,23 @@ Check if bigbluebutton is removed correctly
     Should Be Equal As Integers    ${rc}  0
 
 *** Keywords ***
+Call the API
+    [Documentation]    Sign a BigBlueButton API call and return its XML answer.
+    ...                The secret never leaves the module: the checksum is
+    ...                computed on the node, inside the module environment.
+    [Arguments]    ${action}    ${query}=${EMPTY}
+    ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
+    ${output}  ${rc} =    Execute Command
+    ...    runagent -m ${module_id} bash -c 'source passwords.env && q="${query}" && sum=$(printf "%s" "${action}$q$SHARED_SECRET" | sha1sum | cut -d" " -f1) && if [ -n "$q" ]; then q="$q&"; fi && curl -fsS "http://127.0.0.1:${port}/bigbluebutton/api/${action}?$q""checksum=$sum"'
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0    API call ${action} failed
+    RETURN    ${output}
+
+The meeting list should not carry
+    [Arguments]    ${meeting_id}
+    ${xml} =    Call the API    getMeetings
+    Should Not Contain    ${xml}    <meetingID>${meeting_id}</meetingID>
+
 Login to cluster-admin
     New Page    https://${NODE_ADDR}/cluster-admin/
     Fill Text    text="Username"    ${CLUSTER_USER}
