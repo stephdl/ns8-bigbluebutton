@@ -266,7 +266,7 @@ Check if bigbluebutton is removed correctly
 *** Keywords ***
 Greenlight should answer
     ${output}  ${rc} =    Execute Command
-    ...    curl -sSLk -w "\n%{http_code}" --resolve ${TEST_HOST}:443:127.0.0.1 https://${TEST_HOST}/
+    ...    curl -sSLk -w " HTTP \%{http_code}" --resolve ${TEST_HOST}:443:127.0.0.1 https://${TEST_HOST}/
     ...    return_rc=True
     Should Be Equal As Integers    ${rc}  0    curl exited ${rc}
     Should Contain    ${output}    Greenlight    Greenlight did not serve its page, curl said: ${output}
