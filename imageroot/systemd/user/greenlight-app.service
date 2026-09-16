@@ -7,7 +7,7 @@
 # The BigBlueButton front end. It holds user accounts, so participants are no
 # longer pseudonymous by construction.
 #
-# DOMAIN must be the public name, which also becomes the browser join URL. The
+# URL_HOST must be the public name, which also becomes the browser join URL. The
 # entrypoint appends it to /etc/hosts pointing at this pod's nginx, and the
 # certificate mounted below is what Ruby then validates.
 #
@@ -32,10 +32,12 @@ ExecStartPre=runagent discover-smarthost
 # POSTGRES_MULTIPLE_DATABASES only runs on a fresh data directory, so an instance
 # older than Greenlight has no database. "already exists" is the normal outcome.
 ExecStartPre=-/usr/bin/podman exec postgres-app psql -U postgres -c "CREATE DATABASE greenlight"
+# Greenlight reads URL_HOST, never DOMAIN, and since 3.9 bin/start exits 1 when
+# it is empty: "URL_HOST must be set to the hostname Greenlight is served from."
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/greenlight-app.pid \
     --cidfile %t/greenlight-app.ctr-id --cgroups=no-conmon \
     --pod-id-file %t/bigbluebutton.pod-id --replace -d --name greenlight-app \
-    --env=DOMAIN=${TRAEFIK_HOST} \
+    --env=URL_HOST=${TRAEFIK_HOST} \
     --env-file=%S/state/overrides/greenlight.env \
     --env-file=%S/state/smarthost.env \
     --volume greenlight:/usr/src/app/storage:z \
