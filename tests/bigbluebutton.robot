@@ -196,9 +196,11 @@ Check if Greenlight serves its sign in page
     # Greenlight is the front door, and a broken one only shows up here: when it
     # fails to start it drags nginx down with it through BindsTo, which looks
     # like a networking problem rather than a Rails one.
-    ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
+    # Through Traefik, the way a browser reaches it. The Host header alone would
+    # not survive the redirect Greenlight answers, and the name resolves nowhere
+    # on the node, so map it onto the loopback instead.
     ${output}  ${rc} =    Execute Command
-    ...    curl -fsSL -H 'Host: ${TEST_HOST}' http://127.0.0.1:${port}/
+    ...    curl -fsSLk --resolve ${TEST_HOST}:443:127.0.0.1 https://${TEST_HOST}/
     ...    return_rc=True
     Should Be Equal As Integers    ${rc}  0
     Should Contain    ${output}    Greenlight
@@ -270,7 +272,7 @@ Join the meeting
     [Arguments]    ${meeting_id}    ${password}
     ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
     ${output}  ${rc} =    Execute Command
-    ...    runagent -m ${module_id} bash -c 'source passwords.env && q="fullName=CI%20Tester&meetingID=${meeting_id}&password=${password}&redirect=true" && sum=$(printf "%s" "join$q$SHARED_SECRET" | sha1sum | cut -d" " -f1) && curl -s -o /dev/null -w "%{redirect_url}" "http://127.0.0.1:${port}/bigbluebutton/api/join?$q""&checksum=$sum"'
+    ...    runagent -m ${module_id} bash -c 'source passwords.env && q="fullName=CI%20Tester&meetingID=${meeting_id}&password=${password}&redirect=true" && sum=$(printf "%s" "join$q$SHARED_SECRET" | sha1sum | cut -d" " -f1) && curl -s -o /dev/null -w "\%{redirect_url}" "http://127.0.0.1:${port}/bigbluebutton/api/join?$q""&checksum=$sum"'
     ...    return_rc=True
     Should Be Equal As Integers    ${rc}  0
     RETURN    ${output}
