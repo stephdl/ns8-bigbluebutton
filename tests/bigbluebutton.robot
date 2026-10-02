@@ -12,14 +12,14 @@ ${CLUSTER_PASSWORD}    Nethesis,1234
 ${TEST_PUBLIC_ADDRESS}    192.0.2.10
 ${TEST_HOST}              bbb.test.local
 ${SCENARIO}               install
-# Restarted by update-module.d/20restart, so each one must come back.
+# Restarted by update-module.d/20restart, so each one must come back. The
+# recording units are left out: the suite configures with recording disabled.
 @{UNITS}    bigbluebutton.service    postgres-app.service    redis-app.service
 ...    freeswitch.service    etherpad-app.service    bbb-pads-app.service
 ...    bbb-web-app.service    apps-akka-app.service    fsesl-akka-app.service
 ...    bbb-graphql-actions-app.service    bbb-graphql-server-app.service
 ...    bbb-graphql-middleware-app.service    bbb-export-annotations-app.service
-...    recordings-app.service    nginx-app.service    greenlight-app.service
-...    webrtc-sfu.service    bbb-webrtc-recorder.service
+...    nginx-app.service    greenlight-app.service    webrtc-sfu.service
 
 *** Test Cases ***
 Check if bigbluebutton is installed correctly
