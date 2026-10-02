@@ -11,10 +11,27 @@ ${CLUSTER_PASSWORD}    Nethesis,1234
 # for these tests, since nothing here establishes a real WebRTC session.
 ${TEST_PUBLIC_ADDRESS}    192.0.2.10
 ${TEST_HOST}              bbb.test.local
+${SCENARIO}               install
+# Restarted by update-module.d/20restart, so each one must come back. The
+# recording units are left out: the suite configures with recording disabled.
+@{UNITS}    bigbluebutton.service    postgres-app.service    redis-app.service
+...    freeswitch.service    etherpad-app.service    bbb-pads-app.service
+...    bbb-web-app.service    apps-akka-app.service    fsesl-akka-app.service
+...    bbb-graphql-actions-app.service    bbb-graphql-server-app.service
+...    bbb-graphql-middleware-app.service    bbb-export-annotations-app.service
+...    nginx-app.service    greenlight-app.service    webrtc-sfu.service
 
 *** Test Cases ***
 Check if bigbluebutton is installed correctly
-    ${output}  ${rc} =    Execute Command    add-module ${IMAGE_URL} 1
+    # The update scenario starts from the stable release users run, and reaches
+    # the image under test through update-module below.
+    IF    '${SCENARIO}' == 'update'
+        Enable the stephdl forge
+        ${image} =    Set Variable    bigbluebutton
+    ELSE
+        ${image} =    Set Variable    ${IMAGE_URL}
+    END
+    ${output}  ${rc} =    Execute Command    add-module ${image} 1
     ...    return_rc=True
     Should Be Equal As Integers    ${rc}  0
     &{output} =    Evaluate    ${output}
@@ -67,6 +84,43 @@ Check if get-configuration mirrors what was set
     Should Be Equal As Strings    ${config.host}    ${TEST_HOST}
     Should Be Equal As Strings    ${config.public_address}    ${TEST_PUBLIC_ADDRESS}
     Dictionary Should Contain Key    ${config}    mediasoup_port_range
+
+Record the state before the update
+    Skip If    '${SCENARIO}' != 'update'    scenario is ${SCENARIO}, nothing to update
+    # Greenlight runs its migrations at boot, so wait for it before writing.
+    Wait Until Keyword Succeeds    300s    5s    Greenlight should answer
+    Greenlight query    CREATE TABLE upgrade_probe (note text); INSERT INTO upgrade_probe VALUES ('pre-update');
+    Execute Command    runagent -m ${module_id} podman exec greenlight-app touch /usr/src/app/storage/upgrade-probe
+    Execute Command    runagent -m ${module_id} bash -c 'mkdir -p custom && touch custom/upgrade-probe'
+    ${state} =    Module state
+    Set Suite Variable    ${before}    ${state}
+
+Check if bigbluebutton survives the update
+    Skip If    '${SCENARIO}' != 'update'    scenario is ${SCENARIO}, nothing to update
+    ${rc} =    Execute Command
+    ...    api-cli run update-module --data '{"force":true,"module_url":"${IMAGE_URL}","instances":["${module_id}"]}'
+    ...    return_rc=True  return_stdout=False
+    Should Be Equal As Integers    ${rc}  0
+    ${image} =    Execute Command    runagent -m ${module_id} printenv IMAGE_URL
+    Should Be Equal As Strings    ${image}    ${IMAGE_URL}
+    Wait Until Keyword Succeeds    300s    10s    Every unit is active
+    Wait Until Keyword Succeeds    300s    5s    Greenlight should answer
+    # A changed secret breaks the signed API calls and the Greenlight database login.
+    ${after} =    Module state
+    Should Be Equal    ${after}    ${before}
+    ${mode} =    Execute Command
+    ...    stat -c %a /home/${module_id}/.config/state/passwords.env
+    Should Be Equal As Strings    ${mode}    600
+    # A postgres major bump leaves a data directory the new server cannot read.
+    ${note} =    Greenlight query    SELECT note FROM upgrade_probe;
+    Should Be Equal As Strings    ${note}    pre-update
+    ${rc} =    Execute Command
+    ...    runagent -m ${module_id} podman exec greenlight-app test -e /usr/src/app/storage/upgrade-probe
+    ...    return_rc=True  return_stdout=False
+    Should Be Equal As Integers    ${rc}  0    the greenlight volume lost its content
+    ${rc} =    Execute Command    runagent -m ${module_id} test -e custom/upgrade-probe
+    ...    return_rc=True  return_stdout=False
+    Should Be Equal As Integers    ${rc}  0    state/custom lost its content
 
 Check if the pod and its containers are running
     ${output} =    Execute Command    runagent -m ${module_id} podman ps --format '{{.Names}}'
@@ -256,6 +310,38 @@ Check if bigbluebutton is removed correctly
     Should Be Equal As Integers    ${rc}  0
 
 *** Keywords ***
+Enable the stephdl forge
+    # The module is published there, not in the default NS8 repositories.
+    ${rc} =    Execute Command
+    ...    api-cli run add-repository --data '{"name":"stephdl","url":"https://forge.de-labrusse.fr/ns8/updates/","status":true}'
+    ...    return_rc=True  return_stdout=False
+    Should Be Equal As Integers    ${rc}  0
+
+Greenlight query
+    [Arguments]    ${sql}
+    ${output}  ${rc} =    Execute Command
+    ...    runagent -m ${module_id} podman exec postgres-app psql -U postgres -d greenlight -tAc "${sql}"
+    ...    return_rc=True
+    Should Be Equal As Integers    ${rc}  0
+    RETURN    ${output}
+
+Module state
+    [Documentation]    What an update must leave untouched: the secrets (by
+    ...                checksum), the configuration, the allocated ports and
+    ...                the digest of the seeded Greenlight admin.
+    ${secrets} =    Execute Command    sha256sum /home/${module_id}/.config/state/passwords.env
+    ${config} =    Execute Command    api-cli run module/${module_id}/get-configuration
+    ${ports} =    Execute Command
+    ...    runagent -m ${module_id} env | grep -E '^(NGINX|REDIS|MEDIASOUP_M..|FS_RTP_M..)_PORT=' | sort
+    ${admin} =    Greenlight query    SELECT password_digest FROM users WHERE email = 'admin@nethserver.org';
+    RETURN    ${secrets}    ${config}    ${ports}    ${admin}
+
+Every unit is active
+    FOR    ${unit}    IN    @{UNITS}
+        ${state} =    Execute Command    runagent -m ${module_id} systemctl --user is-active ${unit}
+        Should Be Equal As Strings    ${state}    active    ${unit} is ${state}
+    END
+
 Greenlight should answer
     ${output}  ${rc} =    Execute Command
     ...    curl -sSLk -w " HTTP \%{http_code}" --resolve ${TEST_HOST}:443:127.0.0.1 https://${TEST_HOST}/
