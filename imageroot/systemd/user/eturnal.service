@@ -4,27 +4,16 @@
 #
 
 #
-# Built-in TURN server, enabled by configure-module only when turn_enabled is
-# true. HOST network namespace, like webrtc-sfu: the relay must send from the
-# node's real address.
+# Built-in TURN server, enabled only when turn_enabled is true. Host network,
+# like webrtc-sfu: the relay must send from the node's real address.
 #
-# Its files are rendered by configure-module and by bigbluebutton.service, which
-# it starts after: rendering again here would rewrite files live pod containers
-# read, at every restart.
+# No render-overrides here: configure-module and bigbluebutton.service do it,
+# and a re-render at each restart would rewrite files live containers read.
 #
-# The secret and the Erlang cookie come from state/eturnal.env, written by
-# render-overrides, rather than the whole passwords.env: eturnal needs no other
-# module secret, and --env would show them on the command line.
-#
-# STUN_SERVICE=false stops the image from asking a public STUN server for the
-# relay address: it is set explicitly in eturnal.yml.
-#
-# --image-volume=ignore: the image declares /opt/eturnal a volume, and an
-# anonymous one would pile up at every restart. eturnal only writes to its run
-# directory, given a tmpfs of its own.
-#
-# The Erlang distribution listens on 127.0.0.1:3470, the image default
-# ERL_DIST_PORT. Fixed, but max-per-node=1 keeps it to one eturnal per node.
+# state/eturnal.env holds only what eturnal needs, not all of passwords.env.
+# STUN_SERVICE=false: no public STUN lookup, the relay address is configured.
+# --image-volume=ignore: avoids a new anonymous volume at every restart.
+# Erlang listens on the fixed 127.0.0.1:3470, fine with max-per-node=1.
 #
 
 [Unit]

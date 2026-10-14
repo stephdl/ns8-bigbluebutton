@@ -1,6 +1,5 @@
 #
-# Built-in TURN server, rendered by bin/render-overrides. The secret comes from
-# ETURNAL_SECRET in state/eturnal.env, so this file holds nothing confidential.
+# Rendered by bin/render-overrides. The secret comes from state/eturnal.env.
 #
 eturnal:
   listen:
@@ -13,15 +12,12 @@ eturnal:
 
   realm: "@@TRAEFIK_HOST@@"
 
-  # An address this host owns: the relay talks to mediasoup on this same host,
-  # never through the router.
+  # Must be owned by this host.
   relay_ipv4_addr: "@@RELAY_IPV4_ADDR@@"
   relay_min_port: @@TURN_RELAY_MIN_PORT@@
   relay_max_port: @@TURN_RELAY_MAX_PORT@@
 
-  # The relay must only reach BigBlueButton itself: mediasoup announces these
-  # addresses and nothing else. Everything private stays refused, so the TURN
-  # server cannot be used as a door into the LAN.
+  # Relay to BigBlueButton only, never to the rest of the LAN.
   blacklist_peers:
     - recommended
   whitelist_peers: @@WHITELIST_PEERS@@

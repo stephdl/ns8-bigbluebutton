@@ -6,8 +6,7 @@
 #
 
 #
-# Before any step changes the route or the environment: a refusal here must
-# leave the module as it was.
+# Runs before any change, so a refusal leaves the module untouched.
 #
 
 import json
@@ -19,8 +18,7 @@ import agent
 
 data = json.load(sys.stdin)
 
-# Omitted keeps the current state, like turn_ext_secret: a caller that predates
-# the field must not switch TURN off behind the administrator's back.
+# Omitted keeps the current state, like turn_ext_secret.
 enabled = data.get("turn_enabled", os.environ.get("TURN_ENABLED") == "true")
 
 if enabled:

@@ -6,11 +6,8 @@
 #
 
 #
-# Split UDP_PORTS_RANGE into the mediasoup, eturnal relay and FreeSWITCH RTP
-# ranges, then open the public ones in the node firewall.
-#
-# Recomputed on every create, configure and update, never trusted from a copied
-# environment: a restore or a clone lands on a node with its own allocation.
+# Split UDP_PORTS_RANGE into mediasoup, TURN relay and FreeSWITCH ranges, then
+# open the public ones. Recomputed each time: a restore or clone gets new ports.
 #
 
 import os
@@ -24,8 +21,7 @@ FS_RTP_PORTS = 1024
 
 TURN_PORT = 3478
 
-# agent.set_env() does not touch os.environ, and each step is its own process:
-# read state/environment back.
+# agent.set_env() does not update os.environ: read the file back.
 env = agent.read_envfile(os.path.join(os.environ["AGENT_STATE_DIR"], "environment"))
 
 udp_start, udp_end = (int(p) for p in os.environ["UDP_PORTS_RANGE"].split("-"))
@@ -45,14 +41,12 @@ agent.set_env("TURN_RELAY_MAX_PORT", str(relay_max))
 agent.set_env("FS_RTP_MIN_PORT", str(fs_min))
 agent.set_env("FS_RTP_MAX_PORT", str(fs_max))
 
-# Only mediasoup and the TURN listener are public. The relay and FreeSWITCH
-# ranges only ever talk to services on this same host.
+# The relay and FreeSWITCH ranges stay local.
 ports = [f"{ms_min}-{ms_max}/udp"]
 if env.get("TURN_ENABLED") == "true":
     ports += [f"{TURN_PORT}/tcp", f"{TURN_PORT}/udp"]
 
-# replace_ports: disabling TURN, or shrinking the mediasoup range of an older
-# install, must close what is no longer listed.
+# replace_ports closes what is no longer listed.
 agent.assert_exp(agent.add_public_service(os.environ["MODULE_ID"], ports, replace_ports=True))
 
 print(f"mediasoup UDP {ms_min}-{ms_max}, TURN relay UDP {relay_min}-{relay_max}, "

@@ -6,13 +6,8 @@
 #
 
 #
-# Print the sockets bound to the TURN port by another user, and exit 1 if there
-# are any. 3478 is fixed, outside the port allocator, so nothing in the platform
-# stops another module from taking it.
-#
-# Ownership goes by socket uid, not by unit state: eturnal runs as uid 9000 in
-# its user namespace, a subuid of this module on the host, and its socket is
-# still ours while the unit restarts.
+# Exit 1 and print the sockets if another user holds port 3478. The port is
+# fixed, outside the allocator. Ours are matched by uid, subuids included.
 #
 
 import getpass
@@ -41,7 +36,7 @@ def our_uids():
 
 ours = our_uids()
 
-# -l lists UDP sockets too, as UNCONN. -e adds the owner as uid:N.
+# -e adds the owner as uid:N.
 out = subprocess.run(
     ["ss", "-Hlntue", f"sport = :{TURN_PORT}"],
     capture_output=True, text=True, check=True,

@@ -6,9 +6,8 @@
 #
 
 #
-# Before 20restart: render-overrides needs the TURN relay range, which an
-# instance created by an older release does not have yet. Also shrinks its
-# public mediasoup range to make room for it.
+# Before 20restart: older instances lack the TURN relay range that
+# render-overrides needs.
 #
 
 set -e

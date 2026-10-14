@@ -1,10 +1,8 @@
 #!/bin/sh
 
 #
-# The image appends a fixed "-setcookie eturnal" to vm.args, and the Erlang
-# distribution listens on 127.0.0.1. With --network=host, any local user who
-# knows that public cookie could run code inside eturnal. Swap in our own,
-# from state/eturnal.env.
+# Replace the image's public Erlang cookie: on the host network, any local
+# user knowing it could run code inside eturnal.
 #
 
 set -eu

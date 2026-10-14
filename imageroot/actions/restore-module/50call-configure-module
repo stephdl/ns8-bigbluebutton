@@ -36,11 +36,7 @@ def on_this_node(label, inherited, detected):
 
 
 def turn_on_this_node():
-    """Keep the built-in TURN server only if port 3478 is free here.
-
-    Fixed, outside the allocator, so another module may own it on this node.
-    Failing configure-module for that would fail the whole restore.
-    """
+    """Keep TURN on only if 3478 is free here, rather than fail the restore."""
     if os.environ.get("TURN_ENABLED", "false") != "true":
         return False
     owner = subprocess.run(["turn-port-owner"], capture_output=True, text=True)

@@ -6,9 +6,7 @@
 #
 
 #
-# Turn the built-in TURN server on or off, then recompute the UDP split and the
-# firewall: the listener port is public only while TURN is on. The port check
-# already ran in 02turn_validation.
+# Store the TURN toggle, then refresh the ports and the firewall.
 #
 
 import json

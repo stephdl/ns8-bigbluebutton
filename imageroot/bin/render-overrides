@@ -119,10 +119,9 @@ peers = [ip for ip in (env.get("PUBLIC_IP", ""), env.get("PRIVATE_IP", "")) if i
 
 
 def relay_address():
-    """IPv4 address eturnal binds its relay sockets to.
+    """IPv4 address the relay binds to: PRIVATE_IP, else the kernel's source.
 
-    It must be owned by this host: behind NAT PUBLIC_IP is the router's, and it
-    may be IPv6. PRIVATE_IP when set, else the kernel's source address.
+    Not PUBLIC_IP: behind NAT it belongs to the router, and it may be IPv6.
     """
     private = env.get("PRIVATE_IP", "")
     if private and ":" not in private:
@@ -132,7 +131,6 @@ def relay_address():
                              capture_output=True, text=True, check=True).stdout.split()
         return out[out.index("src") + 1]
     except (subprocess.CalledProcessError, ValueError, IndexError):
-        # Only eturnal suffers: it starts and refuses every allocation.
         print(agent.SD_WARNING + "no IPv4 source address, the TURN relay will not work",
               file=sys.stderr)
         return "127.0.0.1"
@@ -176,9 +174,8 @@ with os.fdopen(gl_fd, "w") as fp:
     print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
     print("RELATIVE_URL_ROOT=/", file=fp)
 
-# Only what eturnal needs, not the whole passwords.env. The Erlang cookie is
-# kept from one render to the next, and nothing else ever needs it: unlike the
-# TURN secret, it is not in passwords.env, which bbb-web loads whole.
+# Only what eturnal needs. The cookie stays out of passwords.env, which bbb-web
+# loads whole.
 et_path = os.path.join(state_dir, "eturnal.env")
 et_old = agent.read_envfile(et_path) if os.path.exists(et_path) else {}
 cookie = et_old.get("ETURNAL_COOKIE") or secrets.token_hex(32)
