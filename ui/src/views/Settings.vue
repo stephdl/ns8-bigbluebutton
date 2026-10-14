@@ -168,19 +168,59 @@
               :showCloseButton="false"
               class="mg-bottom"
             />
+            <NsToggle
+              value="turnEnabled"
+              :label="$t('settings.turn_enabled')"
+              v-model="isTurnEnabled"
+              :disabled="stillLoading"
+              class="mg-bottom"
+              ref="turn_enabled"
+            >
+              <template #tooltip>
+                {{ $t("settings.turn_enabled_tooltip") }}
+              </template>
+              <template slot="text-left">{{
+                $t("settings.disabled")
+              }}</template>
+              <template slot="text-right">{{
+                $t("settings.enabled")
+              }}</template>
+            </NsToggle>
+            <NsInlineNotification
+              v-if="error.turn_enabled"
+              kind="error"
+              :title="$t('settings.turn_enabled')"
+              :description="error.turn_enabled"
+              :showCloseButton="false"
+              class="mg-bottom"
+            />
             <!-- The module opens this node's firewall, but not a router in front. -->
             <NsInlineNotification
               v-if="mediasoupPortRange"
               kind="info"
-              :title="$t('settings.udp_ports_title')"
-              :description="
-                $t('settings.udp_ports_description', {
-                  range: mediasoupPortRange,
-                })
-              "
+              :title="$t('settings.edge_ports_title')"
               :showCloseButton="false"
               class="mg-bottom"
-            />
+            >
+              <template slot="description">
+                <p>{{ $t("settings.edge_ports_description") }}</p>
+                <ul class="port-list">
+                  <li>
+                    {{ $t("settings.edge_ports_web") }}
+                  </li>
+                  <li>
+                    {{
+                      $t("settings.edge_ports_media", {
+                        range: mediasoupPortRange,
+                      })
+                    }}
+                  </li>
+                  <li v-if="isTurnEnabled">
+                    {{ $t("settings.edge_ports_turn") }}
+                  </li>
+                </ul>
+              </template>
+            </NsInlineNotification>
 
             <!-- advanced options -->
             <cv-accordion ref="accordion" class="maxwidth mg-bottom">
@@ -440,21 +480,6 @@
                   <!-- NAT traversal -->
                   <h4 class="mg-bottom">{{ $t("settings.nat_traversal") }}</h4>
                   <NsTextInput
-                    :label="$t('settings.stun_server')"
-                    placeholder="stun:stun.example.org:3478"
-                    v-model.trim="stunServer"
-                    class="mg-bottom"
-                    :invalid-message="$t(error.stun_server)"
-                    :disabled="stillLoading"
-                    tooltipAlignment="start"
-                    tooltipDirection="right"
-                    ref="stun_server"
-                  >
-                    <template #tooltip>
-                      {{ $t("settings.stun_server_tooltip") }}
-                    </template>
-                  </NsTextInput>
-                  <NsTextInput
                     :label="$t('settings.turn_ext_server')"
                     placeholder="turns:turn.example.org:443?transport=tcp"
                     v-model.trim="turnExtServer"
@@ -617,11 +642,11 @@ export default {
       mediasoupPortRange: "",
       certificateMatchesHost: true,
       defaultAdminPasswordInUse: false,
-      stunServer: "",
       turnExtServer: "",
       turnExtSecret: "",
       turnExtSecretSet: false,
       isRecordingEnabled: true,
+      isTurnEnabled: false,
       isLearningDashboardEnabled: true,
       areExternalVideosEnabled: true,
       areBreakoutRoomsEnabled: true,
@@ -655,7 +680,7 @@ export default {
         lets_encrypt: "",
         public_address: "",
         private_address: "",
-        stun_server: "",
+        turn_enabled: "",
         turn_ext_server: "",
         turn_ext_secret: "",
         audio_captions_language: "",
@@ -889,7 +914,7 @@ export default {
       this.mediasoupPortRange = config.mediasoup_port_range;
       this.certificateMatchesHost = config.certificate_matches_host;
       this.defaultAdminPasswordInUse = config.default_admin_password_in_use;
-      this.stunServer = config.stun_server;
+      this.isTurnEnabled = config.turn_enabled;
       this.turnExtServer = config.turn_ext_server;
       this.turnExtSecretSet = config.turn_ext_secret_set;
       // Never returned by get-configuration, so an empty field means unchanged.
@@ -1027,7 +1052,7 @@ export default {
             lets_encrypt: this.isLetsEncryptEnabled,
             public_address: this.publicAddress,
             private_address: this.privateAddress,
-            stun_server: this.stunServer,
+            turn_enabled: this.isTurnEnabled,
             turn_ext_server: this.turnExtServer,
             ...(this.turnExtSecret
               ? { turn_ext_secret: this.turnExtSecret }
@@ -1091,6 +1116,11 @@ export default {
 
 .maxwidth {
   max-width: 38rem;
+}
+
+.port-list {
+  list-style: disc;
+  margin-left: $spacing-05;
 }
 
 .address-row {

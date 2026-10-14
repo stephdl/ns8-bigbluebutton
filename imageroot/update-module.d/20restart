@@ -36,4 +36,5 @@ systemctl --user try-restart \
     nginx-app.service \
     greenlight-app.service \
     webrtc-sfu.service \
-    bbb-webrtc-recorder.service
+    bbb-webrtc-recorder.service \
+    eturnal.service

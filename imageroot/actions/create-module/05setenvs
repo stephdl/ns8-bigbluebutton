@@ -6,8 +6,7 @@
 #
 
 #
-# Split TCP_PORTS_RANGE and UDP_PORTS_RANGE, injected by the platform from the
-# labels in build-images.sh, into the variables the systemd units expect.
+# Split TCP_PORTS_RANGE for the units. The UDP range is split in 20firewall.
 #
 
 import os
@@ -22,27 +21,4 @@ agent.assert_exp(tcp_end - tcp_start + 1 >= 2, "at least 2 TCP ports are require
 agent.set_env("NGINX_PORT", str(tcp_start))
 agent.set_env("REDIS_PORT", str(tcp_start + 1))
 
-MEDIASOUP_PORTS = 8192
-FS_RTP_PORTS = 1024
-
-udp_start, udp_end = (int(p) for p in os.environ["UDP_PORTS_RANGE"].split("-"))
-agent.assert_exp(
-    udp_end - udp_start + 1 >= MEDIASOUP_PORTS + FS_RTP_PORTS,
-    f"at least {MEDIASOUP_PORTS + FS_RTP_PORTS} UDP ports are required",
-)
-
-# Public half: must be reachable from the internet.
-agent.set_env("MEDIASOUP_MIN_PORT", str(udp_start))
-agent.set_env("MEDIASOUP_MAX_PORT", str(udp_start + MEDIASOUP_PORTS - 1))
-
-# Node-local half, bound on the host. Allocated all the same, because
-# FreeSWITCH's 16384-24576 default overlaps the allocator span.
-agent.set_env("FS_RTP_MIN_PORT", str(udp_start + MEDIASOUP_PORTS))
-agent.set_env("FS_RTP_MAX_PORT", str(udp_start + MEDIASOUP_PORTS + FS_RTP_PORTS - 1))
-
-print(
-    f"Allocated TCP {tcp_start}-{tcp_start + 1}, "
-    f"mediasoup UDP {udp_start}-{udp_start + MEDIASOUP_PORTS - 1}, "
-    f"FreeSWITCH RTP UDP {udp_start + MEDIASOUP_PORTS}-{udp_start + MEDIASOUP_PORTS + FS_RTP_PORTS - 1}",
-    file=sys.stderr,
-)
+print(f"Allocated TCP {tcp_start}-{tcp_start + 1}", file=sys.stderr)

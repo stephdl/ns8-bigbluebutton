@@ -27,9 +27,9 @@ and improve it.
   the Traefik HTTPS port. The allocated UDP range must be reachable from the
   internet; the firewall rule on the node itself is created automatically, but
   any router in front of it needs the range forwarded.
-- **No TURN server is included.** Participants behind a firewall that blocks
-  UDP cannot join unless you point the module at an external TURN server. See
-  *STUN and TURN* below.
+- **TCP and UDP 3478 for the built-in TURN server, if you enable it.**
+  Participants behind a firewall that blocks UDP cannot join without TURN. The
+  port is fixed, so it must be free on the node. See *STUN and TURN* below.
 - **A certificate the browser trusts, matching the site hostname.** WebRTC only
   grants microphone and camera access in a secure context, so without one every
   participant meets a warning page and stays without a microphone or a camera
@@ -72,7 +72,7 @@ cameras each therefore costs about 20 × 5 × 50 kbps = 5 Mbps upstream, plus
 roughly 40 kbps of mixed audio per participant. Do not tune those thresholds
 away: an SFU multiplies every extra kbps by the number of receivers.
 
-**Ports are never the wall.** The allocated 8192 mediasoup ports allow 4096
+**Ports are never the wall.** The allocated 7168 mediasoup ports allow 3584
 concurrent transports, since each binds one socket per announced address and this
 module declares two. Memory and CPU are exhausted long before that.
 
@@ -115,13 +115,21 @@ put every audio packet through rootlessport in userspace.
 
 | | Range | Reachable from |
 |---|---|---|
-| mediasoup RTC | 8192 UDP, allocated | the internet |
+| mediasoup RTC | 7168 UDP, allocated | the internet |
+| eturnal relay | 1024 UDP, allocated | the node only |
 | FreeSWITCH RTP | 1024 UDP, allocated | the node only |
+| TURN and STUN | 3478 TCP and UDP, fixed, only when enabled | the internet |
 | nginx, Redis | 2 TCP, allocated | the node loopback |
 | FreeSWITCH ESL, SIP-over-WebSocket | 8021, 5066 | the node only |
 
-Both UDP ranges come from a single allocation that `create-module/05setenvs`
-splits. FreeSWITCH's upstream default of 16384-24576 is not used: it overlaps
+The three UDP ranges come from a single allocation that `bin/apply-port-layout`
+splits. It runs on create, on every configure and on update, so a restore or a
+clone on another node never reuses the numbers of the node it came from. The
+relay range is carved out rather than allocated on demand: the core can only
+release all of a module's UDP ports at once, mediasoup's included. Instances
+created before the built-in TURN server had an 8192-port mediasoup range. The
+update shrinks it to 7168 and the node firewall follows. A router that still
+forwards the old range keeps working, since it is a superset. FreeSWITCH's upstream default of 16384-24576 is not used: it overlaps
 the NS8 allocator span of 20000-45000 and is far wider than the SFU-to-FreeSWITCH
 audio leg needs.
 
@@ -144,7 +152,6 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "lets_encrypt": true,
   "public_address": "203.0.113.10",
   "private_address": "192.168.1.10",
-  "stun_server": "",
   "turn_ext_server": "",
   "turn_ext_secret": "",
   "enable_recording": true,
@@ -190,8 +197,8 @@ What each field does, and the value a fresh install carries:
 | Parameter | Fresh install | Notes |
 |---|---|---|
 | `private_address` | detected | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
-| `stun_server` | empty | See *STUN and TURN* below. A public STUN server receives the IP address of every participant. |
-| `turn_ext_server` | empty | Without TURN, participants behind UDP-blocking firewalls cannot join. |
+| `turn_enabled` | `false` | Runs eturnal on TCP and UDP 3478 and opens the port in the node firewall. The action fails if another service already owns 3478. Omit the field to keep the current state. See *STUN and TURN* below. |
+| `turn_ext_server` | empty | An extra TURN server on another host, for networks that only allow TCP 443. See *STUN and TURN* below. |
 | `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
 | `enable_recording` | `true` | Recordings capture audio, video, chat, shared notes and presentations. |
 | `recording_max_age_days` | `0` | How long a recording stays available after the meeting. `0` keeps it forever, otherwise 1 to 180 days. Deletion goes through `bbb-record --delete`, so the database and the published tree stay consistent. |
@@ -208,35 +215,57 @@ What each field does, and the value a fresh install carries:
 
 ## STUN and TURN
 
-This module ships no coturn, so it has no STUN and no TURN listener of its own.
-`stun_server`, `turn_ext_server` and `turn_ext_secret` are all empty by default,
-and the patched `turn-stun-servers.xml` omits each bean whose value is empty — the
-client is handed an empty list rather than a candidate pointing at a port nothing
-listens on.
+**Media needs neither.** mediasoup announces the node's public address, so the
+browser sends straight to the SFU. There is no STUN setting: the built-in TURN
+server answers STUN when it runs.
 
-**Media works without either.** mediasoup announces the node's public address and
-the allocated UDP range is open, so the browser sends straight to the SFU, which
-learns the browser's address from the packets it receives.
+**TURN is for blocked UDP.** A client whose firewall blocks outbound UDP cannot
+reach the SFU. TURN relays its media over a port it can reach.
 
-**What STUN buys.** Upstream describes it as being used "to allow direct UDP
-connections through certain types of firewalls which otherwise might not work":
-some NAT shapes need the client to discover its own reflexive address first. It
-does nothing for a client whose firewall blocks outbound UDP altogether. That case
-needs TURN, which relays the media, typically over TCP 443.
+**The built-in server.** `turn_enabled` runs [eturnal](https://eturnal.net) on the
+host network, listening on TCP and UDP 3478. BigBlueButton hands each client a
+STUN entry and two TURN entries, one per transport, for the site hostname. Audio,
+video and screen sharing all use the same port. eturnal relays from an announced
+IPv4 address the node owns, so behind NAT `private_address` must be set, or
+enabling TURN is refused. It only relays to the addresses mediasoup announces,
+so the rest of the LAN stays out of reach. eturnal filters by address, not by
+port: a participant can reach any UDP service on those addresses, as with the
+coturn setup BigBlueButton documents. Its shared secret is
+generated at install time and never leaves the node.
 
-**Privacy is why both are empty.** A STUN server learns the IP address of every
-participant that queries it, and upstream's `sample.env` points at a third-party
-public one. Run your own instead: coturn answers STUN and TURN on the same port,
-so a single server covers both.
+The port is fixed, outside the NS8 allocator. Enabling the server fails if
+another service already owns it. If one takes it later, the Status page shows
+it and the other settings still save. A restore, clone or move always lands with TURN off, like Let's
+Encrypt: the router must first send 3478 to the new node. Turn it back on after.
 
-**TURN needs its secret.** BigBlueButton supports one authentication mode —
-`TurnServer.generatePasswordFor()` signs a short-lived credential with
+**The extra TURN server is the last resort.** Some networks block everything
+except TCP 443. Only TURNS on 443 gets through, and Traefik already owns 443
+here, so it must live on another host or come from a provider. Media then goes
+over TCP and TLS, so quality may drop. Set `turn_ext_server`, for example
+`turns:turn.example.org:443?transport=tcp`. One option is HAProxy on your
+firewall, terminating TLS and forwarding to this node's TCP 3478 with the
+built-in secret, stored as `TURN_SECRET` in `state/passwords.env`.
+
+**Test it** with the [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/)
+page, from a browser that can reach the node. The browser does the work, so a
+LAN-only name is fine. Make a one-hour credential on the node:
+
+```
+runagent -m bigbluebutton1 python3 -c 'import base64,hmac,hashlib,time,agent; s=agent.read_envfile("passwords.env")["TURN_SECRET"]; u=f"{int(time.time())+3600}:test"; print(u, base64.b64encode(hmac.new(s.encode(),u.encode(),hashlib.sha1).digest()).decode())'
+```
+
+Remove the default server, add `turn:<host>:3478?transport=udp` with that
+username and password, tick *relay*, and gather. A `relay` candidate means TURN
+works. A `srflx` one, with *all* ticked, means STUN works. Repeat with
+`?transport=tcp`. A wrong password must give no `relay` candidate. In a meeting,
+`chrome://webrtc-internals` shows `candidateType=relay` on the active pair when
+the client went through TURN.
+
+**The extra TURN server needs its secret.** BigBlueButton supports one authentication
+mode: `TurnServer.generatePasswordFor()` signs a short-lived credential with
 `HMAC-SHA1(expiry:userId, secret)`, and the TURN server recomputes it from its own
 `static-auth-secret`. Set `turn_ext_secret` to that value or every allocation is
 refused. There is no username-and-password mode.
-
-Value formats: `stun:turn.example.org:3478` and
-`turns:turn.example.org:443?transport=tcp`.
 
 Upstream references:
 
@@ -326,12 +355,10 @@ reports rather than silently ignoring.
 The port is not a straight translation of `bigbluebutton/docker`. What changed,
 and why:
 
-- **coturn is dropped.** Its template hardcodes `turns:${DOMAIN}:443`, which
-  collides with Traefik, and `turn:...:3478` is a fixed port that would force
-  one instance per node for a protocol reason rather than a resource one.
-  Upstream also emits the `turn0` bean unconditionally, with no `ENABLE_COTURN`
-  guard, so without this fix every client would receive a TURN candidate for a
-  port nothing listens on. Use `turn_ext_server` instead, and see *STUN and TURN*.
+- **coturn is replaced by eturnal, off by default.** Upstream's template
+  hardcodes `turns:${DOMAIN}:443`, which collides with Traefik, and emits the
+  `turn0` bean unconditionally, with no `ENABLE_COTURN` guard. Here the beans
+  exist only while `turn_enabled` is true. See *STUN and TURN*.
 - **STUN is empty by default.** `sample.env` ships a third-party public STUN
   server, which would receive the IP address of every participant.
 - **Greenlight is the front end**, served at the site root, and the module seeds

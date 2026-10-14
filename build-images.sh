@@ -42,6 +42,7 @@ BBB_IMAGES=(
     "docker.io/bigbluebutton/greenlight:v3.9.0.1"
     "docker.io/library/postgres:16.15-alpine"
     "docker.io/library/redis:8.10.2-alpine"
+    "ghcr.io/processone/eturnal:1.12.3"
 )
 
 # Create a new empty container image
@@ -73,8 +74,9 @@ buildah add "${container}" ui/dist /ui
 # runs in the host namespace and keeps those defaults, which sit below 20000,
 # outside the allocator span.
 #
-# UDP (9216): one contiguous range, split at create time into
-#   - the first 8192 ports  -> mediasoup RTC (public, declared in the firewall)
+# UDP (9216): one contiguous range, split by bin/apply-port-layout into
+#   - the first 7168 ports  -> mediasoup RTC (public, declared in the firewall)
+#   - the next  1024 ports  -> eturnal relay (bound on the host, not public)
 #   - the last  1024 ports  -> FreeSWITCH RTP (bound on the host, not public)
 # FreeSWITCH upstream defaults to 16384-24576 (8193 ports), which overlaps the
 # core allocator span 20000-45000 and is far more than the SFU<->FreeSWITCH

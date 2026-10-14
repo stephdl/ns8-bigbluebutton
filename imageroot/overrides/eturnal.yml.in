@@ -1,0 +1,25 @@
+eturnal:
+  listen:
+    - ip: "@@TURN_LISTEN_IP@@"
+      port: 3478
+      transport: udp
+    - ip: "@@TURN_LISTEN_IP@@"
+      port: 3478
+      transport: tcp
+
+  realm: "@@TRAEFIK_HOST@@"
+
+  # Must be owned by this host.
+  relay_ipv4_addr: "@@RELAY_IPV4_ADDR@@"
+  relay_min_port: @@TURN_RELAY_MIN_PORT@@
+  relay_max_port: @@TURN_RELAY_MAX_PORT@@
+
+  # BigBlueButton only, never the rest of the LAN.
+  blacklist_peers:
+    - recommended
+  whitelist_peers: @@WHITELIST_PEERS@@
+
+  log_dir: stdout
+  log_level: notice
+  modules:
+    mod_log_stun: {}

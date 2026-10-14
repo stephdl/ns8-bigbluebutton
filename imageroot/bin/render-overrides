@@ -14,7 +14,9 @@ import datetime
 import hashlib
 import json
 import os
+import secrets
 import shutil
+import subprocess
 import sys
 
 import agent
@@ -53,6 +55,7 @@ ENTRYPOINTS = (
     "recordings-entrypoint.sh",
     "apps-akka-entrypoint.sh",
     "bbb-web-entrypoint.sh",
+    "eturnal-entrypoint.sh",
 )
 
 
@@ -111,15 +114,35 @@ for name, src in sources.items():
 for name in ENTRYPOINTS:
     os.chmod(os.path.join(dst_dir, name), 0o755)
 
-# Substituted here: neither file has templating of its own.
+peers = [ip for ip in (env.get("PUBLIC_IP", ""), env.get("PRIVATE_IP", "")) if ip]
+
+
+def relay_address():
+    found = subprocess.run(["turn-relay-address", env.get("PRIVATE_IP", ""), env.get("PUBLIC_IP", "")],
+                           capture_output=True, text=True)
+    if found.returncode == 0:
+        return found.stdout.strip()
+    # 02turn_validation refuses this case, so only a changed address gets here.
+    if env.get("TURN_ENABLED") == "true":
+        print(agent.SD_WARNING + "no announced IPv4 address on this node, the TURN relay will not work",
+              file=sys.stderr)
+    return "127.0.0.1"
+
+# Substituted here: none of these files has templating of its own.
 placeholders = {
     "@@REDIS_PORT@@": env["REDIS_PORT"],
     "@@TRAEFIK_HOST@@": env["TRAEFIK_HOST"],
     "@@MEDIASOUP_MIN_PORT@@": env["MEDIASOUP_MIN_PORT"],
     "@@MEDIASOUP_MAX_PORT@@": env["MEDIASOUP_MAX_PORT"],
+    "@@TURN_RELAY_MIN_PORT@@": env["TURN_RELAY_MIN_PORT"],
+    "@@TURN_RELAY_MAX_PORT@@": env["TURN_RELAY_MAX_PORT"],
+    "@@RELAY_IPV4_ADDR@@": relay_address(),
+    # "::" fails to bind on a kernel booted with ipv6.disable=1.
+    "@@TURN_LISTEN_IP@@": "::" if os.path.exists("/proc/net/if_inet6") else "0.0.0.0",
+    "@@WHITELIST_PEERS@@": json.dumps(peers),
 }
 
-for name in ("webrtc-sfu-config.yaml", "nginx.conf"):
+for name in ("webrtc-sfu-config.yaml", "nginx.conf", "eturnal.yml"):
     with open(os.path.join(src_dir, name + ".in")) as fp:
         content = fp.read()
     for key, value in placeholders.items():
@@ -143,6 +166,15 @@ with os.fdopen(gl_fd, "w") as fp:
     print(f"BIGBLUEBUTTON_SECRET={pw['SHARED_SECRET']}", file=fp)
     print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
     print("RELATIVE_URL_ROOT=/", file=fp)
+
+# Not in passwords.env: bbb-web loads that whole and has no use for the cookie.
+et_path = os.path.join(state_dir, "eturnal.env")
+et_old = agent.read_envfile(et_path) if os.path.exists(et_path) else {}
+cookie = et_old.get("ETURNAL_COOKIE") or secrets.token_hex(32)
+et_fd = os.open(et_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(et_fd, "w") as fp:
+    print(f"ETURNAL_SECRET={pw['TURN_SECRET']}", file=fp)
+    print(f"ETURNAL_COOKIE={cookie}", file=fp)
 
 #
 # The containers call the site's public name and validate what answers, so nginx
