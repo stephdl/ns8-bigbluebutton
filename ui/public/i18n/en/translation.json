@@ -25,7 +25,12 @@
     "bigbluebutton_webapp": "BigBlueButton",
     "not_configured": "Not configured",
     "open_webapp": "Open BigBlueButton",
-    "configure": "Configure"
+    "configure": "Configure",
+    "turn_server": "TURN server",
+    "turn_disabled": "Disabled",
+    "turn_running": "Running on port 3478",
+    "turn_port_in_use": "Port 3478 is used by another service",
+    "turn_stopped": "Not running"
   },
   "settings": {
     "title": "Settings",

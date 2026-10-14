@@ -25,7 +25,12 @@
     "bigbluebutton_webapp": "BigBlueButton",
     "not_configured": "Sin configurar",
     "open_webapp": "Abrir BigBlueButton",
-    "configure": "Configurar"
+    "configure": "Configurar",
+    "turn_server": "Servidor TURN",
+    "turn_disabled": "Desactivado",
+    "turn_running": "Activo en el puerto 3478",
+    "turn_port_in_use": "Otro servicio usa el puerto 3478",
+    "turn_stopped": "Detenido"
   },
   "settings": {
     "title": "Ajustes",

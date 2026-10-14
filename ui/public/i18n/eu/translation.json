@@ -25,7 +25,12 @@
     "bigbluebutton_webapp": "BigBlueButton",
     "not_configured": "Konfiguratu gabe",
     "open_webapp": "Ireki BigBlueButton",
-    "configure": "Konfiguratu"
+    "configure": "Konfiguratu",
+    "turn_server": "TURN zerbitzaria",
+    "turn_disabled": "Desgaituta",
+    "turn_running": "Martxan 3478 atakan",
+    "turn_port_in_use": "Beste zerbitzu batek erabiltzen du 3478 ataka",
+    "turn_stopped": "Geldituta"
   },
   "settings": {
     "title": "Ezarpenak",
