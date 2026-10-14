@@ -52,6 +52,7 @@
     "turn_enabled": "Built-in TURN server",
     "turn_enabled_tooltip": "Lets participants join when their firewall blocks UDP. Uses port 3478, TCP and UDP.",
     "turn_port_in_use": "Port 3478 is already in use on this node.",
+    "turn_needs_lan_address": "The TURN server needs an IPv4 address of this node here. Set the LAN address.",
     "edge_ports_title": "Ports to forward on your router",
     "edge_ports_description": "This node's firewall is set up for you. A router in front must forward:",
     "edge_ports_web": "TCP 80 and 443 to the node serving the website",

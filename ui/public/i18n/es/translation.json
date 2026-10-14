@@ -52,6 +52,7 @@
     "turn_enabled": "Servidor TURN integrado",
     "turn_enabled_tooltip": "Permite unirse cuando el cortafuegos bloquea UDP. Usa el puerto 3478, TCP y UDP.",
     "turn_port_in_use": "El puerto 3478 ya está en uso en este nodo.",
+    "turn_needs_lan_address": "El servidor TURN necesita aquí una dirección IPv4 de este nodo. Indica la dirección LAN.",
     "edge_ports_title": "Puertos que redirigir en tu router",
     "edge_ports_description": "El cortafuegos de este nodo se configura solo. Un router delante debe redirigir:",
     "edge_ports_web": "TCP 80 y 443 al nodo que sirve el sitio web",

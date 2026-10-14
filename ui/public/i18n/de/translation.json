@@ -52,6 +52,7 @@
     "turn_enabled": "Integrierter TURN-Server",
     "turn_enabled_tooltip": "Ermöglicht die Teilnahme, wenn die Firewall UDP blockiert. Nutzt Port 3478, TCP und UDP.",
     "turn_port_in_use": "Port 3478 wird auf diesem Knoten bereits verwendet.",
+    "turn_needs_lan_address": "Der TURN-Server braucht hier eine IPv4-Adresse dieses Knotens. Geben Sie die LAN-Adresse an.",
     "edge_ports_title": "Am Router weiterzuleitende Ports",
     "edge_ports_description": "Die Firewall dieses Knotens wird für Sie eingerichtet. Ein vorgeschalteter Router muss weiterleiten:",
     "edge_ports_web": "TCP 80 und 443 an den Knoten, der die Website bereitstellt",

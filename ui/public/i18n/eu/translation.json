@@ -52,6 +52,7 @@
     "turn_enabled": "TURN zerbitzari integratua",
     "turn_enabled_tooltip": "Suebakiak UDP blokeatzen duenean bat egitea ahalbidetzen du. 3478 ataka erabiltzen du, TCP eta UDP.",
     "turn_port_in_use": "3478 ataka erabiltzen ari da dagoeneko nodo honetan.",
+    "turn_needs_lan_address": "TURN zerbitzariak nodo honen IPv4 helbide bat behar du hemen. Ezarri LAN helbidea.",
     "edge_ports_title": "Bideratzailean birbideratu beharreko atakak",
     "edge_ports_description": "Nodo honen suebakia automatikoki konfiguratzen da. Aurreko bideratzaileak hauek birbideratu behar ditu:",
     "edge_ports_web": "TCP 80 eta 443 webgunea zerbitzatzen duen nodora",

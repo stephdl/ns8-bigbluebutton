@@ -52,6 +52,7 @@
     "turn_enabled": "Servidor TURN integrado",
     "turn_enabled_tooltip": "Permite entrar quando o firewall bloqueia UDP. Usa a porta 3478, TCP e UDP.",
     "turn_port_in_use": "A porta 3478 já está em uso neste nó.",
+    "turn_needs_lan_address": "O servidor TURN precisa aqui de um endereço IPv4 deste nó. Informe o endereço LAN.",
     "edge_ports_title": "Portas a redirecionar no roteador",
     "edge_ports_description": "O firewall deste nó é configurado automaticamente. Um roteador à frente precisa redirecionar:",
     "edge_ports_web": "TCP 80 e 443 para o nó que serve o site",

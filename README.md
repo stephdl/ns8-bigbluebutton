@@ -225,15 +225,17 @@ reach the SFU. TURN relays its media over a port it can reach.
 **The built-in server.** `turn_enabled` runs [eturnal](https://eturnal.net) on the
 host network, listening on TCP and UDP 3478. BigBlueButton hands each client a
 STUN entry and two TURN entries, one per transport, for the site hostname. Audio,
-video and screen sharing all use the same port. eturnal relays from `private_address`
-when set, else from the address the node routes to the internet with. It only
-relays to the addresses mediasoup announces: every other private address stays
-refused, so the server cannot be used to reach the LAN. Its shared secret is
+video and screen sharing all use the same port. eturnal relays from an announced
+IPv4 address the node owns, so behind NAT `private_address` must be set, or
+enabling TURN is refused. It only relays to the addresses mediasoup announces,
+so the rest of the LAN stays out of reach. eturnal filters by address, not by
+port: a participant can reach any UDP service on those addresses, as with the
+coturn setup BigBlueButton documents. Its shared secret is
 generated at install time and never leaves the node.
 
 The port is fixed, outside the NS8 allocator. Enabling the server fails if
-another service already owns it, and the Status page shows it if one takes the
-port later. A restore, clone or move always lands with TURN off, like Let's
+another service already owns it. If one takes it later, the Status page shows
+it and the other settings still save. A restore, clone or move always lands with TURN off, like Let's
 Encrypt: the router must first send 3478 to the new node. Turn it back on after.
 
 **The extra TURN server is the last resort.** Some networks block everything

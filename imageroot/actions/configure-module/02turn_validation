@@ -18,15 +18,32 @@ import agent
 
 data = json.load(sys.stdin)
 
+was_enabled = os.environ.get("TURN_ENABLED") == "true"
 # Omitted keeps the current state, like turn_ext_secret.
-enabled = data.get("turn_enabled", os.environ.get("TURN_ENABLED") == "true")
+enabled = data.get("turn_enabled", was_enabled)
+
+
+def refuse(field, error):
+    agent.set_status("validation-failed")
+    json.dump([{"field": field, "parameter": field, "value": data.get(field),
+                "error": error}], fp=sys.stdout)
+    sys.exit(2)
+
 
 if enabled:
+    public = data["public_address"] or os.environ.get("DETECTED_PUBLIC_IP", "")
+    relay = subprocess.run(["turn-relay-address", data["private_address"], public],
+                           capture_output=True)
+    if relay.returncode != 0:
+        print(agent.SD_ERR + "TURN needs an IPv4 address of this node among the "
+              "announced ones: set the LAN address", file=sys.stderr)
+        refuse("private_address", "turn_needs_lan_address")
+
+# Only when switching on: a conflict found later shows on the Status page and
+# must not block unrelated settings.
+if enabled and not was_enabled:
     owner = subprocess.run(["turn-port-owner"], capture_output=True, text=True)
     if owner.returncode != 0:
         print(agent.SD_ERR + "port 3478 is already in use on this node:\n" + owner.stdout,
               file=sys.stderr)
-        agent.set_status("validation-failed")
-        json.dump([{"field": "turn_enabled", "parameter": "turn_enabled",
-                    "value": True, "error": "turn_port_in_use"}], fp=sys.stdout)
-        sys.exit(2)
+        refuse("turn_enabled", "turn_port_in_use")

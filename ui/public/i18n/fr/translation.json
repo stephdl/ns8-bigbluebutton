@@ -52,6 +52,7 @@
     "turn_enabled": "Serveur TURN intégré",
     "turn_enabled_tooltip": "Permet de rejoindre quand le pare-feu bloque l'UDP. Utilise le port 3478, TCP et UDP.",
     "turn_port_in_use": "Le port 3478 est déjà utilisé sur ce nœud.",
+    "turn_needs_lan_address": "Le serveur TURN a besoin ici d'une adresse IPv4 de ce nœud. Renseignez l'adresse LAN.",
     "edge_ports_title": "Ports à rediriger sur votre routeur",
     "edge_ports_description": "Le pare-feu de ce nœud est configuré pour vous. Un routeur placé devant doit rediriger :",
     "edge_ports_web": "TCP 80 et 443 vers le nœud qui sert le site web",

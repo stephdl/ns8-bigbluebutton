@@ -374,9 +374,9 @@ Module state
     ...                additions are left out: the update adds its secrets and
     ...                shrinks the mediasoup range on purpose.
     ${secrets} =    Execute Command
-    ...    grep -v '^TURN_' /home/${module_id}/.config/state/passwords.env | sha256sum
+    ...    grep -v '^TURN_SECRET=' /home/${module_id}/.config/state/passwords.env | sha256sum
     ${config} =    Execute Command
-    ...    api-cli run module/${module_id}/get-configuration | python3 -c 'import json,sys; c=json.load(sys.stdin); [c.pop(k, None) for k in ("turn_enabled", "mediasoup_port_range")]; print(json.dumps(c, sort_keys=True))'
+    ...    api-cli run module/${module_id}/get-configuration | python3 -c 'import json,sys; c=json.load(sys.stdin); [c.pop(k, None) for k in ("turn_enabled", "turn_status", "stun_server", "mediasoup_port_range")]; print(json.dumps(c, sort_keys=True))'
     ${ports} =    Execute Command
     ...    runagent -m ${module_id} env | grep -E '^(NGINX|REDIS|MEDIASOUP_MIN|FS_RTP_M..)_PORT=' | sort
     ${admin} =    Greenlight query    SELECT password_digest FROM users WHERE email = 'admin@nethserver.org';
