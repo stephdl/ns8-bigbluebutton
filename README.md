@@ -232,8 +232,9 @@ refused, so the server cannot be used to reach the LAN. Its shared secret is
 generated at install time and never leaves the node.
 
 The port is fixed, outside the NS8 allocator. Enabling the server fails if
-another service already owns it. A restore or a clone onto a node where it is
-taken completes with TURN turned off and a warning in the task log.
+another service already owns it, and the Status page shows it if one takes the
+port later. A restore, clone or move always lands with TURN off, like Let's
+Encrypt: the router must first send 3478 to the new node. Turn it back on after.
 
 **The extra TURN server is the last resort.** Some networks block everything
 except TCP 443. Only TURNS on 443 gets through, and Traefik already owns 443
