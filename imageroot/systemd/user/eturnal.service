@@ -23,6 +23,8 @@ Restart=always
 # Slows the loop while another service holds 3478.
 RestartSec=10
 TimeoutStopSec=30
+# A clone re-enables every unit the source had: never start while TURN is off.
+ExecCondition=/bin/sh -c 'test "$TURN_ENABLED" = true'
 ExecStartPre=/bin/rm -f %t/eturnal.pid %t/eturnal.ctr-id
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/eturnal.pid \
     --cidfile %t/eturnal.ctr-id --cgroups=no-conmon \
