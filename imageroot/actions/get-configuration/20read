@@ -22,7 +22,6 @@ config["lets_encrypt"] = agent.get_route(os.environ["MODULE_ID"]).get("lets_encr
 
 config["public_address"] = os.getenv("PUBLIC_IP", "") or os.getenv("DETECTED_PUBLIC_IP", "")
 config["private_address"] = os.getenv("PRIVATE_IP", "") or os.getenv("DETECTED_PRIVATE_IP", "")
-config["stun_server"] = os.getenv("STUN_SERVER", "")
 config["turn_enabled"] = os.getenv("TURN_ENABLED", "false") == "true"
 config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
 

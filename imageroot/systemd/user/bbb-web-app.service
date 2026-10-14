@@ -26,7 +26,6 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-web-app.pid \
     --env=LEARNING_DASHBOARD_CLEANUP_MINUTES=${LEARNING_DASHBOARD_CLEANUP_MINUTES} \
     --env=WELCOME_MESSAGE=${WELCOME_MESSAGE} \
     --env=WELCOME_FOOTER=${WELCOME_FOOTER} \
-    --env=STUN_SERVER=${STUN_SERVER} \
     --env=TURN_EXT_SERVER=${TURN_EXT_SERVER} \
     --env=TURN_ENABLED=${TURN_ENABLED} \
     --env=ENABLE_HTTPS_PROXY=false \

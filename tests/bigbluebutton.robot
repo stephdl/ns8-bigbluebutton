@@ -474,7 +474,7 @@ Configure module
     # The schema requires every field, so a partial payload would be rejected here
     # even though one setting at a time is under test.
     ${rc} =    Execute Command
-    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_enabled":${turn},"turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"show_presentation_on_join":true,"enable_audio_captions":${captions},"audio_captions_language":"${captions_language}","learning_dashboard_max_age_days":7,"sounds_language":"${sounds_language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
+    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","turn_enabled":${turn},"turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"show_presentation_on_join":true,"enable_audio_captions":${captions},"audio_captions_language":"${captions_language}","learning_dashboard_max_age_days":7,"sounds_language":"${sounds_language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
 

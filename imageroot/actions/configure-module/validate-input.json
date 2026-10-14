@@ -9,7 +9,6 @@
             "lets_encrypt": true,
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
-            "stun_server": "",
             "turn_ext_server": "",
             "turn_enabled": false,
             "enable_recording": false,
@@ -33,7 +32,6 @@
         "host",
         "public_address",
         "private_address",
-        "stun_server",
         "turn_ext_server",
         "enable_recording",
         "enable_learning_dashboard",
@@ -114,11 +112,6 @@
             ],
             "title": "LAN IP address",
             "description": "Optional. When set, mediasoup also advertises this address so clients on the local network connect directly instead of relying on NAT reflection."
-        },
-        "stun_server": {
-            "type": "string",
-            "title": "STUN server",
-            "description": "Optional, like 'stun:stun.example.org:3478'. Empty by default: a public STUN server would receive every participant's IP address. Unneeded when turn_enabled is true, the built-in server answers STUN too."
         },
         "turn_enabled": {
             "type": "boolean",

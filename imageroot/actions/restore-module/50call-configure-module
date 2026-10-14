@@ -58,7 +58,6 @@ config = {
     "private_address": on_this_node("LAN", inherited_private,
                                     os.environ.get("DETECTED_PRIVATE_IP", ""))
                        if inherited_private else "",
-    "stun_server": os.environ.get("STUN_SERVER", ""),
     "turn_ext_server": os.environ.get("TURN_EXT_SERVER", ""),
     "turn_enabled": turn_on_this_node(),
     "enable_recording": os.environ.get("ENABLE_RECORDING", "false") == "true",

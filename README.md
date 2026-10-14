@@ -152,7 +152,6 @@ api-cli run configure-module --agent module/bigbluebutton1 --data - <<EOF
   "lets_encrypt": true,
   "public_address": "203.0.113.10",
   "private_address": "192.168.1.10",
-  "stun_server": "",
   "turn_ext_server": "",
   "turn_ext_secret": "",
   "enable_recording": true,
@@ -199,8 +198,7 @@ What each field does, and the value a fresh install carries:
 |---|---|---|
 | `private_address` | detected | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
 | `turn_enabled` | `false` | Runs eturnal on TCP and UDP 3478 and opens the port in the node firewall. The action fails if another service already owns 3478. Omit the field to keep the current state. See *STUN and TURN* below. |
-| `stun_server` | empty | See *STUN and TURN* below. A public STUN server receives the IP address of every participant. Not needed with `turn_enabled`, which answers STUN too. |
-| `turn_ext_server` | empty | A TURN server you already run elsewhere, alone or in addition to the built-in one. |
+| `turn_ext_server` | empty | An extra TURN server on another host, for networks that only allow TCP 443. See *STUN and TURN* below. |
 | `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
 | `enable_recording` | `true` | Recordings capture audio, video, chat, shared notes and presentations. |
 | `recording_max_age_days` | `0` | How long a recording stays available after the meeting. `0` keeps it forever, otherwise 1 to 180 days. Deletion goes through `bbb-record --delete`, so the database and the published tree stay consistent. |
@@ -217,9 +215,9 @@ What each field does, and the value a fresh install carries:
 
 ## STUN and TURN
 
-**Media works without either.** mediasoup announces the node's public address and
-the allocated UDP range is open, so the browser sends straight to the SFU, which
-learns the browser's address from the packets it receives.
+**Media needs neither.** mediasoup announces the node's public address, so the
+browser sends straight to the SFU. There is no STUN setting: the built-in TURN
+server answers STUN when it runs.
 
 **TURN is for blocked UDP.** A client whose firewall blocks outbound UDP cannot
 reach the SFU. TURN relays its media over a port it can reach.
@@ -237,27 +235,19 @@ The port is fixed, outside the NS8 allocator. Enabling the server fails if
 another service already owns it. A restore or a clone onto a node where it is
 taken completes with TURN turned off and a warning in the task log.
 
-**TURNS is not provided.** TLS on 5349 or 443 would need the site certificate,
-which on a multi-node cluster often lives on another node's Traefik. The few
-networks that block TCP 3478 usually block 5349 too. For those, terminate TLS on
-443 upstream, for example with HAProxy on your firewall forwarding the decrypted
-stream to this node's TCP 3478, and announce it with
-`turn_ext_server=turns:turn.example.org:443?transport=tcp` and the same secret.
-It is stored as `TURN_SECRET` in `state/passwords.env`.
+**The extra TURN server is the last resort.** Some networks block everything
+except TCP 443. Only TURNS on 443 gets through, and Traefik already owns 443
+here, so it must live on another host or come from a provider. Media then goes
+over TCP and TLS, so quality may drop. Set `turn_ext_server`, for example
+`turns:turn.example.org:443?transport=tcp`. One option is HAProxy on your
+firewall, terminating TLS and forwarding to this node's TCP 3478 with the
+built-in secret, stored as `TURN_SECRET` in `state/passwords.env`.
 
-**Privacy is why `stun_server` is empty.** A STUN server learns the IP address of
-every participant that queries it, and upstream's `sample.env` points at a
-third-party public one. The built-in server answers STUN on the same port, so
-enabling it covers both.
-
-**An external TURN needs its secret.** BigBlueButton supports one authentication
+**The extra TURN server needs its secret.** BigBlueButton supports one authentication
 mode: `TurnServer.generatePasswordFor()` signs a short-lived credential with
 `HMAC-SHA1(expiry:userId, secret)`, and the TURN server recomputes it from its own
 `static-auth-secret`. Set `turn_ext_secret` to that value or every allocation is
 refused. There is no username-and-password mode.
-
-Value formats: `stun:turn.example.org:3478` and
-`turns:turn.example.org:443?transport=tcp`.
 
 Upstream references:
 

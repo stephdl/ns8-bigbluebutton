@@ -9,7 +9,6 @@
             "lets_encrypt": true,
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
-            "stun_server": "",
             "turn_enabled": false,
             "turn_ext_server": "",
             "turn_ext_secret_set": false,
@@ -38,7 +37,6 @@
         "lets_encrypt",
         "public_address",
         "private_address",
-        "stun_server",
         "turn_enabled",
         "turn_ext_server",
         "turn_ext_secret_set",
@@ -80,10 +78,6 @@
             "type": "string",
             "title": "LAN IP address",
             "description": "Additional address advertised to clients on the local network"
-        },
-        "stun_server": {
-            "type": "string",
-            "title": "STUN server"
         },
         "turn_enabled": {
             "type": "boolean",
