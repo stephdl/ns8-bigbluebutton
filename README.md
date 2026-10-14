@@ -29,7 +29,8 @@ and improve it.
   any router in front of it needs the range forwarded.
 - **TCP and UDP 3478 for the built-in TURN server, if you enable it.**
   Participants behind a firewall that blocks UDP cannot join without TURN. The
-  port is fixed, so it must be free on the node. See *STUN and TURN* below.
+  port is fixed, so it must be free on the node. Behind NAT, set the LAN
+  address too. See *STUN and TURN* below.
 - **A certificate the browser trusts, matching the site hostname.** WebRTC only
   grants microphone and camera access in a secure context, so without one every
   participant meets a warning page and stays without a microphone or a camera
@@ -177,11 +178,12 @@ configuration: a missing one would silently reset a setting instead of leaving i
 alone. Read the current values with `api-cli run get-configuration`, change what
 you need and send the result back.
 
-Two fields are exempt, both because they cannot round-trip. `lets_encrypt`
-defaults to `false` when omitted, which is what the restore and clone paths rely
-on to avoid requesting a certificate for a name that does not resolve yet.
-`turn_ext_secret` keeps its stored value when omitted, since `get-configuration`
-returns only `turn_ext_secret_set`; send an empty string to clear it.
+Three fields are exempt. `lets_encrypt` defaults to `false` when omitted, which
+is what the restore and clone paths rely on to avoid requesting a certificate for
+a name that does not resolve yet. `turn_enabled` keeps its current state when
+omitted, so an older caller cannot switch TURN off. `turn_ext_secret` keeps its
+stored value when omitted, since `get-configuration` returns only
+`turn_ext_secret_set`; send an empty string to clear it.
 
 `host` is the fully qualified domain name of the web client. `public_address` is
 what participants use to reach this node: it is *announced* to WebRTC clients, not
@@ -270,8 +272,8 @@ refused. There is no username-and-password mode.
 Upstream references:
 
 - [TURN server configuration](https://docs.bigbluebutton.org/administration/turn-server/)
-  — coturn setup, the ports it needs, and the `turn-stun-servers.xml` beans this
-  module patches
+  — the coturn setup this module replaces with eturnal, and the
+  `turn-stun-servers.xml` beans it patches
 - [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/)
   — check from a browser that your server returns candidates
 - `stunclient --mode full --localport 30000 turn.example.org 3478`, from the
@@ -345,10 +347,12 @@ presentation of its own. Detach the room presentation to get `default.pdf` back.
 
     api-cli run get-configuration --agent module/bigbluebutton1
 
-Two read-only fields come back with it. `mediasoup_port_range` is the UDP range
+Three read-only fields come back with it. `mediasoup_port_range` is the UDP range
 that must be reachable from the internet. `certificate_matches_host` is `false`
 when Traefik serves a certificate for another name, which the Settings page
-reports rather than silently ignoring.
+reports rather than silently ignoring. `turn_status` is `disabled`, `running`,
+`stopped` or `port_in_use`, the last when another service holds 3478; the Status
+page shows it.
 
 ## Differences from upstream
 
@@ -359,8 +363,9 @@ and why:
   hardcodes `turns:${DOMAIN}:443`, which collides with Traefik, and emits the
   `turn0` bean unconditionally, with no `ENABLE_COTURN` guard. Here the beans
   exist only while `turn_enabled` is true. See *STUN and TURN*.
-- **STUN is empty by default.** `sample.env` ships a third-party public STUN
-  server, which would receive the IP address of every participant.
+- **No STUN setting.** `sample.env` ships a third-party public STUN server,
+  which would receive the IP address of every participant. Here mediasoup
+  announces its own address, and the built-in TURN server answers STUN.
 - **Greenlight is the front end**, served at the site root, and the module seeds
   a bootstrap administrator for it. The BigBlueButton API stays available for
   another front end to drive.
@@ -410,6 +415,13 @@ either would be restored and overwritten seconds later.
 **A restore therefore loses every in-progress meeting, and any recording still
 queued for processing at backup time.** The raw media survives, but the job that
 would have processed it does not.
+
+The built-in TURN server comes back off, like Let's Encrypt: point the router's
+3478 at the new node, then turn it on in Settings. Its secret is kept.
+
+Cloning or moving from a Rocky Linux node to a Debian node fails at the last
+step in NS8 core 3.22.0, for every app; the app still runs. See
+[NethServer/dev#8232](https://github.com/NethServer/dev/issues/8232).
 
 ## Uninstall
 
