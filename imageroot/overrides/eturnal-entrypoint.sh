@@ -1,8 +1,7 @@
 #!/bin/sh
 
 #
-# Replace the image's public Erlang cookie: on the host network, any local
-# user knowing it could run code inside eturnal.
+# The image's cookie is public: on the host network it would let anyone in.
 #
 
 set -eu

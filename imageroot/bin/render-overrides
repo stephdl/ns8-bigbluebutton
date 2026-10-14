@@ -114,15 +114,11 @@ for name, src in sources.items():
 for name in ENTRYPOINTS:
     os.chmod(os.path.join(dst_dir, name), 0o755)
 
-# The relay reaches BigBlueButton only at the addresses mediasoup announces.
 peers = [ip for ip in (env.get("PUBLIC_IP", ""), env.get("PRIVATE_IP", "")) if ip]
 
 
 def relay_address():
-    """IPv4 address the relay binds to: PRIVATE_IP, else the kernel's source.
-
-    Not PUBLIC_IP: behind NAT it belongs to the router, and it may be IPv6.
-    """
+    """Not PUBLIC_IP: behind NAT it is the router's, and it may be IPv6."""
     private = env.get("PRIVATE_IP", "")
     if private and ":" not in private:
         return private
@@ -174,8 +170,7 @@ with os.fdopen(gl_fd, "w") as fp:
     print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
     print("RELATIVE_URL_ROOT=/", file=fp)
 
-# Only what eturnal needs. The cookie stays out of passwords.env, which bbb-web
-# loads whole.
+# Not in passwords.env: bbb-web loads that whole and has no use for the cookie.
 et_path = os.path.join(state_dir, "eturnal.env")
 et_old = agent.read_envfile(et_path) if os.path.exists(et_path) else {}
 cookie = et_old.get("ETURNAL_COOKIE") or secrets.token_hex(32)

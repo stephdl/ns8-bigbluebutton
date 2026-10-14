@@ -4,16 +4,10 @@
 #
 
 #
-# Built-in TURN server, enabled only when turn_enabled is true. Host network,
-# like webrtc-sfu: the relay must send from the node's real address.
-#
-# No render-overrides here: configure-module and bigbluebutton.service do it,
-# and a re-render at each restart would rewrite files live containers read.
-#
-# state/eturnal.env holds only what eturnal needs, not all of passwords.env.
+# Host network: the relay must send from the node's real address.
+# No render-overrides: a re-render at each restart rewrites files live containers read.
 # STUN_SERVICE=false: no public STUN lookup, the relay address is configured.
-# --image-volume=ignore: avoids a new anonymous volume at every restart.
-# Erlang listens on the fixed 127.0.0.1:3470, fine with max-per-node=1.
+# --image-volume=ignore: no new anonymous volume at every restart.
 #
 
 [Unit]

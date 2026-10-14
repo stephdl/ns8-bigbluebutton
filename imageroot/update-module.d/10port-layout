@@ -6,8 +6,7 @@
 #
 
 #
-# Before 20restart: older instances lack the TURN relay range that
-# render-overrides needs.
+# Before 20restart: render-overrides needs the relay range older instances lack.
 #
 
 set -e

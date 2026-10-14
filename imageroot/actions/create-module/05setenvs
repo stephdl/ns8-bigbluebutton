@@ -6,9 +6,7 @@
 #
 
 #
-# Split TCP_PORTS_RANGE, injected by the platform from the label in
-# build-images.sh, into the variables the systemd units expect. The UDP range
-# is split by apply-port-layout in 20firewall.
+# Split TCP_PORTS_RANGE for the units. The UDP range is split in 20firewall.
 #
 
 import os

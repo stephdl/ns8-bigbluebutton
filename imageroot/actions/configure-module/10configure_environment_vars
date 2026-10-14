@@ -44,8 +44,7 @@ else:
 # space in the value trips anything that sources the file.
 agent.set_env("MS_WEBRTC_LISTEN_IPS", json.dumps(listen_ips, separators=(",", ":")))
 
-# No STUN setting: mediasoup announces its public address, and the built-in
-# TURN server answers STUN when enabled. An older instance may still carry it.
+# STUN is no longer a setting: drop the value an older release stored.
 agent.unset_env("STUN_SERVER")
 agent.set_env("TURN_EXT_SERVER", data["turn_ext_server"])
 

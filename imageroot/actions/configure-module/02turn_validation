@@ -6,7 +6,7 @@
 #
 
 #
-# Runs before any change, so a refusal leaves the module untouched.
+# Before any change, so a refusal leaves the module untouched.
 #
 
 import json

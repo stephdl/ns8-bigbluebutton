@@ -6,8 +6,7 @@
 #
 
 #
-# Exit 1 and print the sockets if another user holds port 3478. The port is
-# fixed, outside the allocator. Ours are matched by uid, subuids included.
+# 3478 is outside the allocator. Match ours by uid, so a restarting eturnal counts.
 #
 
 import getpass
@@ -36,7 +35,6 @@ def our_uids():
 
 ours = our_uids()
 
-# -e adds the owner as uid:N.
 out = subprocess.run(
     ["ss", "-Hlntue", f"sport = :{TURN_PORT}"],
     capture_output=True, text=True, check=True,

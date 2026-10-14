@@ -78,7 +78,6 @@ buildah add "${container}" ui/dist /ui
 #   - the first 7168 ports  -> mediasoup RTC (public, declared in the firewall)
 #   - the next  1024 ports  -> eturnal relay (bound on the host, not public)
 #   - the last  1024 ports  -> FreeSWITCH RTP (bound on the host, not public)
-# The relay is carved out: the core can only free all of a module's UDP ports.
 # FreeSWITCH upstream defaults to 16384-24576 (8193 ports), which overlaps the
 # core allocator span 20000-45000 and is far more than the SFU<->FreeSWITCH
 # audio leg needs: that leg uses one port per audio participant, not per stream.

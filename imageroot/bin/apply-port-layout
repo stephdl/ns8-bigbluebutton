@@ -6,8 +6,8 @@
 #
 
 #
-# Split UDP_PORTS_RANGE into mediasoup, TURN relay and FreeSWITCH ranges, then
-# open the public ones. Recomputed each time: a restore or clone gets new ports.
+# Recomputed each time, since a restore or clone gets new ports. The relay is
+# carved out here because the core can only free all of a module's UDP ports.
 #
 
 import os
@@ -41,12 +41,10 @@ agent.set_env("TURN_RELAY_MAX_PORT", str(relay_max))
 agent.set_env("FS_RTP_MIN_PORT", str(fs_min))
 agent.set_env("FS_RTP_MAX_PORT", str(fs_max))
 
-# The relay and FreeSWITCH ranges stay local.
 ports = [f"{ms_min}-{ms_max}/udp"]
 if env.get("TURN_ENABLED") == "true":
     ports += [f"{TURN_PORT}/tcp", f"{TURN_PORT}/udp"]
 
-# replace_ports closes what is no longer listed.
 agent.assert_exp(agent.add_public_service(os.environ["MODULE_ID"], ports, replace_ports=True))
 
 print(f"mediasoup UDP {ms_min}-{ms_max}, TURN relay UDP {relay_min}-{relay_max}, "
