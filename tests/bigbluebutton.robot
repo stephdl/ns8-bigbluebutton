@@ -39,8 +39,8 @@ Check if bigbluebutton is installed correctly
 
 Check if the port ranges were allocated
     # The platform allocates from the labels in build-images.sh, and
-    # create-module/05setenvs splits the UDP range in two. If any of these are
-    # missing the units will start with empty port variables.
+    # bin/apply-port-layout splits the UDP range. If any of these are missing
+    # the units will start with empty port variables.
     ${output} =    Execute Command    runagent -m ${module_id} env
     Should Contain    ${output}    NGINX_PORT=
     Should Contain    ${output}    REDIS_PORT=
@@ -50,10 +50,13 @@ Check if the port ranges were allocated
     Should Contain    ${output}    FS_RTP_MAX_PORT=
 
 Check if the mediasoup range is the expected size
-    ${min} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MIN_PORT
-    ${max} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MAX_PORT
-    ${size} =    Evaluate    ${max} - ${min} + 1
-    Should Be Equal As Integers    ${size}    8192
+    # The update scenario still runs the stable release here, which predates the
+    # TURN relay range carved out of mediasoup's.
+    IF    '${SCENARIO}' == 'update'
+        Mediasoup range should be    8192
+    ELSE
+        Mediasoup range should be    7168
+    END
 
 Check if the secrets file is not world readable
     # These must never reach the environment: agent.set_env writes to Redis in
@@ -103,7 +106,26 @@ Check if bigbluebutton survives the update
     Should Be Equal As Integers    ${rc}  0
     ${image} =    Execute Command    runagent -m ${module_id} printenv IMAGE_URL
     Should Be Equal As Strings    ${image}    ${IMAGE_URL}
-    Wait Until Keyword Succeeds    300s    10s    Every unit is active
+    Wait Until Keyword Succeeds    300s    10s    Mediasoup range should be
+    [Arguments]    ${expected}
+    ${min} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MIN_PORT
+    ${max} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MAX_PORT
+    ${size} =    Evaluate    ${max} - ${min} + 1
+    Should Be Equal As Integers    ${size}    ${expected}
+
+Unit should be
+    [Arguments]    ${unit}    ${expected}
+    ${state} =    Execute Command    runagent -m ${module_id} systemctl --user is-active ${unit}
+    Should Be Equal As Strings    ${state}    ${expected}    ${unit} is ${state}
+
+TURN beans are rendered
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} podman exec bbb-web-app cat /etc/bigbluebutton/turn-stun-servers.xml
+    Should Contain    ${output}    turn:${TEST_HOST}:3478?transport=udp
+    Should Contain    ${output}    turn:${TEST_HOST}:3478?transport=tcp
+    Should Contain    ${output}    stun:${TEST_HOST}:3478
+
+Every unit is active
     Wait Until Keyword Succeeds    300s    5s    Greenlight should answer
     # A changed secret breaks the signed API calls and the Greenlight database login.
     ${after} =    Module state
@@ -121,6 +143,14 @@ Check if bigbluebutton survives the update
     ${rc} =    Execute Command    runagent -m ${module_id} test -e custom/upgrade-probe
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0    state/custom lost its content
+    # The update makes room for the TURN relay, and leaves TURN itself off.
+    Mediasoup range should be    7168
+    ${relay} =    Execute Command    runagent -m ${module_id} printenv TURN_RELAY_MIN_PORT
+    Should Not Be Empty    ${relay}
+    ${turn} =    Execute Command    runagent -m ${module_id} printenv TURN_ENABLED
+    Should Not Be Equal As Strings    ${turn}    true
+    ${output} =    Execute Command    firewall-cmd --info-service=${module_id}
+    Should Not Contain    ${output}    3478
 
 Check if the pod and its containers are running
     ${output} =    Execute Command    runagent -m ${module_id} podman ps --format '{{.Names}}'
@@ -222,6 +252,37 @@ Check if disabling automatic subtitles reverts the client settings
     Configure audio captions    false    browserLanguage
     Wait Until Keyword Succeeds    120s    5s    Client setting is
     ...    .public.app.audioCaptions.enabled    false
+
+Check if the built-in TURN server can be enabled
+    Configure module    en-us-callie    false    browserLanguage    true
+    Wait Until Keyword Succeeds    120s    5s    Unit should be    eturnal.service    active
+    ${output} =    Execute Command    ss -Hlntu 'sport = :3478'
+    Should Contain    ${output}    tcp
+    Should Contain    ${output}    udp
+    ${output} =    Execute Command    firewall-cmd --info-service=${module_id}
+    Should Contain    ${output}    3478/tcp
+    Should Contain    ${output}    3478/udp
+    ${output} =    Execute Command    api-cli run module/${module_id}/get-configuration
+    &{config} =    Evaluate    json.loads('''${output}''')    modules=json
+    Should Be True    ${config.turn_enabled}
+
+Check if bbb-web hands out the built-in TURN server
+    # The beans are rendered inside bbb-web by dockerize, from TURN_ENABLED.
+    Wait Until Keyword Succeeds    120s    5s    TURN beans are rendered
+
+Check if the TURN secret stays out of the environment
+    ${output} =    Execute Command    runagent -m ${module_id} env
+    Should Not Contain    ${output}    TURN_SECRET=
+    Should Not Contain    ${output}    ETURNAL_COOKIE=
+    ${mode} =    Execute Command
+    ...    stat -c %a /home/${module_id}/.config/state/eturnal.env
+    Should Be Equal As Strings    ${mode}    600
+
+Check if the built-in TURN server can be disabled
+    Configure module    en-us-callie    false    browserLanguage    false
+    Unit should be    eturnal.service    inactive
+    ${output} =    Execute Command    firewall-cmd --info-service=${module_id}
+    Should Not Contain    ${output}    3478
 
 Check if nginx answers behind Traefik
     ${port} =    Execute Command    runagent -m ${module_id} printenv NGINX_PORT
@@ -328,11 +389,15 @@ Greenlight query
 Module state
     [Documentation]    What an update must leave untouched: the secrets (by
     ...                checksum), the configuration, the allocated ports and
-    ...                the digest of the seeded Greenlight admin.
-    ${secrets} =    Execute Command    sha256sum /home/${module_id}/.config/state/passwords.env
-    ${config} =    Execute Command    api-cli run module/${module_id}/get-configuration
+    ...                the digest of the seeded Greenlight admin. The TURN
+    ...                additions are left out: the update adds its secrets and
+    ...                shrinks the mediasoup range on purpose.
+    ${secrets} =    Execute Command
+    ...    grep -v '^TURN_' /home/${module_id}/.config/state/passwords.env | sha256sum
+    ${config} =    Execute Command
+    ...    api-cli run module/${module_id}/get-configuration | python3 -c 'import json,sys; c=json.load(sys.stdin); [c.pop(k, None) for k in ("turn_enabled", "mediasoup_port_range")]; print(json.dumps(c, sort_keys=True))'
     ${ports} =    Execute Command
-    ...    runagent -m ${module_id} env | grep -E '^(NGINX|REDIS|MEDIASOUP_M..|FS_RTP_M..)_PORT=' | sort
+    ...    runagent -m ${module_id} env | grep -E '^(NGINX|REDIS|MEDIASOUP_MIN|FS_RTP_M..)_PORT=' | sort
     ${admin} =    Greenlight query    SELECT password_digest FROM users WHERE email = 'admin@nethserver.org';
     RETURN    ${secrets}    ${config}    ${ports}    ${admin}
 
@@ -405,11 +470,11 @@ Configure audio captions
     Configure module    en-us-callie    ${captions}    ${language}
 
 Configure module
-    [Arguments]    ${sounds_language}    ${captions}    ${captions_language}
+    [Arguments]    ${sounds_language}    ${captions}    ${captions_language}    ${turn}=false
     # The schema requires every field, so a partial payload would be rejected here
     # even though one setting at a time is under test.
     ${rc} =    Execute Command
-    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"show_presentation_on_join":true,"enable_audio_captions":${captions},"audio_captions_language":"${captions_language}","learning_dashboard_max_age_days":7,"sounds_language":"${sounds_language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
+    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_enabled":${turn},"turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"show_presentation_on_join":true,"enable_audio_captions":${captions},"audio_captions_language":"${captions_language}","learning_dashboard_max_age_days":7,"sounds_language":"${sounds_language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
 
