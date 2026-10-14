@@ -106,26 +106,7 @@ Check if bigbluebutton survives the update
     Should Be Equal As Integers    ${rc}  0
     ${image} =    Execute Command    runagent -m ${module_id} printenv IMAGE_URL
     Should Be Equal As Strings    ${image}    ${IMAGE_URL}
-    Wait Until Keyword Succeeds    300s    10s    Mediasoup range should be
-    [Arguments]    ${expected}
-    ${min} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MIN_PORT
-    ${max} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MAX_PORT
-    ${size} =    Evaluate    ${max} - ${min} + 1
-    Should Be Equal As Integers    ${size}    ${expected}
-
-Unit should be
-    [Arguments]    ${unit}    ${expected}
-    ${state} =    Execute Command    runagent -m ${module_id} systemctl --user is-active ${unit}
-    Should Be Equal As Strings    ${state}    ${expected}    ${unit} is ${state}
-
-TURN beans are rendered
-    ${output} =    Execute Command
-    ...    runagent -m ${module_id} podman exec bbb-web-app cat /etc/bigbluebutton/turn-stun-servers.xml
-    Should Contain    ${output}    turn:${TEST_HOST}:3478?transport=udp
-    Should Contain    ${output}    turn:${TEST_HOST}:3478?transport=tcp
-    Should Contain    ${output}    stun:${TEST_HOST}:3478
-
-Every unit is active
+    Wait Until Keyword Succeeds    300s    10s    Every unit is active
     Wait Until Keyword Succeeds    300s    5s    Greenlight should answer
     # A changed secret breaks the signed API calls and the Greenlight database login.
     ${after} =    Module state
@@ -400,6 +381,25 @@ Module state
     ...    runagent -m ${module_id} env | grep -E '^(NGINX|REDIS|MEDIASOUP_MIN|FS_RTP_M..)_PORT=' | sort
     ${admin} =    Greenlight query    SELECT password_digest FROM users WHERE email = 'admin@nethserver.org';
     RETURN    ${secrets}    ${config}    ${ports}    ${admin}
+
+Mediasoup range should be
+    [Arguments]    ${expected}
+    ${min} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MIN_PORT
+    ${max} =    Execute Command    runagent -m ${module_id} printenv MEDIASOUP_MAX_PORT
+    ${size} =    Evaluate    ${max} - ${min} + 1
+    Should Be Equal As Integers    ${size}    ${expected}
+
+Unit should be
+    [Arguments]    ${unit}    ${expected}
+    ${state} =    Execute Command    runagent -m ${module_id} systemctl --user is-active ${unit}
+    Should Be Equal As Strings    ${state}    ${expected}    ${unit} is ${state}
+
+TURN beans are rendered
+    ${output} =    Execute Command
+    ...    runagent -m ${module_id} podman exec bbb-web-app cat /etc/bigbluebutton/turn-stun-servers.xml
+    Should Contain    ${output}    turn:${TEST_HOST}:3478?transport=udp
+    Should Contain    ${output}    turn:${TEST_HOST}:3478?transport=tcp
+    Should Contain    ${output}    stun:${TEST_HOST}:3478
 
 Every unit is active
     FOR    ${unit}    IN    @{UNITS}
