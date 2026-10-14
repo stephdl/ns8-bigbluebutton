@@ -480,22 +480,6 @@
                   <!-- NAT traversal -->
                   <h4 class="mg-bottom">{{ $t("settings.nat_traversal") }}</h4>
                   <NsTextInput
-                    v-if="!isTurnEnabled"
-                    :label="$t('settings.stun_server')"
-                    placeholder="stun:stun.example.org:3478"
-                    v-model.trim="stunServer"
-                    class="mg-bottom"
-                    :invalid-message="$t(error.stun_server)"
-                    :disabled="stillLoading"
-                    tooltipAlignment="start"
-                    tooltipDirection="right"
-                    ref="stun_server"
-                  >
-                    <template #tooltip>
-                      {{ $t("settings.stun_server_tooltip") }}
-                    </template>
-                  </NsTextInput>
-                  <NsTextInput
                     :label="$t('settings.turn_ext_server')"
                     placeholder="turns:turn.example.org:443?transport=tcp"
                     v-model.trim="turnExtServer"
@@ -658,7 +642,6 @@ export default {
       mediasoupPortRange: "",
       certificateMatchesHost: true,
       defaultAdminPasswordInUse: false,
-      stunServer: "",
       turnExtServer: "",
       turnExtSecret: "",
       turnExtSecretSet: false,
@@ -697,7 +680,6 @@ export default {
         lets_encrypt: "",
         public_address: "",
         private_address: "",
-        stun_server: "",
         turn_enabled: "",
         turn_ext_server: "",
         turn_ext_secret: "",
@@ -932,7 +914,6 @@ export default {
       this.mediasoupPortRange = config.mediasoup_port_range;
       this.certificateMatchesHost = config.certificate_matches_host;
       this.defaultAdminPasswordInUse = config.default_admin_password_in_use;
-      this.stunServer = config.stun_server;
       this.isTurnEnabled = config.turn_enabled;
       this.turnExtServer = config.turn_ext_server;
       this.turnExtSecretSet = config.turn_ext_secret_set;
@@ -1071,8 +1052,6 @@ export default {
             lets_encrypt: this.isLetsEncryptEnabled,
             public_address: this.publicAddress,
             private_address: this.privateAddress,
-            // Hidden while the built-in server answers STUN, so it cannot linger.
-            stun_server: this.isTurnEnabled ? "" : this.stunServer,
             turn_enabled: this.isTurnEnabled,
             turn_ext_server: this.turnExtServer,
             ...(this.turnExtSecret
