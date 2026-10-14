@@ -37,10 +37,12 @@
       "allowedVersions": "/^\\d+\\.\\d+\\.\\d+-s[0-9a-f]+-p[0-9a-f]+$/"
     },
     {
-      "description": "Mixing BigBlueButton component versions is not supported upstream, so the whole alangecker set must move in a single PR",
+      "description": "Mixing BigBlueButton component versions is not supported upstream, so the whole alangecker set must move in a single PR. separateMinorPatch undoes the split from :automergePatch, which would also merge the patch half alone. A BigBlueButton bump always needs a manual test.",
       "matchDatasources": ["docker"],
       "matchDepNames": ["alangecker/**"],
-      "groupName": "BigBlueButton images"
+      "groupName": "BigBlueButton images",
+      "separateMinorPatch": false,
+      "automerge": false
     }
   ]
 }
