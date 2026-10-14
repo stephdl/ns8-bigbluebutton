@@ -243,6 +243,21 @@ over TCP and TLS, so quality may drop. Set `turn_ext_server`, for example
 firewall, terminating TLS and forwarding to this node's TCP 3478 with the
 built-in secret, stored as `TURN_SECRET` in `state/passwords.env`.
 
+**Test it** with the [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/)
+page, from a browser that can reach the node. The browser does the work, so a
+LAN-only name is fine. Make a one-hour credential on the node:
+
+```
+runagent -m bigbluebutton1 python3 -c 'import base64,hmac,hashlib,time,agent; s=agent.read_envfile("passwords.env")["TURN_SECRET"]; u=f"{int(time.time())+3600}:test"; print(u, base64.b64encode(hmac.new(s.encode(),u.encode(),hashlib.sha1).digest()).decode())'
+```
+
+Remove the default server, add `turn:<host>:3478?transport=udp` with that
+username and password, tick *relay*, and gather. A `relay` candidate means TURN
+works. A `srflx` one, with *all* ticked, means STUN works. Repeat with
+`?transport=tcp`. A wrong password must give no `relay` candidate. In a meeting,
+`chrome://webrtc-internals` shows `candidateType=relay` on the active pair when
+the client went through TURN.
+
 **The extra TURN server needs its secret.** BigBlueButton supports one authentication
 mode: `TurnServer.generatePasswordFor()` signs a short-lived credential with
 `HMAC-SHA1(expiry:userId, secret)`, and the TURN server recomputes it from its own
