@@ -27,6 +27,7 @@ for evar in [
         "MS_WEBRTC_LISTEN_IPS",
         "STUN_SERVER",
         "TURN_EXT_SERVER",
+        "TURN_ENABLED",
         "ENABLE_RECORDING",
         "RECORDING_MAX_AGE_DAYS",
         "ENABLE_LEARNING_DASHBOARD",

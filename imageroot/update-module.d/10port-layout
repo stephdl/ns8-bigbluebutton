@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Before 20restart: render-overrides needs the TURN relay range, which an
+# instance created by an older release does not have yet. Also shrinks its
+# public mediasoup range to make room for it.
+#
+
+set -e
+exec 1>&2
+
+exec apply-port-layout

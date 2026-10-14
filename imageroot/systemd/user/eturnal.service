@@ -1,0 +1,63 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Built-in TURN server, enabled by configure-module only when turn_enabled is
+# true. HOST network namespace, like webrtc-sfu: the relay must send from the
+# node's real address.
+#
+# The secret and the Erlang cookie come from state/eturnal.env, written by
+# render-overrides, rather than the whole passwords.env: eturnal needs no other
+# module secret, and --env would show them on the command line.
+#
+# STUN_SERVICE=false stops the image from asking a public STUN server for the
+# relay address: it is set explicitly in eturnal.yml.
+#
+# --image-volume=ignore: the image declares /opt/eturnal a volume, and an
+# anonymous one would pile up at every restart. eturnal only writes to its run
+# directory, given a tmpfs of its own.
+#
+# The Erlang distribution listens on 127.0.0.1:3470, the image default
+# ERL_DIST_PORT. Fixed, but max-per-node=1 keeps it to one eturnal per node.
+#
+
+[Unit]
+Description=Podman eturnal.service
+After=bigbluebutton.service
+Wants=bigbluebutton.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+Restart=always
+TimeoutStopSec=30
+ExecStartPre=/bin/rm -f %t/eturnal.pid %t/eturnal.ctr-id
+ExecStartPre=runagent render-overrides
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/eturnal.pid \
+    --cidfile %t/eturnal.ctr-id --cgroups=no-conmon \
+    --replace -d --name eturnal \
+    --network=host \
+    --read-only \
+    --tmpfs /tmp \
+    --tmpfs /opt/eturnal/run:mode=1777 \
+    --image-volume=ignore \
+    --cap-drop=ALL \
+    --security-opt no-new-privileges \
+    --no-healthcheck \
+    --env-file=%S/state/eturnal.env \
+    --env=STUN_SERVICE=false \
+    --volume %S/state/overrides/eturnal.yml:/etc/eturnal.yml:ro,z \
+    --volume %S/state/overrides/eturnal-entrypoint.sh:/eturnal-entrypoint.sh:ro,z \
+    --entrypoint='["/sbin/tini","--","/eturnal-entrypoint.sh"]' \
+    ${ETURNAL_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/eturnal.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/eturnal.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/eturnal.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

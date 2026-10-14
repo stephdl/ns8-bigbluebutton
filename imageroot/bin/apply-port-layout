@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Split UDP_PORTS_RANGE into the mediasoup, eturnal relay and FreeSWITCH RTP
+# ranges, then open the public ones in the node firewall.
+#
+# Recomputed on every create, configure and update, never trusted from a copied
+# environment: a restore or a clone lands on a node with its own allocation.
+#
+
+import os
+import sys
+
+import agent
+
+MEDIASOUP_PORTS = 7168
+TURN_RELAY_PORTS = 1024
+FS_RTP_PORTS = 1024
+
+TURN_PORT = 3478
+
+# agent.set_env() does not touch os.environ, and each step is its own process:
+# read state/environment back.
+env = agent.read_envfile(os.path.join(os.environ["AGENT_STATE_DIR"], "environment"))
+
+udp_start, udp_end = (int(p) for p in os.environ["UDP_PORTS_RANGE"].split("-"))
+agent.assert_exp(
+    udp_end - udp_start + 1 >= MEDIASOUP_PORTS + TURN_RELAY_PORTS + FS_RTP_PORTS,
+    f"at least {MEDIASOUP_PORTS + TURN_RELAY_PORTS + FS_RTP_PORTS} UDP ports are required",
+)
+
+ms_min, ms_max = udp_start, udp_start + MEDIASOUP_PORTS - 1
+relay_min, relay_max = ms_max + 1, ms_max + TURN_RELAY_PORTS
+fs_min, fs_max = relay_max + 1, relay_max + FS_RTP_PORTS
+
+agent.set_env("MEDIASOUP_MIN_PORT", str(ms_min))
+agent.set_env("MEDIASOUP_MAX_PORT", str(ms_max))
+agent.set_env("TURN_RELAY_MIN_PORT", str(relay_min))
+agent.set_env("TURN_RELAY_MAX_PORT", str(relay_max))
+agent.set_env("FS_RTP_MIN_PORT", str(fs_min))
+agent.set_env("FS_RTP_MAX_PORT", str(fs_max))
+
+# Only mediasoup and the TURN listener are public. The relay and FreeSWITCH
+# ranges only ever talk to services on this same host.
+ports = [f"{ms_min}-{ms_max}/udp"]
+if env.get("TURN_ENABLED") == "true":
+    ports += [f"{TURN_PORT}/tcp", f"{TURN_PORT}/udp"]
+
+# replace_ports: disabling TURN, or shrinking the mediasoup range of an older
+# install, must close what is no longer listed.
+agent.assert_exp(agent.add_public_service(os.environ["MODULE_ID"], ports, replace_ports=True))
+
+print(f"mediasoup UDP {ms_min}-{ms_max}, TURN relay UDP {relay_min}-{relay_max}, "
+      f"FreeSWITCH RTP UDP {fs_min}-{fs_max}, public: {' '.join(ports)}", file=sys.stderr)

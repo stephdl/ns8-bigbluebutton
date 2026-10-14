@@ -4,9 +4,9 @@
     alangecker/bbb-docker-web. Still a dockerize template, rendered by bbb-web's
     entrypoint, so {{ .Env.X }} is resolved there.
 
-    Two changes, both because this module ships no coturn: upstream's unguarded
-    turn0 bean is gone, and stun1 is guarded so an empty value cannot produce an
-    invalid bean.
+    Changes: upstream's turn0 bean, which assumes a coturn next to bbb-web, is
+    replaced by beans for the built-in eturnal, guarded by TURN_ENABLED. stun1 is
+    guarded so an empty value cannot produce an invalid bean.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -16,6 +16,22 @@
     {{if .Env.STUN_SERVER }}
     <bean id="stun1" class="org.bigbluebutton.web.services.turn.StunServer">
         <constructor-arg index="0" value="{{ .Env.STUN_SERVER }}"/>
+    </bean>
+    {{end}}
+
+    {{if eq .Env.TURN_ENABLED "true" }}
+    <bean id="stun0" class="org.bigbluebutton.web.services.turn.StunServer">
+        <constructor-arg index="0" value="stun:{{ .Env.DOMAIN }}:3478"/>
+    </bean>
+    <bean id="turn0" class="org.bigbluebutton.web.services.turn.TurnServer">
+        <constructor-arg index="0" value="{{ .Env.TURN_SECRET }}"/>
+        <constructor-arg index="1" value="turn:{{ .Env.DOMAIN }}:3478?transport=udp"/>
+        <constructor-arg index="2" value="86400"/>
+    </bean>
+    <bean id="turn1" class="org.bigbluebutton.web.services.turn.TurnServer">
+        <constructor-arg index="0" value="{{ .Env.TURN_SECRET }}"/>
+        <constructor-arg index="1" value="turn:{{ .Env.DOMAIN }}:3478?transport=tcp"/>
+        <constructor-arg index="2" value="86400"/>
     </bean>
     {{end}}
 
@@ -30,6 +46,9 @@
     <bean id="stunTurnService" class="org.bigbluebutton.web.services.turn.StunTurnService">
         <property name="stunServers">
             <set>
+                {{if eq .Env.TURN_ENABLED "true" }}
+                <ref bean="stun0" />
+                {{end}}
                 {{if .Env.STUN_SERVER }}
                 <ref bean="stun1" />
                 {{end}}
@@ -37,6 +56,10 @@
         </property>
         <property name="turnServers">
             <set>
+                {{if eq .Env.TURN_ENABLED "true" }}
+                <ref bean="turn0" />
+                <ref bean="turn1" />
+                {{end}}
                 {{if .Env.TURN_EXT_SERVER }}
                 <ref bean="turn2" />
                 {{end}}

@@ -16,6 +16,7 @@
 #
 
 import os
+import subprocess
 import sys
 import agent
 
@@ -34,6 +35,23 @@ def on_this_node(label, inherited, detected):
     return detected
 
 
+def turn_on_this_node():
+    """Keep the built-in TURN server only if port 3478 is free here.
+
+    Fixed, outside the allocator, so another module may own it on this node.
+    Failing configure-module for that would fail the whole restore.
+    """
+    if os.environ.get("TURN_ENABLED", "false") != "true":
+        return False
+    owner = subprocess.run(["turn-port-owner"], capture_output=True, text=True)
+    if owner.returncode == 0:
+        return True
+    print(agent.SD_WARNING + "port 3478 is already in use on this node, the "
+          "built-in TURN server stays off: free the port and enable it in Settings\n"
+          + owner.stdout, file=sys.stderr)
+    return False
+
+
 inherited_private = os.environ.get("PRIVATE_IP", "")
 
 config = {
@@ -46,6 +64,7 @@ config = {
                        if inherited_private else "",
     "stun_server": os.environ.get("STUN_SERVER", ""),
     "turn_ext_server": os.environ.get("TURN_EXT_SERVER", ""),
+    "turn_enabled": turn_on_this_node(),
     "enable_recording": os.environ.get("ENABLE_RECORDING", "false") == "true",
     "recording_max_age_days": int(os.environ.get("RECORDING_MAX_AGE_DAYS", "14")),
     "enable_learning_dashboard": os.environ.get("ENABLE_LEARNING_DASHBOARD", "true") == "true",

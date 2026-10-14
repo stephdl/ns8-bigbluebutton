@@ -28,6 +28,7 @@ ExecStart=/usr/bin/podman run --conmon-pidfile %t/bbb-web-app.pid \
     --env=WELCOME_FOOTER=${WELCOME_FOOTER} \
     --env=STUN_SERVER=${STUN_SERVER} \
     --env=TURN_EXT_SERVER=${TURN_EXT_SERVER} \
+    --env=TURN_ENABLED=${TURN_ENABLED} \
     --env=ENABLE_HTTPS_PROXY=false \
     --env=IGNORE_TLS_CERT_ERRORS=false \
     --volume bigbluebutton:/var/bigbluebutton:z \

@@ -14,6 +14,7 @@ import datetime
 import hashlib
 import json
 import os
+import secrets
 import shutil
 import sys
 
@@ -53,6 +54,7 @@ ENTRYPOINTS = (
     "recordings-entrypoint.sh",
     "apps-akka-entrypoint.sh",
     "bbb-web-entrypoint.sh",
+    "eturnal-entrypoint.sh",
 )
 
 
@@ -111,15 +113,24 @@ for name, src in sources.items():
 for name in ENTRYPOINTS:
     os.chmod(os.path.join(dst_dir, name), 0o755)
 
-# Substituted here: neither file has templating of its own.
+# The relay reaches BigBlueButton only at the addresses mediasoup announces.
+# Behind NAT it sends from the LAN address, which needs no hairpin on the router.
+peers = [ip for ip in (env.get("PUBLIC_IP", ""), env.get("PRIVATE_IP", "")) if ip]
+relay_addr = env.get("PRIVATE_IP", "") or env.get("PUBLIC_IP", "")
+
+# Substituted here: none of these files has templating of its own.
 placeholders = {
     "@@REDIS_PORT@@": env["REDIS_PORT"],
     "@@TRAEFIK_HOST@@": env["TRAEFIK_HOST"],
     "@@MEDIASOUP_MIN_PORT@@": env["MEDIASOUP_MIN_PORT"],
     "@@MEDIASOUP_MAX_PORT@@": env["MEDIASOUP_MAX_PORT"],
+    "@@TURN_RELAY_MIN_PORT@@": env["TURN_RELAY_MIN_PORT"],
+    "@@TURN_RELAY_MAX_PORT@@": env["TURN_RELAY_MAX_PORT"],
+    "@@RELAY_IPV4_ADDR@@": relay_addr,
+    "@@WHITELIST_PEERS@@": json.dumps(peers),
 }
 
-for name in ("webrtc-sfu-config.yaml", "nginx.conf"):
+for name in ("webrtc-sfu-config.yaml", "nginx.conf", "eturnal.yml"):
     with open(os.path.join(src_dir, name + ".in")) as fp:
         content = fp.read()
     for key, value in placeholders.items():
@@ -143,6 +154,17 @@ with os.fdopen(gl_fd, "w") as fp:
     print(f"BIGBLUEBUTTON_SECRET={pw['SHARED_SECRET']}", file=fp)
     print(f"SECRET_KEY_BASE={pw['RAILS_SECRET']}", file=fp)
     print("RELATIVE_URL_ROOT=/", file=fp)
+
+# Only what eturnal needs, not the whole passwords.env. The Erlang cookie is
+# kept from one render to the next, and nothing else ever needs it: unlike the
+# TURN secret, it is not in passwords.env, which bbb-web loads whole.
+et_path = os.path.join(state_dir, "eturnal.env")
+et_old = agent.read_envfile(et_path) if os.path.exists(et_path) else {}
+cookie = et_old.get("ETURNAL_COOKIE") or secrets.token_hex(32)
+et_fd = os.open(et_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(et_fd, "w") as fp:
+    print(f"ETURNAL_SECRET={pw['TURN_SECRET']}", file=fp)
+    print(f"ETURNAL_COOKIE={cookie}", file=fp)
 
 #
 # The containers call the site's public name and validate what answers, so nginx
