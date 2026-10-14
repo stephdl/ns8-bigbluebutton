@@ -235,7 +235,9 @@ Check if disabling automatic subtitles reverts the client settings
     ...    .public.app.audioCaptions.enabled    false
 
 Check if the built-in TURN server can be enabled
-    Configure module    en-us-callie    false    browserLanguage    true
+    # TURN relays from an address the node owns: the test public address is not one.
+    ${lan} =    Execute Command    ip -4 route get 1.1.1.1 | grep -o 'src [0-9.]*' | cut -d' ' -f2
+    Configure module    en-us-callie    false    browserLanguage    true    ${lan}
     Wait Until Keyword Succeeds    120s    5s    Unit should be    eturnal.service    active
     ${output} =    Execute Command    ss -Hlntu 'sport = :3478'
     Should Contain    ${output}    tcp
@@ -470,12 +472,12 @@ Configure audio captions
     Configure module    en-us-callie    ${captions}    ${language}
 
 Configure module
-    [Arguments]    ${sounds_language}    ${captions}    ${captions_language}    ${turn}=false
+    [Arguments]    ${sounds_language}    ${captions}    ${captions_language}    ${turn}=false    ${private}=${EMPTY}
     # The schema requires every field, so a partial payload would be rejected here
     # even though one setting at a time is under test. stun_server is for the
     # stable release of the update scenario, which still requires it.
     ${rc} =    Execute Command
-    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"","stun_server":"","turn_enabled":${turn},"turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"show_presentation_on_join":true,"enable_audio_captions":${captions},"audio_captions_language":"${captions_language}","learning_dashboard_max_age_days":7,"sounds_language":"${sounds_language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
+    ...    api-cli run module/${module_id}/configure-module --data '{"host":"${TEST_HOST}","public_address":"${TEST_PUBLIC_ADDRESS}","private_address":"${private}","stun_server":"","turn_enabled":${turn},"turn_ext_server":"","lets_encrypt":false,"enable_recording":false,"recording_max_age_days":0,"enable_learning_dashboard":true,"enable_external_videos":true,"enable_breakout_rooms":true,"show_presentation_on_join":true,"enable_audio_captions":${captions},"audio_captions_language":"${captions_language}","learning_dashboard_max_age_days":7,"sounds_language":"${sounds_language}","disable_sound_muted":false,"disable_sound_alone":false,"welcome_message":"","welcome_footer":""}'
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0
 
