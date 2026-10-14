@@ -6,26 +6,54 @@
 #
 
 #
-# Print the sockets bound to the TURN port by something other than our own
-# eturnal, and exit 1 if there are any. 3478 is fixed, outside the port
-# allocator, so nothing in the platform stops another module from taking it.
+# Print the sockets bound to the TURN port by another user, and exit 1 if there
+# are any. 3478 is fixed, outside the port allocator, so nothing in the platform
+# stops another module from taking it.
+#
+# Ownership goes by socket uid, not by unit state: eturnal runs as uid 9000 in
+# its user namespace, a subuid of this module on the host, and its socket is
+# still ours while the unit restarts.
 #
 
+import getpass
+import os
+import re
 import subprocess
 import sys
 
 TURN_PORT = 3478
 
-ours = subprocess.run(["systemctl", "--user", "is-active", "--quiet", "eturnal.service"]).returncode == 0
-if ours:
-    sys.exit(0)
 
-# -l lists UDP sockets too, as UNCONN.
+def our_uids():
+    uid = os.getuid()
+    ranges = [(uid, uid)]
+    user = getpass.getuser()
+    try:
+        with open("/etc/subuid") as fp:
+            for line in fp:
+                name, start, count = line.strip().split(":")
+                if name in (user, str(uid)):
+                    ranges.append((int(start), int(start) + int(count) - 1))
+    except (OSError, ValueError):
+        pass
+    return ranges
+
+
+ours = our_uids()
+
+# -l lists UDP sockets too, as UNCONN. -e adds the owner as uid:N.
 out = subprocess.run(
-    ["ss", "-Hlntu", f"sport = :{TURN_PORT}"],
+    ["ss", "-Hlntue", f"sport = :{TURN_PORT}"],
     capture_output=True, text=True, check=True,
-).stdout.strip()
+).stdout.splitlines()
 
-if out:
-    print(out)
+foreign = []
+for line in out:
+    m = re.search(r"\buid:(\d+)", line)
+    owner = int(m.group(1)) if m else 0
+    if not any(lo <= owner <= hi for lo, hi in ours):
+        foreign.append(line)
+
+if foreign:
+    print("\n".join(foreign))
     sys.exit(1)

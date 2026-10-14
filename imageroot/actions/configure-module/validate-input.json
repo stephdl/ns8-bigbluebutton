@@ -123,7 +123,7 @@
         "turn_enabled": {
             "type": "boolean",
             "title": "Built-in TURN server",
-            "description": "Run eturnal on port 3478, TCP and UDP, and open it in the node firewall. Lets clients behind UDP-blocking firewalls join. Omitted means false, so callers that predate it keep working."
+            "description": "Run eturnal on port 3478, TCP and UDP, and open it in the node firewall. Lets clients behind UDP-blocking firewalls join. Omitted keeps the current state, so a caller that predates the field cannot switch TURN off."
         },
         "turn_ext_server": {
             "type": "string",

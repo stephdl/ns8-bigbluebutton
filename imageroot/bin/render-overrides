@@ -16,6 +16,7 @@ import json
 import os
 import secrets
 import shutil
+import subprocess
 import sys
 
 import agent
@@ -114,9 +115,27 @@ for name in ENTRYPOINTS:
     os.chmod(os.path.join(dst_dir, name), 0o755)
 
 # The relay reaches BigBlueButton only at the addresses mediasoup announces.
-# Behind NAT it sends from the LAN address, which needs no hairpin on the router.
 peers = [ip for ip in (env.get("PUBLIC_IP", ""), env.get("PRIVATE_IP", "")) if ip]
-relay_addr = env.get("PRIVATE_IP", "") or env.get("PUBLIC_IP", "")
+
+
+def relay_address():
+    """IPv4 address eturnal binds its relay sockets to.
+
+    It must be owned by this host: behind NAT PUBLIC_IP is the router's, and it
+    may be IPv6. PRIVATE_IP when set, else the kernel's source address.
+    """
+    private = env.get("PRIVATE_IP", "")
+    if private and ":" not in private:
+        return private
+    try:
+        out = subprocess.run(["ip", "-4", "route", "get", "1.1.1.1"],
+                             capture_output=True, text=True, check=True).stdout.split()
+        return out[out.index("src") + 1]
+    except (subprocess.CalledProcessError, ValueError, IndexError):
+        # Only eturnal suffers: it starts and refuses every allocation.
+        print(agent.SD_WARNING + "no IPv4 source address, the TURN relay will not work",
+              file=sys.stderr)
+        return "127.0.0.1"
 
 # Substituted here: none of these files has templating of its own.
 placeholders = {
@@ -126,7 +145,9 @@ placeholders = {
     "@@MEDIASOUP_MAX_PORT@@": env["MEDIASOUP_MAX_PORT"],
     "@@TURN_RELAY_MIN_PORT@@": env["TURN_RELAY_MIN_PORT"],
     "@@TURN_RELAY_MAX_PORT@@": env["TURN_RELAY_MAX_PORT"],
-    "@@RELAY_IPV4_ADDR@@": relay_addr,
+    "@@RELAY_IPV4_ADDR@@": relay_address(),
+    # "::" fails to bind on a kernel booted with ipv6.disable=1.
+    "@@TURN_LISTEN_IP@@": "::" if os.path.exists("/proc/net/if_inet6") else "0.0.0.0",
     "@@WHITELIST_PEERS@@": json.dumps(peers),
 }
 

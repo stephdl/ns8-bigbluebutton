@@ -8,6 +8,10 @@
 # true. HOST network namespace, like webrtc-sfu: the relay must send from the
 # node's real address.
 #
+# Its files are rendered by configure-module and by bigbluebutton.service, which
+# it starts after: rendering again here would rewrite files live pod containers
+# read, at every restart.
+#
 # The secret and the Erlang cookie come from state/eturnal.env, written by
 # render-overrides, rather than the whole passwords.env: eturnal needs no other
 # module secret, and --env would show them on the command line.
@@ -35,7 +39,6 @@ WorkingDirectory=%S/state
 Restart=always
 TimeoutStopSec=30
 ExecStartPre=/bin/rm -f %t/eturnal.pid %t/eturnal.ctr-id
-ExecStartPre=runagent render-overrides
 ExecStart=/usr/bin/podman run --conmon-pidfile %t/eturnal.pid \
     --cidfile %t/eturnal.ctr-id --cgroups=no-conmon \
     --replace -d --name eturnal \

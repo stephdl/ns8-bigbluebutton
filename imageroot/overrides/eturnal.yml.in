@@ -4,17 +4,17 @@
 #
 eturnal:
   listen:
-    - ip: "::"
+    - ip: "@@TURN_LISTEN_IP@@"
       port: 3478
       transport: udp
-    - ip: "::"
+    - ip: "@@TURN_LISTEN_IP@@"
       port: 3478
       transport: tcp
 
   realm: "@@TRAEFIK_HOST@@"
 
-  # Behind NAT this is the LAN address: the relay talks to mediasoup and
-  # FreeSWITCH on this same host, never through the router.
+  # An address this host owns: the relay talks to mediasoup on this same host,
+  # never through the router.
   relay_ipv4_addr: "@@RELAY_IPV4_ADDR@@"
   relay_min_port: @@TURN_RELAY_MIN_PORT@@
   relay_max_port: @@TURN_RELAY_MAX_PORT@@

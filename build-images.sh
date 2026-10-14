@@ -74,7 +74,7 @@ buildah add "${container}" ui/dist /ui
 # runs in the host namespace and keeps those defaults, which sit below 20000,
 # outside the allocator span.
 #
-# UDP (9216): one contiguous range, split by bin/udp-split into
+# UDP (9216): one contiguous range, split by bin/apply-port-layout into
 #   - the first 7168 ports  -> mediasoup RTC (public, declared in the firewall)
 #   - the next  1024 ports  -> eturnal relay (bound on the host, not public)
 #   - the last  1024 ports  -> FreeSWITCH RTP (bound on the host, not public)

@@ -198,7 +198,7 @@ What each field does, and the value a fresh install carries:
 | Parameter | Fresh install | Notes |
 |---|---|---|
 | `private_address` | detected | Set it when participants also connect from the LAN. The server then advertises both addresses, so internal clients connect directly instead of depending on NAT reflection. |
-| `turn_enabled` | `false` | Runs eturnal on TCP and UDP 3478 and opens the port in the node firewall. The action fails if another service already owns 3478. See *STUN and TURN* below. |
+| `turn_enabled` | `false` | Runs eturnal on TCP and UDP 3478 and opens the port in the node firewall. The action fails if another service already owns 3478. Omit the field to keep the current state. See *STUN and TURN* below. |
 | `stun_server` | empty | See *STUN and TURN* below. A public STUN server receives the IP address of every participant. Not needed with `turn_enabled`, which answers STUN too. |
 | `turn_ext_server` | empty | A TURN server you already run elsewhere, alone or in addition to the built-in one. |
 | `turn_ext_secret` | empty | The TURN server's shared secret. Mandatory with the above. Omit the field to keep the stored value; `get-configuration` returns only `turn_ext_secret_set`, never the secret. |
@@ -227,8 +227,8 @@ reach the SFU. TURN relays its media over a port it can reach.
 **The built-in server.** `turn_enabled` runs [eturnal](https://eturnal.net) on the
 host network, listening on TCP and UDP 3478. BigBlueButton hands each client a
 STUN entry and two TURN entries, one per transport, for the site hostname. Audio,
-video and screen sharing all use the same port. eturnal relays from the node's
-LAN address when `private_address` is set, else from the public one. It only
+video and screen sharing all use the same port. eturnal relays from `private_address`
+when set, else from the address the node routes to the internet with. It only
 relays to the addresses mediasoup announces: every other private address stays
 refused, so the server cannot be used to reach the LAN. Its shared secret is
 generated at install time and never leaves the node.
