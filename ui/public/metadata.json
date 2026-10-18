@@ -3,7 +3,7 @@
   "description": {
     "en": "Web conferencing with audio, video, screen sharing, shared notes and recording"
   },
-  "categories": ["collaboration"],
+  "categories": ["communication"],
   "authors": [
     {
       "name": "Stephane de Labrusse",
