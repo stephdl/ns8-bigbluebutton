@@ -12,7 +12,7 @@
   ],
   "docs": {
     "documentation_url": "https://docs.bigbluebutton.org/",
-    "bug_url": "https://github.com/stephdl/ns8-bigbluebutton/issues",
+    "bug_url": "https://github.com/stephdl/dev/issues",
     "code_url": "https://github.com/stephdl/ns8-bigbluebutton"
   },
   "source": "ghcr.io/stephdl/bigbluebutton"
