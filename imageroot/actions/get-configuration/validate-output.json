@@ -9,7 +9,8 @@
             "lets_encrypt": true,
             "public_address": "203.0.113.10",
             "private_address": "192.168.1.10",
-            "stun_server": "",
+            "turn_enabled": false,
+            "turn_status": "disabled",
             "turn_ext_server": "",
             "turn_ext_secret_set": false,
             "enable_recording": false,
@@ -37,7 +38,8 @@
         "lets_encrypt",
         "public_address",
         "private_address",
-        "stun_server",
+        "turn_enabled",
+        "turn_status",
         "turn_ext_server",
         "turn_ext_secret_set",
         "enable_recording",
@@ -79,9 +81,21 @@
             "title": "LAN IP address",
             "description": "Additional address advertised to clients on the local network"
         },
-        "stun_server": {
+        "turn_enabled": {
+            "type": "boolean",
+            "title": "Built-in TURN server",
+            "description": "True when eturnal runs on port 3478, TCP and UDP."
+        },
+        "turn_status": {
             "type": "string",
-            "title": "STUN server"
+            "enum": [
+                "disabled",
+                "running",
+                "port_in_use",
+                "stopped"
+            ],
+            "title": "Built-in TURN server state",
+            "description": "port_in_use: another service holds 3478, so eturnal cannot start."
         },
         "turn_ext_server": {
             "type": "string",

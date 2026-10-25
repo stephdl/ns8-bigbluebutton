@@ -25,7 +25,6 @@ for evar in [
         "PRIVATE_IP",
         "BEHIND_NAT",
         "MS_WEBRTC_LISTEN_IPS",
-        "STUN_SERVER",
         "TURN_EXT_SERVER",
         "ENABLE_RECORDING",
         "RECORDING_MAX_AGE_DAYS",

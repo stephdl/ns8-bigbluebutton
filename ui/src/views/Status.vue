@@ -123,6 +123,25 @@
               </div>
             </template>
           </NsInfoCard>
+          <NsInfoCard
+            light
+            :title="$t('status.turn_server')"
+            :description="$t('status.turn_' + turnStatus)"
+            :icon="ConnectionSignal32"
+            :loading="loading.getConfiguration"
+            class="min-height-card"
+          >
+            <template slot="content">
+              <NsButton
+                kind="ghost"
+                :icon="ArrowRight20"
+                :disabled="loading.getConfiguration"
+                @click="goToAppPage(instanceName, 'settings')"
+              >
+                {{ $t("status.configure") }}
+              </NsButton>
+            </template>
+          </NsInfoCard>
           <NsBackupCard
             :title="core.$t('backup.title')"
             :noBackupMessage="core.$t('backup.no_backup_configured')"
@@ -355,6 +374,7 @@ import { mapState } from "vuex";
 import RestartModuleModal from "@/components/RestartModuleModal.vue";
 // Not in IconService.
 import Restart20 from "@carbon/icons-vue/es/restart/20";
+import ConnectionSignal32 from "@carbon/icons-vue/es/connection-signal/32";
 import {
   QueryParamService,
   TaskService,
@@ -394,6 +414,8 @@ export default {
       backupRepositories: [],
       backups: [],
       Restart20,
+      ConnectionSignal32,
+      turnStatus: "disabled",
       isShownRestartModuleModal: false,
       imagesTablePage: [],
       imagesTableColumns: ["name", "size", "created"],
@@ -526,6 +548,7 @@ export default {
     getConfigurationCompleted(taskContext, taskResult) {
       const config = taskResult.output;
       this.host = config.host;
+      this.turnStatus = config.turn_status;
       this.loading.getConfiguration = false;
     },
     async getStatus() {

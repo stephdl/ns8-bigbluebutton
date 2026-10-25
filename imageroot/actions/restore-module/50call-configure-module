@@ -44,8 +44,9 @@ config = {
     "private_address": on_this_node("LAN", inherited_private,
                                     os.environ.get("DETECTED_PRIVATE_IP", ""))
                        if inherited_private else "",
-    "stun_server": os.environ.get("STUN_SERVER", ""),
     "turn_ext_server": os.environ.get("TURN_EXT_SERVER", ""),
+    # Off, like lets_encrypt: the router must first send 3478 to this node.
+    "turn_enabled": False,
     "enable_recording": os.environ.get("ENABLE_RECORDING", "false") == "true",
     "recording_max_age_days": int(os.environ.get("RECORDING_MAX_AGE_DAYS", "14")),
     "enable_learning_dashboard": os.environ.get("ENABLE_LEARNING_DASHBOARD", "true") == "true",

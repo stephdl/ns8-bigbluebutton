@@ -44,9 +44,8 @@ else:
 # space in the value trips anything that sources the file.
 agent.set_env("MS_WEBRTC_LISTEN_IPS", json.dumps(listen_ips, separators=(",", ":")))
 
-# Empty by default: the module ships no coturn, and sample.env's public default
-# would send every client's IP to a third party.
-agent.set_env("STUN_SERVER", data["stun_server"])
+# STUN is no longer a setting: drop the value an older release stored.
+agent.unset_env("STUN_SERVER")
 agent.set_env("TURN_EXT_SERVER", data["turn_ext_server"])
 
 agent.set_env("ENABLE_RECORDING", str(data["enable_recording"]).lower())

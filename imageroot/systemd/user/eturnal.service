@@ -1,0 +1,53 @@
+#
+# Copyright (C) 2026 Nethesis S.r.l.
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+#
+# Host network: the relay must send from the node's real address.
+# No render-overrides: a re-render at each restart rewrites files live containers read.
+# STUN_SERVICE=false: no public STUN lookup, the relay address is configured.
+# --image-volume=ignore: no new anonymous volume at every restart.
+#
+
+[Unit]
+Description=Podman eturnal.service
+After=bigbluebutton.service
+Wants=bigbluebutton.service
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+EnvironmentFile=%S/state/environment
+WorkingDirectory=%S/state
+Restart=always
+# Slows the loop while another service holds 3478.
+RestartSec=10
+TimeoutStopSec=30
+# A clone re-enables every unit the source had: never start while TURN is off.
+ExecCondition=/bin/sh -c 'test "$TURN_ENABLED" = true'
+ExecStartPre=/bin/rm -f %t/eturnal.pid %t/eturnal.ctr-id
+ExecStart=/usr/bin/podman run --conmon-pidfile %t/eturnal.pid \
+    --cidfile %t/eturnal.ctr-id --cgroups=no-conmon \
+    --replace -d --name eturnal \
+    --network=host \
+    --read-only \
+    --tmpfs /tmp \
+    --tmpfs /opt/eturnal/run:mode=1777 \
+    --image-volume=ignore \
+    --cap-drop=ALL \
+    --security-opt no-new-privileges \
+    --no-healthcheck \
+    --env-file=%S/state/eturnal.env \
+    --env=STUN_SERVICE=false \
+    --volume %S/state/overrides/eturnal.yml:/etc/eturnal.yml:ro,z \
+    --volume %S/state/overrides/eturnal-entrypoint.sh:/eturnal-entrypoint.sh:ro,z \
+    --entrypoint='["/sbin/tini","--","/eturnal-entrypoint.sh"]' \
+    ${ETURNAL_IMAGE}
+ExecStop=/usr/bin/podman stop --ignore --cidfile %t/eturnal.ctr-id -t 10
+ExecStopPost=/usr/bin/podman rm --ignore -f --cidfile %t/eturnal.ctr-id
+SyslogIdentifier=%u
+PIDFile=%t/eturnal.pid
+Type=forking
+
+[Install]
+WantedBy=default.target

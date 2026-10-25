@@ -22,7 +22,15 @@ config["lets_encrypt"] = agent.get_route(os.environ["MODULE_ID"]).get("lets_encr
 
 config["public_address"] = os.getenv("PUBLIC_IP", "") or os.getenv("DETECTED_PUBLIC_IP", "")
 config["private_address"] = os.getenv("PRIVATE_IP", "") or os.getenv("DETECTED_PRIVATE_IP", "")
-config["stun_server"] = os.getenv("STUN_SERVER", "")
+config["turn_enabled"] = os.getenv("TURN_ENABLED", "false") == "true"
+if not config["turn_enabled"]:
+    config["turn_status"] = "disabled"
+elif subprocess.run(["systemctl", "--user", "is-active", "--quiet", "eturnal.service"]).returncode == 0:
+    config["turn_status"] = "running"
+elif subprocess.run(["turn-port-owner"], capture_output=True).returncode != 0:
+    config["turn_status"] = "port_in_use"
+else:
+    config["turn_status"] = "stopped"
 config["turn_ext_server"] = os.getenv("TURN_EXT_SERVER", "")
 
 # The secret itself stays out: a task output is stored in Redis.

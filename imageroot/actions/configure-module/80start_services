@@ -50,6 +50,14 @@ else
     systemctl --user disable --now "${RECORDING_UNITS[@]}" || true
 fi
 
+TURN_ENABLED=$(sed -n 's/^TURN_ENABLED=//p' "${AGENT_STATE_DIR}/environment" | head -1)
+
+if [ "${TURN_ENABLED}" = "true" ]; then
+    UNITS+=(eturnal.service)
+else
+    systemctl --user disable --now eturnal.service || true
+fi
+
 systemctl --user enable "${UNITS[@]}"
 systemctl --user restart "${UNITS[@]}"
 
