@@ -52,6 +52,7 @@ ExecStartPre=/usr/bin/podman pod create \
     --add-host=bbb-web:127.0.0.1 \
     --add-host=etherpad:127.0.0.1 \
     --add-host=bbb-pads:127.0.0.1 \
+    --add-host=bbb-shared-notes-server:127.0.0.1 \
     --add-host=apps-akka:127.0.0.1 \
     --add-host=bbb-graphql-server:127.0.0.1 \
     --add-host=bbb-graphql-actions:127.0.0.1 \
