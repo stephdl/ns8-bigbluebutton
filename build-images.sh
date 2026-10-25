@@ -20,8 +20,8 @@ reponame="bigbluebutton"
 # org.nethserver.images label to open update PRs, and a floating tag gives it
 # nothing to compare against.
 #
-# The alangecker/* tags come from bigbluebutton/docker repos/tags at ref d38784b
-# (BigBlueButton 3.0.23). Bump them as a set: mixing BBB component versions is
+# The alangecker/* tags come from bigbluebutton/docker repos/tags at ref e7571f4
+# (BigBlueButton 3.0.39). Bump them as a set: mixing BBB component versions is
 # not supported upstream.
 #
 BBB_IMAGES=(
