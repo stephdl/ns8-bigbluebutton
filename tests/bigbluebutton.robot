@@ -50,13 +50,7 @@ Check if the port ranges were allocated
     Should Contain    ${output}    FS_RTP_MAX_PORT=
 
 Check if the mediasoup range is the expected size
-    # The update scenario still runs the stable release here, which predates the
-    # TURN relay range carved out of mediasoup's.
-    IF    '${SCENARIO}' == 'update'
-        Mediasoup range should be    8192
-    ELSE
-        Mediasoup range should be    7168
-    END
+    Mediasoup range should be    7168
 
 Check if the secrets file is not world readable
     # These must never reach the environment: agent.set_env writes to Redis in
@@ -124,7 +118,7 @@ Check if bigbluebutton survives the update
     ${rc} =    Execute Command    runagent -m ${module_id} test -e custom/upgrade-probe
     ...    return_rc=True  return_stdout=False
     Should Be Equal As Integers    ${rc}  0    state/custom lost its content
-    # The update makes room for the TURN relay, and leaves TURN itself off.
+    # The update keeps the TURN relay range, and leaves TURN itself off.
     Mediasoup range should be    7168
     ${relay} =    Execute Command    runagent -m ${module_id} printenv TURN_RELAY_MIN_PORT
     Should Not Be Empty    ${relay}

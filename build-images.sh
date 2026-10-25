@@ -20,25 +20,25 @@ reponame="bigbluebutton"
 # org.nethserver.images label to open update PRs, and a floating tag gives it
 # nothing to compare against.
 #
-# The alangecker/* tags come from bigbluebutton/docker repos/tags at ref d38784b
-# (BigBlueButton 3.0.23). Bump them as a set: mixing BBB component versions is
+# The alangecker/* tags come from bigbluebutton/docker repos/tags at ref e7571f4
+# (BigBlueButton 3.0.39). Bump them as a set: mixing BBB component versions is
 # not supported upstream.
 #
 BBB_IMAGES=(
-    "docker.io/alangecker/bbb-docker-web:v3.0.23"
-    "docker.io/alangecker/bbb-docker-freeswitch:v1.10.12-v3.0.23"
-    "docker.io/alangecker/bbb-docker-nginx:v3.0.23-v5.4.4-1.29"
+    "docker.io/alangecker/bbb-docker-web:v3.0.39"
+    "docker.io/alangecker/bbb-docker-freeswitch:v1.11.3-v3.0.39"
+    "docker.io/alangecker/bbb-docker-nginx:v3.0.39-v5.4.8-1.29"
     "docker.io/alangecker/bbb-docker-etherpad:2.4.2-s8328b77-p88f3f6b"
     "docker.io/alangecker/bbb-docker-pads:v1.5.8"
-    "docker.io/alangecker/bbb-docker-bbb-export-annotations:v3.0.23"
-    "docker.io/alangecker/bbb-docker-webrtc-sfu:v2.22.0"
+    "docker.io/alangecker/bbb-docker-bbb-export-annotations:v3.0.39"
+    "docker.io/alangecker/bbb-docker-webrtc-sfu:v2.24.0"
     "docker.io/alangecker/bbb-docker-webrtc-recorder:v0.14.0"
-    "docker.io/alangecker/bbb-docker-fsesl-akka:v3.0.23"
-    "docker.io/alangecker/bbb-docker-apps-akka:v3.0.23"
-    "docker.io/alangecker/bbb-docker-graphql-server:v3.0.23"
-    "docker.io/alangecker/bbb-docker-graphql-actions:v3.0.23"
-    "docker.io/alangecker/bbb-docker-graphql-middleware:v3.0.23"
-    "docker.io/alangecker/bbb-docker-recordings:v3.0.23"
+    "docker.io/alangecker/bbb-docker-fsesl-akka:v3.0.39"
+    "docker.io/alangecker/bbb-docker-apps-akka:v3.0.39"
+    "docker.io/alangecker/bbb-docker-graphql-server:v3.0.39"
+    "docker.io/alangecker/bbb-docker-graphql-actions:v3.0.39"
+    "docker.io/alangecker/bbb-docker-graphql-middleware:v3.0.39"
+    "docker.io/alangecker/bbb-docker-recordings:v3.0.39"
     "docker.io/bigbluebutton/greenlight:v3.9.0.1"
     "docker.io/library/postgres:16.15-alpine"
     "docker.io/library/redis:8.10.2-alpine"
