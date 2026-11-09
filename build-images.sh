@@ -35,7 +35,7 @@ BBB_IMAGES=(
     "docker.io/alangecker/bbb-docker-pads:v1.5.8"
     "docker.io/alangecker/bbb-docker-bbb-export-annotations:v3.0.39"
     "docker.io/alangecker/bbb-docker-webrtc-sfu:v2.24.0"
-    "docker.io/alangecker/bbb-docker-webrtc-recorder:v0.14.0"
+    "docker.io/alangecker/bbb-docker-webrtc-recorder:v0.18.0"
     "docker.io/alangecker/bbb-docker-fsesl-akka:v3.0.39"
     "docker.io/alangecker/bbb-docker-apps-akka:v3.0.39"
     "docker.io/alangecker/bbb-docker-graphql-server:v3.0.39"
